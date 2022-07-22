@@ -53,10 +53,9 @@ classdef KnnND < handle
       obj.samples_per_classe = cat(1,id,obj.samples_per_classe);
     end
     
-    % SÓ FALTA CHECAR ESSE MÉTODO
-    function experiment = runExperiments(obj,num_experiments,plot_metric)
+    function experiments = runExperiments(obj,num_experiments,plot_metric)
       %-----------------------------------------------------------------------------------
-      % Runs novelty detection experiments and hyperparameter search.
+      % Runs validation experiments and hyperparameter search.
       %
       % Input args
       %   num_experiments:
@@ -142,7 +141,8 @@ classdef KnnND < handle
         split_exp{i}.ytest = ytest;
       end
       close all;
-      % Métrica MCC
+      % Finds the threshold index that gives the best average matthews correlation 
+      % coefficient on all validation experiments
       mean_mcc = mean(MCC,1);
       [~,best_threshold_id] = max(mean_mcc);
       
@@ -161,7 +161,7 @@ classdef KnnND < handle
       all_metrics.TNR = TNR;
       all_metrics.FPR = FPR;
       all_metrics.FNR = FNR;
-      experiment.all_metrics = all_metrics;
+      experiments.all_metrics = all_metrics;
       
       model.training_ratio = obj.training_ratio;
       model.best_threshold_id = best_threshold_id;
@@ -170,27 +170,27 @@ classdef KnnND < handle
       model.knn_arg = obj.knn_arg;
       model.knn_threshold = obj.knn_threshold;
       
-      experiment.model = model;
-      experiment.split = cell2mat(split_exp);
-      experiment.evaluations = evaluations;
-      experiment.mean_mcc = mean_mcc;
-      experiment.mean_f1 = mean_f1;
-      experiment.mean_afr = mean_afr;
-      experiment.mean_tpr = mean_tpr;
-      experiment.mean_tnr = mean_tnr;
-      experiment.mean_fpr = mean_fpr;
-      experiment.mean_fnr = mean_fnr;
+      experiments.model = model;
+      experiments.split = cell2mat(split_exp);
+      experiments.evaluations = evaluations;
+      experiments.mean_mcc = mean_mcc;
+      experiments.mean_f1 = mean_f1;
+      experiments.mean_afr = mean_afr;
+      experiments.mean_tpr = mean_tpr;
+      experiments.mean_tnr = mean_tnr;
+      experiments.mean_fpr = mean_fpr;
+      experiments.mean_fnr = mean_fnr;
       
-      experiment.mcc_score = mean_mcc(best_threshold_id);
-      experiment.f1_score = mean_f1(best_threshold_id);
-      experiment.afr_score = mean_afr(best_threshold_id);
-      experiment.tpr_score = mean_tpr(best_threshold_id);
-      experiment.tnr_score = mean_tnr(best_threshold_id);
-      experiment.fpr_score = mean_fpr(best_threshold_id);
-      experiment.fnr_score = mean_fnr(best_threshold_id);
+      experiments.mcc_score = mean_mcc(best_threshold_id);
+      experiments.f1_score = mean_f1(best_threshold_id);
+      experiments.afr_score = mean_afr(best_threshold_id);
+      experiments.tpr_score = mean_tpr(best_threshold_id);
+      experiments.tnr_score = mean_tnr(best_threshold_id);
+      experiments.fpr_score = mean_fpr(best_threshold_id);
+      experiments.fnr_score = mean_fnr(best_threshold_id);
       
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
-        experiment.mcc_score,experiment.f1_score,experiment.afr_score);
+        experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
       figure;
       plot(obj.threshold,mean_mcc);
@@ -205,61 +205,6 @@ classdef KnnND < handle
       xlabel('threshold');
       ylabel('afr');
       title('AFR');
-    end
-    
-    function model = validation(obj,num_validations,plot_error)
-      %-----------------------------------------------------------------------------------
-      % Runs a cross-validation algorithm.
-      %
-      % Input args
-      %   num_validations:
-      %   plot_error: if true plots de accuracy metric.
-      %
-      % Output args
-      %   model:
-      % ----------------------------------------------------------------------------------
-      obj.split = cell(num_validations,1);
-      mcc = zeros(num_validations,obj.num_thresholds);
-      for i=1:num_validations
-        rng(i);
-        % Cria um objeto split. Particiona a base em dois conjuntos
-        % de classes treinadas e não treinadas. Separa uma
-        % parte para treinamento e outra para teste
-        obj.split{i} = SplitData(obj.X,obj.Y,obj.training_ratio,obj.untrained_classes);
-        % Separa uma parte do treinamento para validação
-        [id_train,id_val] = obj.split{i}.idTrainVal();
-        [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
-        RT = [];
-        for j=1:obj.num_thresholds
-          fprintf('\nKNN (K=%d kappa=%d) \tVal %d/%d \tThreshold %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_validations,j,obj.num_thresholds);
-          result = obj.evaluate(xtrain,ytrain,xval,yval,obj.threshold(j));
-          mcc(i,j) = result.MCC;
-          if plot_error
-            RT = cat(1,RT,mcc(i,j));
-            figure(1);
-            clf('reset');
-            plot(obj.threshold(1:j),RT,'-','LineWidth',3);
-            xlim([obj.threshold(1),obj.threshold(end)]);
-            ylim([0,1]);
-            xlabel('Threshold');
-            ylabel('Matthews correlation coefficient (MCC)');
-            title(['KNN [ validação ',num2str(i),'/',num2str(num_validations),' | threshold ',num2str(j),'/',num2str(obj.num_thresholds),' ]']);
-            drawnow;
-            pause(0.01);
-          end
-        end
-        model.split{i} = obj.split{i};
-      end
-      close all;
-      mean_mcc = mean(mcc,1);
-      [max_mean_mcc,ID] = max(mean_mcc);
-      
-      model.training_ratio = obj.training_ratio;
-      model.threshold = obj.threshold(ID);
-      model.untrained_classes = obj.untrained_classes;
-      model.knn_arg = obj.knn_arg;
-      model.knn_threshold = obj.knn_threshold;
-      model.mean_mcc = max_mean_mcc;
     end
     
     function [results,evaluations] = evaluateModel(obj,model,num_tests)
@@ -350,7 +295,9 @@ classdef KnnND < handle
       result.general_conf_matrix = report.CM;
       result.outlier_conf_matrix = report_outliers.CM;
       
-      fprintf('\nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
+      fprintf('\nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f ...\nACC: %f\nAFR: %f\n',...
+        threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),...
+        report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
     
     function predictions = predict(obj,xtrain,ytrain,xtest,threshold)

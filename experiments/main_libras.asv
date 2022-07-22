@@ -75,32 +75,34 @@ kpca_par.kernel = linspace(0.2,1.2,kpca_par.num_kernels)';
 
 parameters = {knn_par,lmnn_par,klmnn_par,knfst_par,one_svm_par,multi_svm_par,kpca_par};
 
-manager = Manager(X,y,out_dir,parameters,num_experiments,...
+
+manager = Manager(X,y,parameters,num_experiments,...
   num_classes,untrained_classes,training_ratio,plot_metric);
 
 tutorial = 1;
-
 switch tutorial
   case 1
     % ------------------------------------------------------------------------------------
     % Runs novelty detection experiments for KNN, LMNN and KLMNN based methods.
     % ------------------------------------------------------------------------------------
-    manager.runExperimentsForKnnMethods(methods([1,2,3]));  
+    manager.runExperimentsForKnnMethods(methods([1,2,3]),parameters,out_dir,...
+      num_experiments,num_classes,untrained_classes,training_ratio,plot_metric);  
   case 2
     % ------------------------------------------------------------------------------------
     % Process novelty detection results for KNN, LMNN, and KLMNN based methods.
     % ------------------------------------------------------------------------------------
-    manager.reportExperimentsForKnnMethods(K,kappa);
+    manager.reportExperimentsForKnnMethods(out_dir);
   case 3
     % ------------------------------------------------------------------------------------
     % Runs novelty detection experiments for KNFST, ONE SVM, MULTI SVM and KPCA 
     % based methods.
     % ------------------------------------------------------------------------------------
-    manager.runExperiments(methods([4,5,6,7]));    
+    manager.runExperiments(X,y,methods([4,5,6,7]),parameters,out_dir,num_experiments,...
+      num_classes,untrained_classes,training_ratio,K,kappa,plot_metric);    
   case 4
     % ------------------------------------------------------------------------------------
     % Process novelty detection results for KNFST, ONE SVM, MULTI SVM and KPCA 
     % based methods.
     % ------------------------------------------------------------------------------------    
-    manager.reportExperimentResults();
+    manager.reportExperimentResults(methods,out_dir,K,kappa);
 end
