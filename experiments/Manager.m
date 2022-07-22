@@ -59,7 +59,7 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_knn);
               experiments.num_validations = obj.num_experiments;
               experiments.search_thresholds = knn.threshold;
-              experiments.num_search_obj.parameters = knn.num_thresholds;
+              experiments.num_search_parameters = knn.num_thresholds;
               % Salva experimentos
               save(strcat(knn_dir,'/knn_experiments.mat'),'-struct','experiments');
             catch
@@ -79,7 +79,7 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_lmnn);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = lmnn.threshold;
-              experiments.num_search_obj.parameters = lmnn.num_thresholds;
+              experiments.num_search_parameters = lmnn.num_thresholds;
               % Salva experimentos
               save(strcat(knn_dir,'/lmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -102,10 +102,10 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_klmnn);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = klmnn.threshold;
-              experiments.num_search_obj.parameters = klmnn.num_thresholds;
+              experiments.num_search_parameters = klmnn.num_thresholds;
               experiments.kernel_type = klmnn.kernel_type;
               experiments.search_kernels = klmnn.kernel;
-              experiments.num_search_obj.parameters = klmnn.num_thresholds * klmnn.num_kernels;
+              experiments.num_search_parameters = klmnn.num_thresholds * klmnn.num_kernels;
               % Salva experimentos
               save(strcat(knn_dir,'/klmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -127,10 +127,10 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_knfst);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = knfst.threshold;
-              experiments.num_search_obj.parameters = knfst.num_thresholds;
+              experiments.num_search_parameters = knfst.num_thresholds;
               experiments.kernel_type = knfst.kernel_type;
               experiments.search_kernels = knfst.kernel;
-              experiments.num_search_obj.parameters = knfst.num_thresholds * knfst.num_kernels;
+              experiments.num_search_parameters = knfst.num_thresholds * knfst.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/knfst_experiments.mat'),'-struct','experiments');
             catch
@@ -152,7 +152,7 @@ classdef Manager < handle
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.kernel_type = one_svm.kernel_type;
               experiments.search_kernels = one_svm.kernel;
-              experiments.num_search_obj.parameters = one_svm.num_kernels;
+              experiments.num_search_parameters = one_svm.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/one_svm_experiments.mat'),'-struct','experiments');
             catch
@@ -177,7 +177,7 @@ classdef Manager < handle
               experiments.search_thresholds = multi_svm.threshold;
               experiments.kernel_type = multi_svm.kernel_type;
               experiments.search_kernels = multi_svm.kernel;
-              experiments.num_search_obj.parameters = ...
+              experiments.num_search_parameters = ...
                 multi_svm.num_thresholds * multi_svm.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/multi_svm_experiments.mat'),'-struct','experiments');
@@ -202,7 +202,7 @@ classdef Manager < handle
               experiments.search_thresholds = kpca.threshold;
               experiments.kernel_type = kpca.kernel_type;
               experiments.search_kernels = kpca.kernel;
-              experiments.num_search_obj.parameters = kpca.num_thresholds * kpca.num_kernels;
+              experiments.num_search_parameters = kpca.num_thresholds * kpca.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/kpca_experiments.mat'),'-struct','experiments');
             catch
