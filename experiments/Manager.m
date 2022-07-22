@@ -93,7 +93,7 @@ classdef Manager < handle
               % Define intervalos de busca de parâmetros
               klmnn.num_thresholds = obj.parameters{3}.num_thresholds;
               klmnn.threshold = obj.parameters{3}.threshold;
-              klmnn.kernel_tobj.ype = obj.parameters{3}.kernel_tobj.ype;
+              klmnn.kernel_type = obj.parameters{3}.kernel_type;
               klmnn.num_kernels = obj.parameters{3}.num_kernels;
               klmnn.kernel = obj.parameters{3}.kernel;
               % Inicia experimentos
@@ -103,7 +103,7 @@ classdef Manager < handle
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = klmnn.threshold;
               experiments.num_search_obj.parameters = klmnn.num_thresholds;
-              experiments.kernel_tobj.ype = klmnn.kernel_tobj.ype;
+              experiments.kernel_type = klmnn.kernel_type;
               experiments.search_kernels = klmnn.kernel;
               experiments.num_search_obj.parameters = klmnn.num_thresholds * klmnn.num_kernels;
               % Salva experimentos
@@ -118,7 +118,7 @@ classdef Manager < handle
               % Define intervalos de busca de parâmetros
               knfst.num_thresholds = obj.parameters{4}.num_thresholds;
               knfst.threshold = obj.parameters{4}.threshold;
-              knfst.kernel_tobj.ype = obj.parameters{4}.kernel_tobj.ype;
+              knfst.kernel_type = obj.parameters{4}.kernel_type;
               knfst.num_kernels = obj.parameters{4}.num_kernels;
               knfst.kernel = obj.parameters{4}.kernel;
               % Inicia experimentos
@@ -128,7 +128,7 @@ classdef Manager < handle
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = knfst.threshold;
               experiments.num_search_obj.parameters = knfst.num_thresholds;
-              experiments.kernel_tobj.ype = knfst.kernel_tobj.ype;
+              experiments.kernel_type = knfst.kernel_type;
               experiments.search_kernels = knfst.kernel;
               experiments.num_search_obj.parameters = knfst.num_thresholds * knfst.num_kernels;
               % Salva experimentos
@@ -141,16 +141,16 @@ classdef Manager < handle
               % Cria um objeto da classe SvmND
               one_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
-              one_svm.kernel_tobj.ype = obj.parameters{5}.kernel_tobj.ype;
+              one_svm.kernel_type = obj.parameters{5}.kernel_type;
               one_svm.num_kernels = obj.parameters{5}.num_kernels;
               one_svm.kernel = obj.parameters{5}.kernel;
               % Inicia experimentos
               t0_one_svm = tic;
-              experiments = one_svm.runNoveltobj.yDetectionOneSVMExperiments(...
+              experiments = one_svm.runNoveltyDetectionOneSVMExperiments(...
                 obj.num_experiments,obj.plot_metric);
               experiments.experiment_time = toc(t0_one_svm);
               experiments.obj.num_experiments = obj.num_experiments;
-              experiments.kernel_tobj.ype = one_svm.kernel_tobj.ype;
+              experiments.kernel_type = one_svm.kernel_type;
               experiments.search_kernels = one_svm.kernel;
               experiments.num_search_obj.parameters = one_svm.num_kernels;
               % Salva experimentos
@@ -165,17 +165,17 @@ classdef Manager < handle
               % Define intervalos de busca de parâmetros
               multi_svm.num_thresholds = obj.parameters{6}.num_thresholds;
               multi_svm.threshold = obj.parameters{6}.threshold;
-              multi_svm.kernel_tobj.ype = obj.parameters{6}.kernel_tobj.ype;
+              multi_svm.kernel_type = obj.parameters{6}.kernel_type;
               multi_svm.num_kernels = obj.parameters{6}.num_kernels;
               multi_svm.kernel = obj.parameters{6}.kernel;
               % Inicia experimentos
               t0_multi_svm = tic;
-              experiments = multi_svm.runNoveltobj.yDetectionMultiSVMExperiments(...
+              experiments = multi_svm.runNoveltyDetectionMultiSVMExperiments(...
                 obj.num_experiments,obj.plot_metric);
               experiments.experiment_time = toc(t0_multi_svm);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = multi_svm.threshold;
-              experiments.kernel_tobj.ype = multi_svm.kernel_tobj.ype;
+              experiments.kernel_type = multi_svm.kernel_type;
               experiments.search_kernels = multi_svm.kernel;
               experiments.num_search_obj.parameters = ...
                 multi_svm.num_thresholds * multi_svm.num_kernels;
@@ -191,7 +191,7 @@ classdef Manager < handle
               % Define intervalos de busca de parâmetros
               kpca.num_thresholds = obj.parameters{7}.num_thresholds;
               kpca.threshold = obj.parameters{7}.threshold;
-              kpca.kernel_tobj.ype = obj.parameters{7}.kernel_tobj.ype;
+              kpca.kernel_type = obj.parameters{7}.kernel_type;
               kpca.num_kernels = obj.parameters{7}.num_kernels;
               kpca.kernel = obj.parameters{7}.kernel;
               % Inicia experimentos
@@ -200,7 +200,7 @@ classdef Manager < handle
               experiments.validation_time = toc(t0_kpca);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = kpca.threshold;
-              experiments.kernel_tobj.ype = kpca.kernel_tobj.ype;
+              experiments.kernel_type = kpca.kernel_type;
               experiments.search_kernels = kpca.kernel;
               experiments.num_search_obj.parameters = kpca.num_thresholds * kpca.num_kernels;
               % Salva experimentos
@@ -241,7 +241,7 @@ classdef Manager < handle
         switch obj.method{i}
           case 'knn'
             try
-              fprintf('\n-> KNN Noveltobj.y Detection \n');
+              fprintf('\n-> KNN Novelty Detection \n');
               % Carrega o modelo
               knn_model = load(strcat(knn_dir,'/knn_model.mat'));
               knn = knn_model.knn;
@@ -259,7 +259,7 @@ classdef Manager < handle
             end
           case 'lmnn'
             try
-              fprintf('\n-> LMNN Noveltobj.y Detection \n');
+              fprintf('\n-> LMNN Novelty Detection \n');
               % Carrega o modelo
               lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
               lmnn = lmnn_model.lmnn;
@@ -277,7 +277,7 @@ classdef Manager < handle
             end
           case 'klmnn'
             try
-              fprintf('\n-> KLMNN Noveltobj.y Detection \n');
+              fprintf('\n-> KLMNN Novelty Detection \n');
               % Carrega o modelo
               klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
               klmnn = klmnn_model.klmnn;
@@ -295,7 +295,7 @@ classdef Manager < handle
             end
           case 'knfst'
             try
-              fprintf('\n-> KNFST Noveltobj.y Detection \n');
+              fprintf('\n-> KNFST Novelty Detection \n');
               % Carrega o modelo
               knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
               knfst = knfst_model.knfst;
@@ -313,7 +313,7 @@ classdef Manager < handle
             end
           case 'one_svm'
             try
-              fprintf('\n-> One SVM Noveltobj.y Detection \n');
+              fprintf('\n-> One SVM Novelty Detection \n');
               % Carrega o modelo
               one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
               one_svm = one_svm_model.one_svm;
@@ -331,7 +331,7 @@ classdef Manager < handle
             end
           case 'multi_svm'
             try
-              fprintf('\n-> Multi SVM Noveltobj.y Detection \n');
+              fprintf('\n-> Multi SVM Novelty Detection \n');
               % Carrega o modelo
               multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
               multi_svm = multi_svm_model.multi_svm;
@@ -349,7 +349,7 @@ classdef Manager < handle
             end
           case 'kpca'
             try
-              fprintf('\n-> KPCA Noveltobj.y Detection \n');
+              fprintf('\n-> KPCA Novelty Detection \n');
               % Carrega o modelo
               kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
               kpca = kpca_model.kpca;
@@ -382,7 +382,7 @@ classdef Manager < handle
         switch obj.method{i}
           case 'knn'
             try
-              fprintf('\n-> KNN Noveltobj.y Detection \n');
+              fprintf('\n-> KNN Novelty Detection \n');
               % Carrega os parâmetros
               knn_model = load(strcat(knn_dir,'/knn_model.mat'));
               knn_model = knn_model.knn_model;
@@ -401,7 +401,7 @@ classdef Manager < handle
             end
           case 'lmnn'
             try
-              fprintf('\n-> LMNN Noveltobj.y Detection \n');
+              fprintf('\n-> LMNN Novelty Detection \n');
               % Carrega o modelo
               lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
               lmnn_model = lmnn_model.lmnn_model;
@@ -421,7 +421,7 @@ classdef Manager < handle
             end
           case 'klmnn'
             try
-              fprintf('\n-> KLMNN Noveltobj.y Detection \n');
+              fprintf('\n-> KLMNN Novelty Detection \n');
               % Carrega o modelo
               klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
               klmnn_model = klmnn_model.klmnn_model;
@@ -441,7 +441,7 @@ classdef Manager < handle
             end
           case 'knfst'
             try
-              fprintf('\n-> KNFST Noveltobj.y Detection \n');
+              fprintf('\n-> KNFST Novelty Detection \n');
               % Carrega o modelo
               knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
               knfst_model = knfst_model.knfst_model;
@@ -460,7 +460,7 @@ classdef Manager < handle
             end
           case 'one_svm'
             try
-              fprintf('\n-> One SVM Noveltobj.y Detection \n');
+              fprintf('\n-> One SVM Novelty Detection \n');
               % Carrega o modelo
               one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
               one_svm_model = one_svm_model.one_svm_model;
@@ -479,7 +479,7 @@ classdef Manager < handle
             end
           case 'multi_svm'
             try
-              fprintf('\n-> Multi SVM Noveltobj.y Detection \n');
+              fprintf('\n-> Multi SVM Novelty Detection \n');
               % Carrega o modelo
               multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
               multi_svm_model = multi_svm_model.multi_svm_model;
@@ -498,7 +498,7 @@ classdef Manager < handle
             end
           case 'kpca'
             try
-              fprintf('\n-> KPCA Noveltobj.y Detection \n');
+              fprintf('\n-> KPCA Novelty Detection \n');
               % Carrega o modelo
               kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
               kpca_model = kpca_model.kpca_model;
@@ -546,7 +546,7 @@ classdef Manager < handle
       for i=1:numel(obj.method)
         switch obj.method{i}
           case 'knn'
-            fprintf('\n-> KNN Noveltobj.y Detection\n\n');
+            fprintf('\n-> KNN Novelty Detection\n\n');
             % Carrega o modelo
             knn_model = load(strcat(knn_dir,'/knn_model.mat'));
             knn_model = knn_model.knn_model;
@@ -558,7 +558,7 @@ classdef Manager < handle
             % Salva avaliação
             save(strcat(knn_dir,'/knn_evaluation.mat'),'-struct','knn_evaluation');
           case 'lmnn'
-            fprintf('\n-> LMNN Noveltobj.y Detection\n');
+            fprintf('\n-> LMNN Novelty Detection\n');
             % Carrega o modelo
             lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
             lmnn_model = lmnn_model.lmnn_model;
@@ -571,7 +571,7 @@ classdef Manager < handle
             % Salva avaliação
             save(strcat(knn_dir,'/lmnn_evaluation.mat'),'-struct','lmnn_evaluation');
           case 'klmnn'
-            fprintf('\n-> KLMNN Noveltobj.y Detection\n');
+            fprintf('\n-> KLMNN Novelty Detection\n');
             % Carrega o modelo
             klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
             klmnn_model = klmnn_model.klmnn_model;
@@ -579,35 +579,35 @@ classdef Manager < handle
             t0_klmnn = tic;
             klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
               klmnn_model.obj.knn_threshold,obj.num_classes);
-            klmnn.kernel_tobj.ype = klmnn_model.kernel_tobj.ype;
+            klmnn.kernel_type = klmnn_model.kernel_type;
             klmnn_evaluation = klmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               klmnn_model.kernel,klmnn_model.threshold);
             klmnn_evaluation.evaluation_time = toc(t0_klmnn);
             % Salva avaliação
             save(strcat(knn_dir,'/klmnn_evaluation.mat'),'-struct','klmnn_evaluation');
           case 'knfst'
-            fprintf('\n-> KNFST Noveltobj.y Detection\n');
+            fprintf('\n-> KNFST Novelty Detection\n');
             % Carrega o modelo
             knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
             knfst_model = knfst_model.knfst_model;
             % Avalia o modelo
             t0_knfst = tic;
             knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
-            knfst.kernel_tobj.ype = knfst_model.kernel_tobj.ype;
+            knfst.kernel_type = knfst_model.kernel_type;
             knfst_evaluation = knfst.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               knfst_model.kernel,knfst_model.threshold);
             knfst_evaluation.evaluation_time = toc(t0_knfst);
             % Salva avaliação
             save(strcat(model_dir,'/knfst_evaluation.mat'),'-struct','knfst_evaluation');
           case 'one_svm'
-            fprintf('\n-> One SVM Noveltobj.y Detection\n');
+            fprintf('\n-> One SVM Novelty Detection\n');
             % Carrega o modelo
             one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
             one_svm_model = one_svm_model.one_svm_model;
             % Avalia o modelo
             t0_svm = tic;
             one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            one_svm.kernel_tobj.ype = one_svm_model.kernel_tobj.ype;
+            one_svm.kernel_type = one_svm_model.kernel_type;
             one_svm_evaluation = one_svm.evaluateOneClassSVM(obj,xtrain,ytrain,...
               xtest,ytest,one_svm_model.kernel);
             one_svm_evaluation.evaluation_time = toc(t0_svm);
@@ -615,14 +615,14 @@ classdef Manager < handle
             save(strcat(model_dir,'/one_svm_evaluation.mat'),...
               '-struct','one_svm_evaluation');
           case 'multi_svm'
-            fprintf('\n-> Multi SVM Noveltobj.y Detection\n');
+            fprintf('\n-> Multi SVM Novelty Detection\n');
             % Carrega o modelo
             multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
             multi_svm_model = multi_svm_model.multi_svm_model;
             % Avalia o modelo
             t0_svm = tic;
             multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            multi_svm.kernel_tobj.ype = multi_svm_model.kernel_tobj.ype;
+            multi_svm.kernel_type = multi_svm_model.kernel_type;
             multi_svm_evaluation = multi_svm.evaluateMultiClassSVM(obj,xtrain,ytrain,...
               xtest,ytest,multi_svm_model.kernel,multi_svm_model.threshold);
             multi_svm_evaluation.evaluation_time = toc(t0_svm);
@@ -630,14 +630,14 @@ classdef Manager < handle
             save(strcat(model_dir,'/multi_svm_evaluation.mat'),...
               '-struct','multi_svm_evaluation');
           case 'kpca'
-            fprintf('\n-> KPCA Noveltobj.y Detection\n');
+            fprintf('\n-> KPCA Novelty Detection\n');
             % Carrega o modelo
             kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
             kpca_model = kpca_model.kpca_model;
             % Avalia o modelo
             t0_kpca = tic;
             kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
-            kpca.kernel_tobj.ype = kpca_model.kernel_tobj.ype;
+            kpca.kernel_type = kpca_model.kernel_type;
             kpca_evaluation = kpca.evaluate(obj,xtrain,xtest,ytest,...
               kpca_model.kernel,kpca_model.threshold);
             kpca_evaluation.evaluation_time = toc(t0_kpca);
@@ -675,7 +675,7 @@ classdef Manager < handle
       for i=1:numel(obj.method)
         switch obj.method{i}
           case 'knn'
-            fprintf('\n-> KNN Noveltobj.y Detection\n\n');
+            fprintf('\n-> KNN Novelty Detection\n\n');
             % Avalia os parâmetros
             t0_knn = tic;
             knn = KnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
@@ -685,7 +685,7 @@ classdef Manager < handle
             % Salva avaliação
             save(strcat(knn_dir,'/knn_evaluate_parameter.mat'),'-struct','knn_evaluation');
           case 'lmnn'
-            fprintf('\n-> LMNN Noveltobj.y Detection\n');
+            fprintf('\n-> LMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_lmnn = tic;
             lmnn = LmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
@@ -696,11 +696,11 @@ classdef Manager < handle
             save(strcat(knn_dir,'/lmnn_evaluate_parameter.mat'),...
               '-struct','lmnn_evaluation');
           case 'klmnn'
-            fprintf('\n-> KLMNN Noveltobj.y Detection\n');
+            fprintf('\n-> KLMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_klmnn = tic;
             klmnn = KlmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
-            klmnn.kernel_tobj.ype = obj.parameters{3}.kernel_tobj.ype;
+            klmnn.kernel_type = obj.parameters{3}.kernel_type;
             klmnn_evaluation = klmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{3}.kernel_arg,obj.parameters{3}.threshold_arg);
             klmnn_evaluation.evaluation_time = toc(t0_klmnn);
@@ -708,11 +708,11 @@ classdef Manager < handle
             save(strcat(knn_dir,'/klmnn_evaluate_parameter.mat'),...
               '-struct','klmnn_evaluation');
           case 'knfst'
-            fprintf('\n-> KNFST Noveltobj.y Detection\n');
+            fprintf('\n-> KNFST Novelty Detection\n');
             % Avalia os parâmetros
             t0_knfst = tic;
             knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
-            knfst.kernel_tobj.ype = obj.parameters{4}.kernel_tobj.ype;
+            knfst.kernel_type = obj.parameters{4}.kernel_type;
             knfst_evaluation = knfst.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{4}.kernel_arg,obj.parameters{4}.threshold_arg);
             knfst_evaluation.evaluation_time = toc(t0_knfst);
@@ -720,11 +720,11 @@ classdef Manager < handle
             save(strcat(model_dir,'/knfst_evaluate_parameter.mat'),...
               '-struct','knfst_evaluation');
           case 'one_svm'
-            fprintf('\n-> One SVM Noveltobj.y Detection\n');
+            fprintf('\n-> One SVM Novelty Detection\n');
             % Avalia os parâmetros
             t0_svm = tic;
             one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            one_svm.kernel_tobj.ype = obj.parameters{5}.kernel_tobj.ype;
+            one_svm.kernel_type = obj.parameters{5}.kernel_type;
             one_svm_evaluation = one_svm.evaluateOneClassSVM(obj,xtrain,ytrain,...
               xtest,ytest,obj.parameters{5}.kernel_arg);
             one_svm_evaluation.evaluation_time = toc(t0_svm);
@@ -732,11 +732,11 @@ classdef Manager < handle
             save(strcat(model_dir,'/one_svm_evaluate_parameter.mat'),...
               '-struct','one_svm_evaluation');
           case 'multi_svm'
-            fprintf('\n-> Multi SVM Noveltobj.y Detection\n');
+            fprintf('\n-> Multi SVM Novelty Detection\n');
             % Avalia os parâmetros
             t0_svm = tic;
             multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            multi_svm.kernel_tobj.ype = obj.parameters{6}.kernel_tobj.ype;
+            multi_svm.kernel_type = obj.parameters{6}.kernel_type;
             multi_svm_evaluation = multi_svm.evaluateMultiClassSVM(obj,xtrain,ytrain,...
               xtest,ytest,obj.parameters{6}.kernel_arg,obj.parameters{6}.threshold_arg);
             multi_svm_evaluation.evaluation_time = toc(t0_svm);
@@ -744,11 +744,11 @@ classdef Manager < handle
             save(strcat(model_dir,'/multi_svm_evaluate_parameter.mat'),...
               '-struct','multi_svm_evaluation');
           case 'kpca'
-            fprintf('\n-> KPCA Noveltobj.y Detection\n');
+            fprintf('\n-> KPCA Novelty Detection\n');
             % Avalia os parâmetros
             t0_kpca = tic;
             kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
-            kpca.kernel_tobj.ype = obj.parameters{7}.kernel_tobj.ype;
+            kpca.kernel_type = obj.parameters{7}.kernel_type;
             kpca_evaluation = kpca.evaluate(obj,xtrain,xtest,ytest,...
               obj.parameters{7}.kernel_arg,obj.parameters{7}.threshold_arg);
             kpca_evaluation.evaluation_time = toc(t0_kpca);
@@ -773,7 +773,7 @@ classdef Manager < handle
       for i=1:numel(obj.method)
         switch obj.method{i}
           case 'knn'
-            fprintf('\n-> KNN Noveltobj.y Detection \n');
+            fprintf('\n-> KNN Novelty Detection \n');
             % Carrega o modelo
             knn_model = load(strcat(knn_dir,'/knn_model.mat'));
             knn_model = knn_model.knn_model;
@@ -788,10 +788,10 @@ classdef Manager < handle
               'prediction_time','predictions','xtest');
             % Plota a fronteira de decisão
             figure;
-            Util.plotDecisionBoundarobj.y(xtest,predictions);
+            Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'lmnn'
-            fprintf('\n-> LMNN Noveltobj.y Detection\n');
+            fprintf('\n-> LMNN Novelty Detection\n');
             % Carrega o modelo
             lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
             lmnn_model = lmnn_model.lmnn_model;
@@ -807,10 +807,10 @@ classdef Manager < handle
               'prediction_time','predictions','xtest');
             % Plota a fronteira de decisão
             figure;
-            Util.plotDecisionBoundarobj.y(xtest,predictions);
+            Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'klmnn'
-            fprintf('\n-> KLMNN Noveltobj.y Detection\n');
+            fprintf('\n-> KLMNN Novelty Detection\n');
             % Carrega o modelo
             klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
             klmnn_model = klmnn_model.klmnn_model;
@@ -818,7 +818,7 @@ classdef Manager < handle
             t0_klmnn = tic;
             klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
               klmnn_model.obj.knn_threshold,obj.num_classes);
-            klmnn.kernel_tobj.ype = klmnn_model.kernel_tobj.ype;
+            klmnn.kernel_type = klmnn_model.kernel_type;
             %klmnn_predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
             % klmnn_model.kernel,klmnn_model.threshold);
             predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
@@ -830,17 +830,17 @@ classdef Manager < handle
               'prediction_time','predictions','xtest');
             % Plota a fronteira de decisão
             figure;
-            Util.plotDecisionBoundarobj.y(xtest,predictions);
+            Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'knfst'
-            fprintf('\n-> KNFST Noveltobj.y Detection\n');
+            fprintf('\n-> KNFST Novelty Detection\n');
             % Carrega o modelo
             knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
             knfst_model = knfst_model.knfst_model;
             % Avalia o modelo
             t0_knfst = tic;
             knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
-            knfst.kernel_tobj.ype = knfst_model.kernel_tobj.ype;
+            knfst.kernel_type = knfst_model.kernel_type;
             predictions = knfst.predict(obj,xtrain,ytrain,xtest,...
               knfst_model.kernel,knfst_model.threshold);
             prediction_time = toc(t0_knfst);
@@ -850,17 +850,17 @@ classdef Manager < handle
               'prediction_time','predictions','xtest');
             % Plota a fronteira de decisão
             figure;
-            Util.plotDecisionBoundarobj.y(xtest,predictions);
+            Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'one_svm'
-            fprintf('\n-> One SVM Noveltobj.y Detection\n');
+            fprintf('\n-> One SVM Novelty Detection\n');
             % Carrega o modelo
             one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
             one_svm_model = one_svm_model.one_svm_model;
             % Avalia o modelo
             t0_svm = tic;
             one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            one_svm.kernel_tobj.ype = one_svm_model.kernel_tobj.ype;
+            one_svm.kernel_type = one_svm_model.kernel_type;
             predictions = one_svm.predictOneClassSVM(obj,xtrain,ytrain,xtest,...
               one_svm_model.kernel);
             prediction_time = toc(t0_svm);
@@ -870,17 +870,17 @@ classdef Manager < handle
               'predictions','xtest');
             % Plota a fronteira de decisão
             figure;
-            Util.plotDecisionBoundarobj.y(xtest,predictions);
+            Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'multi_svm'
-            fprintf('\n-> Multi SVM Noveltobj.y Detection\n');
+            fprintf('\n-> Multi SVM Novelty Detection\n');
             % Carrega o modelo
             multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
             multi_svm_model = multi_svm_model.multi_svm_model;
             % Avalia o modelo
             t0_svm = tic;
             multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            multi_svm.kernel_tobj.ype = multi_svm_model.kernel_tobj.ype;
+            multi_svm.kernel_type = multi_svm_model.kernel_type;
             predictions = multi_svm.predictMultiClassSVM(obj,xtrain,ytrain,xtest,...
               multi_svm_model.kernel,multi_svm_model.threshold);
             prediction_time = toc(t0_svm);
@@ -890,18 +890,18 @@ classdef Manager < handle
               'predictions','xtest');
             % Plota a fronteira de decisão
             figure;
-            Util.plotDecisionBoundarobj.y(xtest,predictions);
+            Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'kpca'
-            fprintf('\n-> KPCA Noveltobj.y Detection\n');
+            fprintf('\n-> KPCA Novelty Detection\n');
             % Carrega o modelo
             kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
             kpca_model = kpca_model.kpca_model;
             % Avalia o modelo
             t0_kpca = tic;
             kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
-            kpca.kernel_tobj.ype = kpca_model.kernel_tobj.ype;
-            predictions = kpca.predictNoveltobj.y(obj,xtrain,xtest,...
+            kpca.kernel_type = kpca_model.kernel_type;
+            predictions = kpca.predictNovelty(obj,xtrain,xtest,...
               kpca_model.kernel,kpca_model.threshold);
             prediction_time = toc(t0_kpca);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
@@ -910,7 +910,7 @@ classdef Manager < handle
               'prediction_time','predictions','xtest');
             % Plota a fronteira de decisão
             figure;
-            Util.plotDecisionBoundarobj.y(xtest,predictions);
+            Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
         end
       end
@@ -947,7 +947,7 @@ classdef Manager < handle
       for i=1:numel(obj.method)
         switch obj.method{i}
           case 'knn'
-            fprintf('\n-> KNN Noveltobj.y Detection \n');
+            fprintf('\n-> KNN Novelty Detection \n');
             t0_knn = tic;
             knn = KnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
             % Avalia os parâmetros
@@ -955,9 +955,9 @@ classdef Manager < handle
             prediction_time = toc(t0_knn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
-            Util.plotClassesWithBoundarobj.y('knn',knn_dir,obj.X,obj.y,xtest,knn_predictions);
+            Util.plotClassesWithBoundary('knn',knn_dir,obj.X,obj.y,xtest,knn_predictions);
           case 'lmnn'
-            fprintf('\n-> LMNN Noveltobj.y Detection\n');
+            fprintf('\n-> LMNN Novelty Detection\n');
             t0_lmnn = tic;
             lmnn = LmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
             % Avalia os parâmetros
@@ -965,67 +965,67 @@ classdef Manager < handle
             prediction_time = toc(t0_lmnn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
-            Util.plotClassesWithBoundarobj.y('lmnn',knn_dir,obj.X,obj.y,xtest,lmnn_predictions);
+            Util.plotClassesWithBoundary('lmnn',knn_dir,obj.X,obj.y,xtest,lmnn_predictions);
           case 'klmnn'
-            fprintf('\n-> KLMNN Noveltobj.y Detection\n');
+            fprintf('\n-> KLMNN Novelty Detection\n');
             t0_klmnn = tic;
             klmnn = KlmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
-            klmnn.kernel_tobj.ype = obj.parameters{3}.kernel_tobj.ype;
+            klmnn.kernel_type = obj.parameters{3}.kernel_type;
             % Avalia os parâmetros
             klmnn_predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
               obj.parameters{3}.kernel_arg,obj.parameters{3}.threshold_arg);
             prediction_time = toc(t0_klmnn);
             fprintf('-> done! [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
-            Util.plotClassesWithBoundarobj.y('klmnn',knn_dir,obj.X,obj.y,xtest,klmnn_predictions);
+            Util.plotClassesWithBoundary('klmnn',knn_dir,obj.X,obj.y,xtest,klmnn_predictions);
           case 'knfst'
-            fprintf('\n-> KNFST Noveltobj.y Detection\n');
+            fprintf('\n-> KNFST Novelty Detection\n');
             t0_knfst = tic;
             knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
-            knfst.kernel_tobj.ype = obj.parameters{4}.kernel_tobj.ype;
+            knfst.kernel_type = obj.parameters{4}.kernel_type;
             % Avalia os parâmetros
             knfst_predictions = knfst.predict(obj,xtrain,ytrain,xtest,...
               obj.parameters{4}.kernel_arg,obj.parameters{4}.threshold_arg);
             prediction_time = toc(t0_knfst);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
-            Util.plotClassesWithBoundarobj.y('knfst',model_dir,obj.X,obj.y,xtest,knfst_predictions);
+            Util.plotClassesWithBoundary('knfst',model_dir,obj.X,obj.y,xtest,knfst_predictions);
           case 'one_svm'
-            fprintf('\n-> One SVM Noveltobj.y Detection\n');
+            fprintf('\n-> One SVM Novelty Detection\n');
             t0_svm = tic;
             one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            multi_svm.kernel_tobj.ype = obj.parameters{5}.kernel_tobj.ype;
+            multi_svm.kernel_type = obj.parameters{5}.kernel_type;
             % Testa o parâmetro
             one_svm_predictions = one_svm.predictOneClassSVM(obj,xtrain,ytrain,xtest,...
               obj.parameters{5}.kernel_arg);
             prediction_time = toc(t0_svm);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
-            Util.plotClassesWithBoundarobj.y('one svm',model_dir,obj.X,obj.y,xtest,one_svm_predictions);
+            Util.plotClassesWithBoundary('one svm',model_dir,obj.X,obj.y,xtest,one_svm_predictions);
           case 'multi_svm'
-            fprintf('\n-> Multi SVM Noveltobj.y Detection\n');
+            fprintf('\n-> Multi SVM Novelty Detection\n');
             t0_svm = tic;
             multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            multi_svm.kernel_tobj.ype = obj.parameters{6}.kernel_tobj.ype;
+            multi_svm.kernel_type = obj.parameters{6}.kernel_type;
             % Avalia os parâmetros
             multi_svm_predictions = multi_svm.predictMultiClassSVM(obj,xtrain,ytrain,xtest,...
               obj.parameters{6}.kernel_arg,obj.parameters{6}.threshold_arg);
             prediction_time = toc(t0_svm);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
-            Util.plotClassesWithBoundarobj.y('multi svm',model_dir,obj.X,obj.y,xtest,multi_svm_predictions);
+            Util.plotClassesWithBoundary('multi svm',model_dir,obj.X,obj.y,xtest,multi_svm_predictions);
           case 'kpca'
-            fprintf('\n-> KPCA Noveltobj.y Detection\n');
+            fprintf('\n-> KPCA Novelty Detection\n');
             t0_kpca = tic;
             kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
-            kpca.kernel_tobj.ype = obj.parameters{7}.kernel_tobj.ype;
+            kpca.kernel_type = obj.parameters{7}.kernel_type;
             % Avalia os parâmetros
-            kpca_predictions = kpca.predictNoveltobj.y(obj,xtrain,xtest,...
+            kpca_predictions = kpca.predictNovelty(obj,xtrain,xtest,...
               obj.parameters{7}.kernel_arg,obj.parameters{7}.threshold_arg);
             prediction_time = toc(t0_kpca);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
-            Util.plotClassesWithBoundarobj.y('kpca',model_dir,obj.X,obj.y,xtest,kpca_predictions);
+            Util.plotClassesWithBoundary('kpca',model_dir,obj.X,obj.y,xtest,kpca_predictions);
         end
       end
     end
@@ -1162,7 +1162,7 @@ classdef Manager < handle
       
       REPORT = [TPR; TNR; FPR; FNR; AFR; F1; MCC];
       
-      REPORT = arraobj.y2table(round(REPORT,2));
+      REPORT = array2table(round(REPORT,2));
       REPORT.Properties.VariableNames = method_names;
       REPORT.Properties.RowNames = metric_names;
       
@@ -1258,31 +1258,31 @@ classdef Manager < handle
       kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
       
       % KNN
-      KNN.TPR = arraobj.y2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.TNR = arraobj.y2table(round(KNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FPR = arraobj.y2table(round(KNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FNR = arraobj.y2table(round(KNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.AFR = arraobj.y2table(round(KNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.F1 = arraobj.y2table(round(KNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.MCC = arraobj.y2table(round(KNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.TPR = array2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.TNR = array2table(round(KNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.FPR = array2table(round(KNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.FNR = array2table(round(KNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.AFR = array2table(round(KNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.F1 = array2table(round(KNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.MCC = array2table(round(KNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
       
       % LMNN
-      LMNN.TPR = arraobj.y2table(round(LMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.TNR = arraobj.y2table(round(LMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FPR = arraobj.y2table(round(LMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FNR = arraobj.y2table(round(LMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.AFR = arraobj.y2table(round(LMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.F1 = arraobj.y2table(round(LMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.MCC = arraobj.y2table(round(LMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.TPR = array2table(round(LMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.TNR = array2table(round(LMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.FPR = array2table(round(LMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.FNR = array2table(round(LMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.AFR = array2table(round(LMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.F1 = array2table(round(LMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.MCC = array2table(round(LMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
       
       % KLMNN
-      KLMNN.TPR = arraobj.y2table(round(KLMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.TNR = arraobj.y2table(round(KLMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FPR = arraobj.y2table(round(KLMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FNR = arraobj.y2table(round(KLMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.AFR = arraobj.y2table(round(KLMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.F1 = arraobj.y2table(round(KLMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.MCC = arraobj.y2table(round(KLMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.TPR = array2table(round(KLMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.TNR = array2table(round(KLMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.FPR = array2table(round(KLMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.FNR = array2table(round(KLMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.AFR = array2table(round(KLMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.F1 = array2table(round(KLMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.MCC = array2table(round(KLMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
       
       save(strcat(model_dir,'/report_knn_obj.method.mat'),'kappa','KNN','LMNN','KLMNN');
       fprintf('done!\n');
@@ -1402,7 +1402,7 @@ classdef Manager < handle
       
       REPORT = [TPR; TNR; FPR; FNR; AFR; F1; MCC];
       
-      REPORT = arraobj.y2table(round(REPORT,2));
+      REPORT = array2table(round(REPORT,2));
       REPORT.Properties.VariableNames = method_names;
       REPORT.Properties.RowNames = metric_names;
       
@@ -1547,42 +1547,42 @@ classdef Manager < handle
       method_names = {'KNN','LMNN','KLMNN','KNFST','ONE_SVM','MULTI_SVM','KPCA_NOV'};
       
       % TPR
-      TPR = arraobj.y2table([TPR;mean(TPR,1)]);
+      TPR = array2table([TPR;mean(TPR,1)]);
       TPR.Properties.VariableNames = method_names;
       TPR.Properties.RowNames = test_names;
       
       % TNR
-      TNR = arraobj.y2table([TNR;mean(TNR,1)]);
+      TNR = array2table([TNR;mean(TNR,1)]);
       TNR.Properties.VariableNames = method_names;
       TNR.Properties.RowNames = test_names;
       
       % FPR
-      FPR = arraobj.y2table([FPR;mean(FPR,1)]);
+      FPR = array2table([FPR;mean(FPR,1)]);
       FPR.Properties.VariableNames = method_names;
       FPR.Properties.RowNames = test_names;
       
       % FNR
-      FNR = arraobj.y2table([FNR;mean(FNR,1)]);
+      FNR = array2table([FNR;mean(FNR,1)]);
       FNR.Properties.VariableNames = method_names;
       FNR.Properties.RowNames = test_names;
       
       % ACC
-      ACC = arraobj.y2table([ACC;mean(ACC,1)]);
+      ACC = array2table([ACC;mean(ACC,1)]);
       ACC.Properties.VariableNames = method_names;
       ACC.Properties.RowNames = test_names;
       
       % AFR
-      AFR = arraobj.y2table([AFR;mean(AFR,1)]);
+      AFR = array2table([AFR;mean(AFR,1)]);
       AFR.Properties.VariableNames = method_names;
       AFR.Properties.RowNames = test_names;
       
       % F1
-      F1 = arraobj.y2table([F1;mean(F1,1)]);
+      F1 = array2table([F1;mean(F1,1)]);
       F1.Properties.VariableNames = method_names;
       F1.Properties.RowNames = test_names;
       
       % MCC
-      MCC = arraobj.y2table([MCC;mean(MCC,1)]);
+      MCC = array2table([MCC;mean(MCC,1)]);
       MCC.Properties.VariableNames = method_names;
       MCC.Properties.RowNames = test_names;
       
@@ -1591,7 +1591,7 @@ classdef Manager < handle
         ACC('MEAN',:).Variables; AFR('MEAN',:).Variables;
         F1('MEAN',:).Variables; MCC('MEAN',:).Variables];
       
-      REPORT = arraobj.y2table(round(REPORT,4));
+      REPORT = array2table(round(REPORT,4));
       REPORT.Properties.VariableNames = method_names;
       REPORT.Properties.RowNames = {'TPR','TNR','FPR','FNR','ACC','AFR','F1','MCC'};
       
@@ -1693,34 +1693,34 @@ classdef Manager < handle
       kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
       
       % KNN
-      KNN.TPR = arraobj.y2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.TNR = arraobj.y2table(round(KNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FPR = arraobj.y2table(round(KNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FNR = arraobj.y2table(round(KNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.ACC = arraobj.y2table(round(KNN.ACC,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.AFR = arraobj.y2table(round(KNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.F1 = arraobj.y2table(round(KNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.MCC = arraobj.y2table(round(KNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.TPR = array2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.TNR = array2table(round(KNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.FPR = array2table(round(KNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.FNR = array2table(round(KNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.ACC = array2table(round(KNN.ACC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.AFR = array2table(round(KNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.F1 = array2table(round(KNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.MCC = array2table(round(KNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
       
       % LMNN
-      LMNN.TPR = arraobj.y2table(round(LMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.TNR = arraobj.y2table(round(LMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FPR = arraobj.y2table(round(LMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FNR = arraobj.y2table(round(LMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.ACC = arraobj.y2table(round(LMNN.ACC,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.AFR = arraobj.y2table(round(LMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.F1 = arraobj.y2table(round(LMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.MCC = arraobj.y2table(round(LMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.TPR = array2table(round(LMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.TNR = array2table(round(LMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.FPR = array2table(round(LMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.FNR = array2table(round(LMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.ACC = array2table(round(LMNN.ACC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.AFR = array2table(round(LMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.F1 = array2table(round(LMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.MCC = array2table(round(LMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
       
       % KLMNN
-      KLMNN.TPR = arraobj.y2table(round(KLMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.TNR = arraobj.y2table(round(KLMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FPR = arraobj.y2table(round(KLMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FNR = arraobj.y2table(round(KLMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.ACC = arraobj.y2table(round(KLMNN.ACC,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.AFR = arraobj.y2table(round(KLMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.F1 = arraobj.y2table(round(KLMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.MCC = arraobj.y2table(round(KLMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.TPR = array2table(round(KLMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.TNR = array2table(round(KLMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.FPR = array2table(round(KLMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.FNR = array2table(round(KLMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.ACC = array2table(round(KLMNN.ACC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.AFR = array2table(round(KLMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.F1 = array2table(round(KLMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.MCC = array2table(round(KLMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
       
       save(strcat(model_dir,'/report_knn_obj.method.mat'),'kappa','KNN','LMNN','KLMNN');
       fprintf('done!\n');
@@ -1814,34 +1814,34 @@ classdef Manager < handle
       kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
       
       % KNN
-      KNN.TPR = arraobj.y2table(round(KNN.TPR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.TNR = arraobj.y2table(round(KNN.TNR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FPR = arraobj.y2table(round(KNN.FPR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FNR = arraobj.y2table(round(KNN.FNR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.ACC = arraobj.y2table(round(KNN.ACC,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.AFR = arraobj.y2table(round(KNN.AFR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.F1 = arraobj.y2table(round(KNN.F1,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.MCC = arraobj.y2table(round(KNN.MCC,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.TPR = array2table(round(KNN.TPR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.TNR = array2table(round(KNN.TNR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.FPR = array2table(round(KNN.FPR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.FNR = array2table(round(KNN.FNR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.ACC = array2table(round(KNN.ACC,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.AFR = array2table(round(KNN.AFR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.F1 = array2table(round(KNN.F1,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN.MCC = array2table(round(KNN.MCC,2),'VariableNames',kappa_names,'RowNames',K_names);
       
       % LMNN
-      LMNN.TPR = arraobj.y2table(round(LMNN.TPR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.TNR = arraobj.y2table(round(LMNN.TNR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FPR = arraobj.y2table(round(LMNN.FPR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FNR = arraobj.y2table(round(LMNN.FNR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.ACC = arraobj.y2table(round(LMNN.ACC,2),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.AFR = arraobj.y2table(round(LMNN.AFR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.F1 = arraobj.y2table(round(LMNN.F1,2),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.MCC = arraobj.y2table(round(LMNN.MCC,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.TPR = array2table(round(LMNN.TPR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.TNR = array2table(round(LMNN.TNR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.FPR = array2table(round(LMNN.FPR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.FNR = array2table(round(LMNN.FNR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.ACC = array2table(round(LMNN.ACC,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.AFR = array2table(round(LMNN.AFR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.F1 = array2table(round(LMNN.F1,2),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN.MCC = array2table(round(LMNN.MCC,2),'VariableNames',kappa_names,'RowNames',K_names);
       
       % KLMNN
-      KLMNN.TPR = arraobj.y2table(round(KLMNN.TPR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.TNR = arraobj.y2table(round(KLMNN.TNR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FPR = arraobj.y2table(round(KLMNN.FPR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FNR = arraobj.y2table(round(KLMNN.FNR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.ACC = arraobj.y2table(round(KLMNN.ACC,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.AFR = arraobj.y2table(round(KLMNN.AFR,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.F1 = arraobj.y2table(round(KLMNN.F1,2),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.MCC = arraobj.y2table(round(KLMNN.MCC,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.TPR = array2table(round(KLMNN.TPR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.TNR = array2table(round(KLMNN.TNR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.FPR = array2table(round(KLMNN.FPR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.FNR = array2table(round(KLMNN.FNR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.ACC = array2table(round(KLMNN.ACC,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.AFR = array2table(round(KLMNN.AFR,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.F1 = array2table(round(KLMNN.F1,2),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN.MCC = array2table(round(KLMNN.MCC,2),'VariableNames',kappa_names,'RowNames',K_names);
       
       save(strcat(model_dir,'/report_knn_obj.method.mat'),'kappa','KNN','LMNN','KLMNN');
       fprintf('done!\n');
@@ -1968,11 +1968,11 @@ classdef Manager < handle
       var_names = var_names(1:end-1);
       row_names = {'KNN','LMNN','KLMNN','KNFST','ONE_SVM','MULTI_SVM','KPCA_NOV'};
       
-      exp1.MCC = arraobj.y2table(exp1.MCC,'VariableNames',var_names,'RowNames',row_names);
-      exp1.F1 = arraobj.y2table(exp1.F1,'VariableNames',var_names,'RowNames',row_names);
-      exp1.val_time = arraobj.y2table(exp1.val_time,...
+      exp1.MCC = array2table(exp1.MCC,'VariableNames',var_names,'RowNames',row_names);
+      exp1.F1 = array2table(exp1.F1,'VariableNames',var_names,'RowNames',row_names);
+      exp1.val_time = array2table(exp1.val_time,...
         'VariableNames',var_names,'RowNames',row_names);
-      exp1.mean_test_time = arraobj.y2table(exp1.mean_test_time,...
+      exp1.mean_test_time = array2table(exp1.mean_test_time,...
         'VariableNames',var_names,'RowNames',row_names);
       
       % Eobj.XPERIMENTO 2 (DIMENSÃO)
@@ -2092,11 +2092,11 @@ classdef Manager < handle
       var_names = var_names(1:end-1);
       row_names = {'KNN','LMNN','KLMNN','KNFST','ONE_SVM','MULTI_SVM','KPCA_NOV'};
       
-      exp2.MCC = arraobj.y2table(exp2.MCC,'VariableNames',var_names,'RowNames',row_names);
-      exp2.F1 = arraobj.y2table(exp2.F1,'VariableNames',var_names,'RowNames',row_names);
-      exp2.val_time = arraobj.y2table(exp2.val_time,...
+      exp2.MCC = array2table(exp2.MCC,'VariableNames',var_names,'RowNames',row_names);
+      exp2.F1 = array2table(exp2.F1,'VariableNames',var_names,'RowNames',row_names);
+      exp2.val_time = array2table(exp2.val_time,...
         'VariableNames',var_names,'RowNames',row_names);
-      exp2.mean_test_time = arraobj.y2table(exp2.mean_test_time,...
+      exp2.mean_test_time = array2table(exp2.mean_test_time,...
         'VariableNames',var_names,'RowNames',row_names);
       
       % PLOTS Eobj.XPERIMENTO 1
@@ -2107,7 +2107,7 @@ classdef Manager < handle
       hold off;
       title('Metric');
       xlabel('# training samples');
-      obj.ylabel('matthews correlation coefficient (mcc)');
+      ylabel('matthews correlation coefficient (mcc)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'});
       
       figure;
@@ -2117,7 +2117,7 @@ classdef Manager < handle
       hold off;
       title('Test time');
       xlabel('# training samples');
-      obj.ylabel('evaluation time (minutes)');
+      ylabel('evaluation time (minutes)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'});
       
       figure;
@@ -2127,7 +2127,7 @@ classdef Manager < handle
       hold off;
       title('Validation time');
       xlabel('# training samples');
-      obj.ylabel('validation time (hours)');
+      ylabel('validation time (hours)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'});
       
       figure;
@@ -2137,7 +2137,7 @@ classdef Manager < handle
       hold off;
       title('Metric');
       xlabel('# dimensions');
-      obj.ylabel('matthews correlation coefficient (mcc)');
+      ylabel('matthews correlation coefficient (mcc)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'});
       
       figure;
@@ -2147,7 +2147,7 @@ classdef Manager < handle
       hold off;
       title('Test time');
       xlabel('# dimensions');
-      obj.ylabel('evaluation time (minutes)');
+      ylabel('evaluation time (minutes)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'});
       
       figure;
@@ -2157,7 +2157,7 @@ classdef Manager < handle
       hold off;
       title('Validation time');
       xlabel('# dimensions');
-      obj.ylabel('validation time (hours)');
+      ylabel('validation time (hours)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'});
       
       save(strcat(model_dir,'/report_experiment.mat'),'exp1','exp2');
@@ -2287,11 +2287,11 @@ classdef Manager < handle
         var_names = var_names(1:end-1);
         row_names = {'KNN','LMNN','KLMNN','KNFST','ONE_SVM','MULTI_SVM','KPCA_NOV'};
         
-        exp1.MCC = arraobj.y2table(exp1.MCC,'VariableNames',var_names,'RowNames',row_names);
-        exp1.F1 = arraobj.y2table(exp1.F1,'VariableNames',var_names,'RowNames',row_names);
-        exp1.val_time = arraobj.y2table(exp1.val_time,...
+        exp1.MCC = array2table(exp1.MCC,'VariableNames',var_names,'RowNames',row_names);
+        exp1.F1 = array2table(exp1.F1,'VariableNames',var_names,'RowNames',row_names);
+        exp1.val_time = array2table(exp1.val_time,...
           'VariableNames',var_names,'RowNames',row_names);
-        exp1.mean_test_time = arraobj.y2table(exp1.mean_test_time,...
+        exp1.mean_test_time = array2table(exp1.mean_test_time,...
           'VariableNames',var_names,'RowNames',row_names);
         
         fprintf('done!\n');
@@ -2420,11 +2420,11 @@ classdef Manager < handle
         var_names = var_names(1:end-1);
         row_names = {'KNN','LMNN','KLMNN','KNFST','ONE_SVM','MULTI_SVM','KPCA_NOV'};
         
-        exp2.MCC = arraobj.y2table(exp2.MCC,'VariableNames',var_names,'RowNames',row_names);
-        exp2.F1 = arraobj.y2table(exp2.F1,'VariableNames',var_names,'RowNames',row_names);
-        exp2.val_time= arraobj.y2table(exp2.val_time,...
+        exp2.MCC = array2table(exp2.MCC,'VariableNames',var_names,'RowNames',row_names);
+        exp2.F1 = array2table(exp2.F1,'VariableNames',var_names,'RowNames',row_names);
+        exp2.val_time= array2table(exp2.val_time,...
           'VariableNames',var_names,'RowNames',row_names);
-        exp2.mean_test_time = arraobj.y2table(exp2.mean_test_time,...
+        exp2.mean_test_time = array2table(exp2.mean_test_time,...
           'VariableNames',var_names,'RowNames',row_names);
         
         fprintf('done!\n');
@@ -2444,7 +2444,7 @@ classdef Manager < handle
       hold off;
       %title('Metric');
       xlabel('training size');
-      obj.ylabel('matthews correlation coefficient (mcc)');
+      ylabel('matthews correlation coefficient (mcc)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'},...
         'fontname','times','fontsize',12,'location','southeast');
       set(gca,'fontname','times','fontsize',12);
@@ -2463,7 +2463,7 @@ classdef Manager < handle
       hold off;
       %title('Test time');
       xlabel('training size');
-      obj.ylabel('evaluation time (seconds)');
+      ylabel('evaluation time (seconds)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'},...
         'fontname','times','fontsize',12,'location','northwest');
       set(gca,'fontname','times','fontsize',12);
@@ -2481,7 +2481,7 @@ classdef Manager < handle
       hold off;
       %title('Validation time');
       xlabel('training size');
-      obj.ylabel('hobj.yperparameter optimization time (minutes)');
+      ylabel('hyperparameter optimization time (minutes)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'},...
         'fontname','times','fontsize',12,'location','northwest');
       set(gca,'fontname','times','fontsize',12);
@@ -2500,7 +2500,7 @@ classdef Manager < handle
       hold off;
       %title('Metric');
       xlabel('dimensions');
-      obj.ylabel('matthews correlation coefficient (mcc)');
+      ylabel('matthews correlation coefficient (mcc)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'},...
         'fontname','times','fontsize',15,'location','southeast');
       set(gca,'fontname','times','fontsize',16.5);
@@ -2519,7 +2519,7 @@ classdef Manager < handle
       hold off;
       %title('Test time');
       xlabel('dimensions');
-      obj.ylabel('evaluation time (seconds)');
+      ylabel('evaluation time (seconds)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'},...
         'fontname','times','fontsize',12,'location','northwest');
       set(gca,'fontname','times','fontsize',12);
@@ -2537,7 +2537,7 @@ classdef Manager < handle
       hold off;
       %title('Validation time');
       xlabel('dimensions');
-      obj.ylabel('hobj.yperparameter optimization time (minutes)');
+      ylabel('hyperparameter optimization time (minutes)');
       legend({'knn','lmnn','klmnn','knfst','one svm','multi svm','kpca nov'},...
         'fontname','times','fontsize',12,'location','southeast');
       set(gca,'fontname','times','fontsize',12);
