@@ -6,19 +6,19 @@ classdef KnnND < handle
   % By Samuel Silva (samuelrs@usp.br).
   % --------------------------------------------------------------------------------------
   properties
-    X = [];                  % data samples [num_samples x dimension]
-    Y = [];                  % labels [num_samples x 1]
+    X = [];                  % Data matrix [num_samples x dimension]
+    Y = [];                  % Labels [num_samples x 1]
     num_samples = 0;         % Number of samples in dataset
-    dimension = 0;           % data dimension
-    num_classes = 0;         % number of classes
-    untrained_classes = 0;   % number of untrained classes
+    dimension = 0;           % Data dimension
+    num_classes = 0;         % Number of classes
+    untrained_classes = 0;   % Number of untrained classes
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
-    num_thresholds = 0;      % number of "tau" thresholds
+    num_thresholds = 0;      % Number of "tau" thresholds
     threshold = [];          % "tau" thresholds (the best needs to be found)
-    training_ratio = 0;      % training sample rate
-    split = {};              % holds a split object that helps the cross-validation process
-    samples_per_classe = []; % samples per class
+    training_ratio = 0;      % Training sample rate
+    split = {};              % Holds a split object that helps the cross-validation process
+    samples_per_classe = []; % Samples per class
   end
   
   methods
@@ -27,8 +27,8 @@ classdef KnnND < handle
       % Constructor.
       %
       % Input args
-      %   X: Data samples [num_samples x dimension].
-      %   Y: labels [num_samples x 1].
+      %   X: Data matrix [num_samples x dimension].
+      %   Y: Labels [num_samples x 1].
       %   knn_arg: K parameter described in the published paper.
       %   knn_threshold: kappa parameter described in the published paper.
       %   num_classes: Number of classes in the dataset.
@@ -306,7 +306,7 @@ classdef KnnND < handle
     
     function predictions = predict(obj,xtrain,ytrain,xtest,threshold)
       % ----------------------------------------------------------------------------------
-      % This method is used to run KNN prediction with multi-class novelty detection.
+      % This method is used to fi KNN prediction with multi-class novelty detection.
       %
       % Input args
       %   xtrain: training data [num_train x dimensions].
@@ -410,9 +410,9 @@ classdef KnnND < handle
     
     function [epsilons,means,medians,stds,iqrs,maxs] = computeEpsilons(obj,xtrain,ytrain)
       % ----------------------------------------------------------------------------------
-      % This method is used to compute the epsilon parameters of each class in the training 
-      % set. This parameter measures the spread of each class. This means that more compact
-      % classes have smaller epsilons while more spread classes tend to have larger epsilons.
+      % Computes the epsilon parameters of each class in the training set. This parameter
+      % measures the spread of each class. This means that more compact classes have smaller
+      % epsilons while more spread classes tend to have larger epsilons.
       %
       % Input args
       %   xtrain: training data [num_train x dimensions].

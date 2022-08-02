@@ -1,27 +1,21 @@
 classdef KlmnnND < handle
-  % --------------------------------------------------------------------------------------
-  % KLMNN Novelty Detection for multi-class classification problems.
-  %
-  % Version 2.0, July 2022.
-  % By Samuel Silva (samuelrs@usp.br).
-  % --------------------------------------------------------------------------------------  
   properties
-    X = [];                  % data samples [num_samples x dimension]
-    Y = [];                  % labels [num_samples x 1]
-    num_samples = 0;         % number of samples in dataset
-    dimension = 0;           % data dimension
-    num_classes = 0;         % number of classes
-    untrained_classes = 0;   % number of untrained classes
+    X = [];                  % Data matrix [num_samples x dimension]
+    Y = [];                  % Labels [num_samples x 1]
+    num_samples = 0;         % Number of samples in dataset
+    dimension = 0;           % Data dimension
+    num_classes = 0;         % Number of classes
+    untrained_classes = 0;   % Number of untrained classes
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
-    num_thresholds = 0;      % number of "tau" thresholds
+    num_thresholds = 0;      % Number of "tau" thresholds
     threshold = [];          % "tau" thresholds list (the best needs to be found)
-    training_ratio = 0;      % training sample rate
-    split = {};              % holds a split object that helps the cross-validation process
-    samples_per_classe = []; % samples per class
-    kernel_type = [];        % kernel function type
-    num_kernels = 0;         % number of kernel values
-    kernel = [];             % kernel list for kpca algorithm (the best must be found)
+    training_ratio = 0;      % Training sample rate
+    split = {};              % Holds a split object that helps the cross-validation process
+    samples_per_classe = []; % Samples per class
+    kernel_type = [];        % Kernel function type
+    num_kernels = 0;         % Number of kernel values
+    kernel = [];             % Kernel list for kpca algorithm (the best must be found)
   end
   
   methods
@@ -30,14 +24,14 @@ classdef KlmnnND < handle
       % Constructor.
       %
       % Args
-      %   X: data samples [num_samples x dimension].
-      %   Y: labels [num_samples x 1].
+      %   X: Data matrix [num_samples x dimension].
+      %   Y: Labels [num_samples x 1].
       %   knn_arg: K parameter described in the published paper.
       %   knn_threshold: kappa parameter described in the published paper.
-      %   num_classes: number of classes in the dataset.
-      %   untrained_classes: number of untrained classes, this parameter can
+      %   num_classes: Number of classes in the dataset.
+      %   untrained_classes: Number of untrained classes, this parameter can
       %     be used to simulate novelty data in the dataset.
-      %   training_ratio: training sample rate.
+      %   training_ratio: Training sample rate.
       % ----------------------------------------------------------------------------------]
       obj.X = X;
       obj.Y = Y;
@@ -56,7 +50,7 @@ classdef KlmnnND < handle
       obj.samples_per_classe = cat(1,id,obj.samples_per_classe);
     end
     
-    function experiment = runExperiments(obj,num_experiments,random_select_classes,plot_metric)
+    function experiment = runNoveltyDetectionExperiments(obj,n_experiments,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search.
       %
@@ -69,19 +63,19 @@ classdef KlmnnND < handle
       % Output args
       %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
-      split_exp = cell(num_experiments,1);
+      split_exp = cell(n_experiments,1);
       
-      MCC = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      AFR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      F1 = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      TPR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      TNR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      FPR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      FNR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      MCC = zeros(obj.num_kernels,obj.num_thresholds,n_experiments);
+      AFR = zeros(obj.num_kernels,obj.num_thresholds,n_experiments);
+      F1 = zeros(obj.num_kernels,obj.num_thresholds,n_experiments);
+      TPR = zeros(obj.num_kernels,obj.num_thresholds,n_experiments);
+      TNR = zeros(obj.num_kernels,obj.num_thresholds,n_experiments);
+      FPR = zeros(obj.num_kernels,obj.num_thresholds,n_experiments);
+      FNR = zeros(obj.num_kernels,obj.num_thresholds,n_experiments);
       
-      evaluations = cell(obj.num_kernels,obj.num_thresholds,num_experiments);
+      evaluations = cell(obj.num_kernels,obj.num_thresholds,n_experiments);
       
-      for i=1:num_experiments
+      for i=1:n_experiments
         rng(i);
         if random_select_classes
           % Randomly selects trained and untrained classes
@@ -147,7 +141,7 @@ classdef KlmnnND < handle
           knn = KnnNovDetection(xtrainpg,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes,obj.untrained_classes);
           RT = [];
           for k=1:obj.num_thresholds
-            fprintf('\nKLMNN (K=%d kappa=%d) \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',obj.knn_arg,obj.knn_threshold,i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
+            fprintf('\nKLMNN (K=%d kappa=%d) \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',obj.knn_arg,obj.knn_threshold,i,n_experiments,j,obj.num_kernels,k,obj.num_thresholds);
             evaluations{j,k,i} = knn.evaluate(xtrainpg,ytrain,xtestpg,ytest,obj.threshold(k));
             evaluations{j,k,i}.kernel = kernel_arg;
             evaluations{j,k,i}.kpca_model = kpca;
@@ -167,7 +161,7 @@ classdef KlmnnND < handle
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KLMNN [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['KLMNN [ test ',num2str(i),'/',num2str(n_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.0001);
             end
@@ -181,7 +175,7 @@ classdef KlmnnND < handle
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['KLMNN [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
+            title(['KLMNN [ test ',num2str(i),'/',num2str(n_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
             drawnow;
           end
         end
@@ -520,8 +514,7 @@ classdef KlmnnND < handle
       % Input arg
       %   kernel_arg: kernel parameter of kernel pca algorithm.
       % 
-      % Output args
-      %   model: kernel pca model.
+      
       % ----------------------------------------------------------------------------------
       % set kernel function
       if strcmp(obj.kernel_type,'poly')

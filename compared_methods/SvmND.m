@@ -1,26 +1,35 @@
 classdef SvmND < handle
+  % --------------------------------------------------------------------------------------
+  % SVM Novelty Detection for multi-class classification problems.
+  %
+  % Version 2.0, July 2022.
+  % By Samuel Silva (samuelrs@usp.br).
+  % --------------------------------------------------------------------------------------    
   properties
-    X = [];                % Pontos X [n_points x dim]
-    Y = [];                % Rótulos Y
-    n_classes = 0;         % Números de classes
-    untrained_classes = 0; % Número de classes não treinadas
-    n_thresholds = 0;      % Número de thresholds de scores
-    threshold = [];        % Vetor de thresholds de scores
-    n_kernels = 0;         % Número de kernels para validação
-    kernel_type = [];      % Tipo da função de kernel
-    kernel = [];           % Vetor kernels (o melhor deve ser encontrado)
-    training_ratio = 0;    % Taxa de treinamento de amostras
-    split = {};            % Guarda um objeto split para auxiliar o processo de validação
+    X = [];                  % data samples [num_samples x dimension]
+    Y = [];                  % labels [num_samples x 1]
+    num_samples = 0;         % number of samples in dataset
+    dimension = 0;           % data dimension
+    num_classes = 0;         % number of classes
+    untrained_classes = 0;   % number of untrained classes
+    num_thresholds = 0;      % number of score thresholds
+    threshold = [];          % score thresholds list (the best needs to be found)
+    training_ratio = 0;      % training sample rate
+    split = {};              % holds a split object that helps the cross-validation process
+    samples_per_classe = []; % samples per class
+    kernel_type = [];        % kernel function type
+    num_kernels = 0;         % number of kernel values
+    kernel = [];             % kernel list for svm algorithm (the best must be found)    
   end
   
   methods
-    function obj = SvmND(X,Y,n_classes,untrained_classes,training_ratio)
+    function obj = SvmND(X,Y,num_classes,untrained_classes,training_ratio)
       % ----------------------------------------------------------------------------------    
       % Construtor
       % ----------------------------------------------------------------------------------      
       obj.X = X;
       obj.Y = Y;
-      obj.n_classes = n_classes;
+      obj.num_classes = num_classes;
       obj.training_ratio = 0.7;
       if nargin>=4
         obj.untrained_classes = untrained_classes;
@@ -30,29 +39,29 @@ classdef SvmND < handle
       end
     end
 
-    function experiment = runNoveltyDetectionOneSVMExperiments(obj,n_experiments,view_plot_metric)
+    function experiment = runOneSVMExperiments(obj,num_experiments,plot_metric)
       % ----------------------------------------------------------------------------------
       % Executa experimentos de detecção de novidade e busca de hiperparâmetros
       % ----------------------------------------------------------------------------------      
-      split_exp = cell(n_experiments,1);
+      split_exp = cell(num_experiments,1);
       
-      MCC = zeros(n_experiments,obj.n_kernels);
-      AFR = zeros(n_experiments,obj.n_kernels);
-      F1 = zeros(n_experiments,obj.n_kernels);
-      TPR = zeros(n_experiments,obj.n_kernels);
-      TNR = zeros(n_experiments,obj.n_kernels);
-      FPR = zeros(n_experiments,obj.n_kernels);
-      FNR = zeros(n_experiments,obj.n_kernels);
+      MCC = zeros(num_experiments,obj.num_kernels);
+      AFR = zeros(num_experiments,obj.num_kernels);
+      F1 = zeros(num_experiments,obj.num_kernels);
+      TPR = zeros(num_experiments,obj.num_kernels);
+      TNR = zeros(num_experiments,obj.num_kernels);
+      FPR = zeros(num_experiments,obj.num_kernels);
+      FNR = zeros(num_experiments,obj.num_kernels);
       
-      evaluations = cell(n_experiments,obj.n_thresholds);
+      evaluations = cell(num_experiments,obj.num_thresholds);
       
-      for i=1:n_experiments
+      for i=1:num_experiments
         rng(i);
         % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = Split.selectClasses(obj.n_classes,obj.untrained_classes);
+        [trained,untrained,is_trained_class] = Split.selectClasses(obj.num_classes,obj.untrained_classes);
         
         % Divide os índices em treino e teste
-        [idx_train,idx_test] = Split.trainTestIdx(obj.X,obj.Y,obj.training_ratio,obj.n_classes,is_trained_class);
+        [idx_train,idx_test] = Split.trainTestIdx(obj.X,obj.Y,obj.training_ratio,obj.num_classes,is_trained_class);
         [xtrain,xtest,ytrain,ytest] = Split.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
         % Todas as amostras não treinadas são definidas
@@ -60,8 +69,8 @@ classdef SvmND < handle
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         RK = [];
-        for j=1:obj.n_kernels
-          fprintf('\nOne SVM \tTest %d/%d \tKernel %d/%d\n',i,n_experiments,j,obj.n_kernels);
+        for j=1:obj.num_kernels
+          fprintf('\nOne SVM \tTest %d/%d \tKernel %d/%d\n',i,num_experiments,j,obj.num_kernels);
           evaluations{i,j} = obj.evaluateOneClassSVM(xtrain,ytrain,xtest,ytest,obj.kernel(j));
           evaluations{i,j}.kernel = obj.kernel(j);
           MCC(i,j) = evaluations{i,j}.MCC;
@@ -71,7 +80,7 @@ classdef SvmND < handle
           TNR(i,j) = evaluations{i,j}.TNR;
           FPR(i,j) = evaluations{i,j}.FPR;
           FNR(i,j) = evaluations{i,j}.FNR;
-          if view_plot_metric
+          if plot_metric
             RK = cat(1,RK,MCC(i,j));
             figure(1);
             clf('reset');
@@ -80,7 +89,7 @@ classdef SvmND < handle
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['One SVM [ test ',num2str(i),'/',num2str(n_experiments),' | kernel ',num2str(j),'/',num2str(obj.n_kernels),' ]']);
+            title(['One SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -150,29 +159,29 @@ classdef SvmND < handle
       xlabel('kernel'); ylabel('afr'); title('AFR');
     end
 
-    function experiment = runNoveltyDetectionMultiSVMExperiments(obj,n_experiments,view_plot_metric)
+    function experiment = runMultiSVMExperiments(obj,num_experiments,plot_metric)
       % ----------------------------------------------------------------------------------
       % Executa experimentos de detecção de novidade e busca de hiperparâmetros
       % ----------------------------------------------------------------------------------      
-      split_exp = cell(n_experiments,1);
+      split_exp = cell(num_experiments,1);
       
-      MCC = zeros(obj.n_kernels,obj.n_thresholds,n_experiments);
-      AFR = zeros(obj.n_kernels,obj.n_thresholds,n_experiments);
-      F1 = zeros(obj.n_kernels,obj.n_thresholds,n_experiments);
-      TPR = zeros(obj.n_kernels,obj.n_thresholds,n_experiments);
-      TNR = zeros(obj.n_kernels,obj.n_thresholds,n_experiments);
-      FPR = zeros(obj.n_kernels,obj.n_thresholds,n_experiments);
-      FNR = zeros(obj.n_kernels,obj.n_thresholds,n_experiments);
+      MCC = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      AFR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      F1 = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      TPR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      TNR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      FPR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      FNR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
       
-      evaluations = cell(obj.n_kernels,obj.n_thresholds,n_experiments);
+      evaluations = cell(obj.num_kernels,obj.num_thresholds,num_experiments);
       
-      for i=1:n_experiments
+      for i=1:num_experiments
         rng(i);
         % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = Split.selectClasses(obj.n_classes,obj.untrained_classes);
+        [trained,untrained,is_trained_class] = Split.selectClasses(obj.num_classes,obj.untrained_classes);
         
         % Divide os índices em treino e teste
-        [idx_train,idx_test] = Split.trainTestIdx(obj.X,obj.Y,obj.training_ratio,obj.n_classes,is_trained_class);
+        [idx_train,idx_test] = Split.trainTestIdx(obj.X,obj.Y,obj.training_ratio,obj.num_classes,is_trained_class);
         [xtrain,xtest,ytrain,ytest] = Split.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
         % Todas as amostras não treinadas são definidas
@@ -180,7 +189,7 @@ classdef SvmND < handle
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         RK = [];
-        for j=1:obj.n_kernels
+        for j=1:obj.num_kernels
           % Treina classificadores SVM's binários com a abordagem One vs All
           ctrain = unique(ytrain);
           model_svm = cell(numel(ctrain),1);
@@ -196,8 +205,8 @@ classdef SvmND < handle
           end
           
           RT = [];
-          for k=1:obj.n_thresholds
-            fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',i,n_experiments,j,obj.n_kernels,k,obj.n_thresholds);
+          for k=1:obj.num_thresholds
+            fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
             evaluations{j,k,i} = obj.evaluateMultiClassSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),obj.threshold(k));
             evaluations{j,k,i}.kernel = obj.kernel(j);
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
@@ -207,7 +216,7 @@ classdef SvmND < handle
             TNR(j,k,i) = evaluations{j,k,i}.TNR;
             FPR(j,k,i) = evaluations{j,k,i}.FPR;
             FNR(j,k,i) = evaluations{j,k,i}.FNR;
-            if view_plot_metric
+            if plot_metric
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
@@ -216,12 +225,12 @@ classdef SvmND < handle
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ test ',num2str(i),'/',num2str(n_experiments),' | kernel ',num2str(j),'/',num2str(obj.n_kernels),' | threshold ',num2str(k),'/',num2str(obj.n_thresholds),' ]']);
+              title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
           end
-          if view_plot_metric
+          if plot_metric
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
@@ -230,7 +239,7 @@ classdef SvmND < handle
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['Multi SVM [ test ',num2str(i),'/',num2str(n_experiments),' | kernel ',num2str(j),'/',num2str(obj.n_kernels),' ]']);
+            title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
             drawnow;
           end
         end
@@ -309,7 +318,7 @@ classdef SvmND < handle
       % Validação do algoritmo one class svm
       % ----------------------------------------------------------------------------------      
       obj.split = cell(n_validations,1);
-      mcc = zeros(n_validations,obj.n_kernels);
+      mcc = zeros(n_validations,obj.num_kernels);
       close all;
       for i=1:n_validations
         rng(i);
@@ -321,8 +330,8 @@ classdef SvmND < handle
         [id_train,id_val] = obj.split{i}.idTrainVal();
         [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
         RK = [];
-        for j=1:obj.n_kernels
-          fprintf('\nOne SVM \tVal: %d/%d \tKernel %d/%d',i,n_validations,j,obj.n_kernels);
+        for j=1:obj.num_kernels
+          fprintf('\nOne SVM \tVal: %d/%d \tKernel %d/%d',i,n_validations,j,obj.num_kernels);
           result = obj.evaluateOneClassSVM(xtrain,ytrain,xval,yval,obj.kernel(j));
           result.kernel = obj.kernel(j);
           mcc(i,j) = result.MCC;
@@ -335,7 +344,7 @@ classdef SvmND < handle
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['One SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.n_kernels),' ]']);
+            title(['One SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -356,7 +365,7 @@ classdef SvmND < handle
       % Validação do algoritmo multi class svm
       % ----------------------------------------------------------------------------------      
       obj.split = cell(n_validations,1);
-      mcc = zeros(obj.n_kernels,obj.n_thresholds,n_validations);
+      mcc = zeros(obj.num_kernels,obj.num_thresholds,n_validations);
       for i=1:n_validations
         rng(i);
         % Cria um objeto split. Particiona a base em dois conjuntos
@@ -367,7 +376,7 @@ classdef SvmND < handle
         [id_train,id_val] = obj.split{i}.idTrainVal();
         [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
         RK = [];
-        for j=1:obj.n_kernels
+        for j=1:obj.num_kernels
           % Treina classificadores SVM's binários com a abordagem One vs All
           ctrain = unique(ytrain);
           model_svm = cell(numel(ctrain),1);
@@ -382,8 +391,8 @@ classdef SvmND < handle
             model_svm{c} = fitSVMPosterior(svm_model);
           end
           RT = [];
-          for k=1:obj.n_thresholds
-            fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tThreshold %d/%d\n',i,n_validations,j,obj.n_kernels,k,obj.n_thresholds);
+          for k=1:obj.num_thresholds
+            fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tThreshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,obj.num_thresholds);
             result = obj.evaluateMultiClassSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),obj.threshold(k));
             result.kernel = obj.kernel(j);
             mcc(j,k,i) = result.MCC;
@@ -396,7 +405,7 @@ classdef SvmND < handle
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.n_kernels),' | threshold ',num2str(k),'/',num2str(obj.n_thresholds),' ]']);
+              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               legend off;
               drawnow;
               pause(0.01);
@@ -411,7 +420,7 @@ classdef SvmND < handle
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.n_kernels),' ]']);
+            title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
             drawnow;
           end
         end
