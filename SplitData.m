@@ -1,39 +1,40 @@
 classdef SplitData < handle
+  % --------------------------------------------------------------------------------------
+  % This class is used to manage the random splitting of dataset into training, validation 
+  % and test sets. 
+  %
+  % Version 2.0, July 2022.
+  % By Samuel Silva (samuelrs@usp.br).
+  % --------------------------------------------------------------------------------------    
   properties
-    X = []
-    Y = [];
-    
-    training_ratio = 0;
-    test_ratio = 0;
-    
-    num_classes = 0;
-    num_inst = 0;
-    istrainedclass = [];
-    
-    classes = [];   % Classses
-    trained = [];   % Classes de treinamento
-    untrained = []; % Classes usadas como outliers
-    
-    idx_trained = [];   % Índices de dados de classes "conhecidas"
-    idx_untrained = []; % Índices de dados "desconhecidos (outliers)
-    
+    X = [];               % samples in dataset
+    Y = [];               % sample labels in dataset    
+    training_ratio = 0;   % training samples rate
+    test_ratio = 0;       % test samples rate
+    num_classes = 0;      % number of classes in dataset
+    num_samples = 0;      % number of samples in dataset
+    istrainedclass = [];  % boolean list, true for trained classes and false for untrained
+    classes = [];         % classses indices
+    trained = [];         % trained classes list
+    untrained = [];       % untrained classes list (used as novelty)
+    idx_trained = [];     % Índices de dados de classes "conhecidas"
+    idx_untrained = [];   % Índices de dados "desconhecidos (outliers)
     idx_train_val_t = []; % Corresponde a 70% dos dados de classes conhecidas
     idx_test_t = [];      % Corresponde a 30% dos dados de classes conhecidas
-    
-    idx_val_u = []; % corresponde a 50% dos dados de classes desconhecidas
-    idx_test_u = []; % corresponde a 50% dos dados de classes desconhecidas
+    idx_val_u = [];       % corresponde a 50% dos dados de classes desconhecidas
+    idx_test_u = [];      % corresponde a 50% dos dados de classes desconhecidas
   end
-  methods
-    
+  
+  methods    
     function obj = SplitData(X,Y,training_ratio,num_untrained)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
       % Args
-      %   X: Data matrix [num_samples x dimension].
-      %   Y: Labels [num_samples x 1].
-      %   training_ratio: Training sample rate.
-      %   num_untrained: Number of untrained classes, this parameter can
+      %   X: samples [num_samples x dimension].
+      %   Y: sample labels [num_samples x 1].
+      %   training_ratio: training sample rate.
+      %   num_untrained: number of untrained classes, this parameter can
       %     be used to simulate novelty data in the dataset.
       % ----------------------------------------------------------------------------------
       obj.Y = Y;
@@ -42,7 +43,7 @@ classdef SplitData < handle
       obj.test_ratio = 0;
       obj.classes = unique(Y);
       obj.num_classes = numel(obj.classes);
-      obj.num_inst = numel(Y);
+      obj.num_samples = numel(Y);
       [obj.trained,obj.untrained,obj.istrainedclass] = obj.selectClasses(num_untrained);
       [obj.idx_trained,obj.idx_untrained] = obj.splitTrainedUntrained(obj.istrainedclass);
       [obj.idx_train_val_t,obj.idx_test_t,obj.idx_val_u,obj.idx_test_u] = obj.idxTrainValTest();
@@ -82,7 +83,7 @@ classdef SplitData < handle
       % ----------------------------------------------------------------------------------
       % This method splits classes into trained and untrained classes.
       % ----------------------------------------------------------------------------------
-      idx = (1:obj.num_inst)';
+      idx = (1:obj.num_samples)';
       idx_trained = [];
       idx_untrained = [];
       for i=1:obj.num_classes

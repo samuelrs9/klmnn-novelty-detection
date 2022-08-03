@@ -23,13 +23,20 @@ classdef KpcaND < handle
   end
   
   methods
-    function obj = KpcaND(X,Y,num_classes,untrained_classes,training_ratio)
+    function obj = KpcaND(X,Y,untrained_classes,training_ratio)
       % ----------------------------------------------------------------------------------
-      % Construtor
-      % ----------------------------------------------------------------------------------      
+      % Constructor.
+      %
+      % Args
+      %   X: samples [num_samples x dimension].
+      %   Y: sample labels [num_samples x 1].
+      %   untrained_classes: number of untrained classes, this parameter can
+      %     be used to simulate novelty data in the dataset.
+      %   training_ratio: training sample rate.
+      % ----------------------------------------------------------------------------------]
       obj.X = X;
       obj.Y = Y;
-      obj.num_classes = num_classes;
+      obj.num_classes = numel(unique(Y));
       obj.training_ratio = 0.7;
       if nargin>=4
         obj.untrained_classes = untrained_classes;
@@ -40,9 +47,18 @@ classdef KpcaND < handle
     end
     
     function experiment = runNoveltyDetectionExperiments(obj,num_experiments,plot_metric)
+      %-----------------------------------------------------------------------------------
+      % This method runs validation experiments and hyperparameter search.
+      %
+      % Input args
+      %   num_experiments: number of validation experiments.
+      %   random_select_classes: enable/disable random selection of untrained classes (a
+      %     boolean value).
+      %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
+      %
+      % Output args
+      %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
-      % Executa experimentos de detecção de novidade e busca de hiperparâmetros
-      % ----------------------------------------------------------------------------------      
       split_exp = cell(num_experiments,1);
       
       MCC = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
@@ -181,7 +197,7 @@ classdef KpcaND < handle
       xlabel('threshold'); ylabel('kernel'); title('AFR');
     end
     
-    function model = validation(obj,n_validations,view_plot_error)
+    function model = validation(obj,n_validations,plot_error)
       % ----------------------------------------------------------------------------------
       % Validação do algoritmo kpca out detection
       % ----------------------------------------------------------------------------------      
@@ -206,7 +222,7 @@ classdef KpcaND < handle
             result = obj.evaluate(xtrain,xval,yval,kernel_arg,threshold_arg);
             result.kernel = kernel_arg;
             mcc(j,k,i) = result.MCC;
-            if view_plot_error
+            if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               clf('reset');
@@ -220,7 +236,7 @@ classdef KpcaND < handle
               pause(0.01);
             end
           end
-          if view_plot_error
+          if plot_error
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
@@ -248,14 +264,23 @@ classdef KpcaND < handle
       model.mean_mcc = max_mean_mcc;
     end
     
-    function [results,evaluations] = evaluateModel(obj,model,n_tests)
+    function [results,evaluations] = evaluateModel(obj,model,num_tests)
       % ----------------------------------------------------------------------------------
-      % Avalia o modelo treinado
-      % ----------------------------------------------------------------------------------      
-      evaluations = cell(n_tests,1);
-      for i=1:n_tests
+      % This method is used to evaluate the KPCA prediction with multi-class novelty 
+      % detection on a trained model.
+      %
+      % Input args
+      %   model: trained model.
+      %   num_tests: number of tests to be performed.
+      %
+      % Output args
+      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
+      % -----------------------------------------------------------------------------------
+
+      evaluations = cell(num_tests,1);
+      for i=1:num_tests
         rng(i);
-        fprintf('\nKPCA NOV Test: %d/%d\n',i,n_tests);
+        fprintf('\nKPCA NOV Test: %d/%d\n',i,num_tests);
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,~] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
@@ -266,12 +291,23 @@ classdef KpcaND < handle
     
     function [results,evaluations] = evaluateTests(obj,xtrain,xtest,ytest,model)
       % ----------------------------------------------------------------------------------
-      % Avalia o modelo treinado em conjuntos de testes
-      % ----------------------------------------------------------------------------------      
-      n_tests = size(xtest,3);
-      evaluations = cell(n_tests,1);
-      for i=1:n_tests
-        fprintf('\nKPCA NOV \tTest: %d/%d\n',i,n_tests);
+      % This method is used to evaluate the KPCA prediction with multi-class novelty 
+      % detection on test sets.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   model: trained model.
+      %
+      % Output args
+      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
+      % ----------------------------------------------------------------------------------
+      num_tests = size(xtest,3);
+      evaluations = cell(num_tests,1);
+      for i=1:num_tests
+        fprintf('\nKPCA NOV \tTest: %d/%d\n',i,num_tests);
         evaluations{i} = obj.evaluate(xtrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
       end
       results = struct2table(cell2mat(evaluations));
@@ -279,8 +315,19 @@ classdef KpcaND < handle
 
     function result = evaluate(obj,xtrain,xtest,ytest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % Avalia o algoritmo kpca nov detection
-      % ----------------------------------------------------------------------------------      
+      % This method is used to evaluate the KPCA prediction with multi-class novelty detection.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   kernel_arg: kernel parameter.
+      %   threshold_arg: decision threshold parameter.
+      %
+      % Output args
+      %   result: metrics report for multi-class prediction and novelty detection.
+      % ----------------------------------------------------------------------------------
       % Predição
       outlier_predictions = obj.predictNovelty(xtrain,xtest,kernel_arg,threshold_arg);
       
@@ -306,18 +353,53 @@ classdef KpcaND < handle
       fprintf('\n\nkernel: %f \nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',...
         kernel_arg,threshold_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
-    
-    function model = kpcaModel(obj,data,kernel_arg,eig_rate)
+   
+    function [predictions,errors] = predict(obj,xtrain,xtest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % Calcula o modelo kpca
+      % This method is used to KPCA prediction with multi-class novelty detection.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   kernel_arg: kernel parameter.
+      %   threshold_arg: decision threshold parameter.
+      %
+      % Output args:
+      %   predictions: prediction with multi-class novelty detection.
+      % ----------------------------------------------------------------------------------
+
+      % Modelo
+      model = obj.kpcaModel(xtrain,kernel_arg,threshold_arg);
+      % Teste
+      predictions = ones(size(xtest,1),1);
+      errors = zeros(size(xtest,1),1);
+      for i=1:size(xtest,1)
+        errors(i,1) = obj.recerr(xtest(i,:),model.data,model.kernel,model.alpha,...
+          model.alphaKrow,model.sumalpha,model.Ksum);
+      end
+      predictions(errors > model.maxerr) = -1;
+    end
+   
+    function model = kpcaModel(obj,xtrain,kernel_arg,eig_rate)
+      % ----------------------------------------------------------------------------------
+      % This method is used to compute kernel pca model.
+      %
+      % Input args
+      %   xtrain: training samples.
+      %   kernel_arg: kernel parameter.
+      %   eig_rate: eigvalue rate.
+      %
+      % Output args:
+      %   model: kernel pca model.
       % ----------------------------------------------------------------------------------      
-      [n,d] = size(data);
+      [n,d] = size(xtrain);
       
       % computing kernel matrix K
       K = zeros(n,n);
       for i=1:n
         for j=i:n
-          K(i,j) = obj.kernelH(data(i,:),data(j,:),kernel_arg);
+          K(i,j) = obj.kernelH(xtrain(i,:),xtrain(j,:),kernel_arg);
           K(j,i) = K(i,j);
         end
       end
@@ -365,8 +447,8 @@ classdef KpcaND < handle
       % evaluating reconstruction error for all data points
       err = zeros(n,1);
       for i=1:n
-        x = data(i,:);
-        err(i) = obj.recerr(x,data,kernel_arg,alpha,alphaKrow,sumalpha,Ksum);
+        x = xtrain(i,:);
+        err(i) = obj.recerr(x,xtrain,kernel_arg,alpha,alphaKrow,sumalpha,Ksum);
       end
       model.err = err;
       model.maxerr = max(err);
@@ -375,53 +457,56 @@ classdef KpcaND < handle
       model.alphaKrow = alphaKrow;
       model.sumalpha = sumalpha;
       model.Ksum = Ksum;
-      model.data = data;
-    end
+      model.data = xtrain;
+    end    
     
-    function [predictions,errors] = predictNovelty(obj,xtrain,xtest,kernel_arg,threshold_arg)
-      % ----------------------------------------------------------------------------------
-      % This functions predict novelty
-      % ----------------------------------------------------------------------------------      
-      % Modelo
-      model = obj.kpcaModel(xtrain,kernel_arg,threshold_arg);
-      % Teste
-      predictions = ones(size(xtest,1),1);
-      errors = zeros(size(xtest,1),1);
-      for i=1:size(xtest,1)
-        errors(i,1) = obj.recerr(xtest(i,:),model.data,model.kernel,model.alpha,...
-          model.alphaKrow,model.sumalpha,model.Ksum);
-      end
-      predictions(errors > model.maxerr) = -1;
-    end
-    
-    function err = recerr(obj,x,data,kernel,alpha,alphaKrow,sumalpha,Ksum)
+    function err = recerr(obj,x,xtrain,kernel_arg,alpha,alphaKrow,sumalpha,Ksum)
       % ----------------------------------------------------------------------------------
       % This function computes the reconstruction error of x in feature
       % space.
+      %
+      % Input args
+      %   x: test sample.
+      %   xtrain: train samples.
+      %   kernel_arg:
+      %   alpha: 
+      %   alphaKrow:
+      %   sumalpha: 
+      %   Ksum:      
+      %
+      % Output args
+      %   err: reconstruction error.
       % ----------------------------------------------------------------------------------      
-      n = size(data,1);
+      n = size(xtrain,1);
       k = zeros(1,n);
       for j=1:n
-        k(j) = obj.kernelH(x,data(j,:),kernel);
+        k(j) = obj.kernelH(x,xtrain(j,:),kernel_arg);
       end
       % projections:
       f = k*alpha - sumalpha * (sum(k)/n - Ksum) - alphaKrow;
       % reconstruction error:
-      err = obj.kernelH(x,x,kernel) - 2*sum(k)/n + Ksum - f*f';
+      err = obj.kernelH(x,x,kernel_arg) - 2*sum(k)/n + Ksum - f*f';
     end
     
-    function k = kernelH(obj,x,y,kernel_arg)
+    function k = kernelH(obj,x1,x2,kernel_arg)
       % ----------------------------------------------------------------------------------
-      % Kernel function for kpca
+      % this method is used to evaluate the kernel function with respect to
+      % two samples x and y.
+      %
+      % Input args
+      %   x1: sample 1.
+      %   x2: sample 2.
+      %   kernel_arg: kernel parameter.
+      %
+      % Output args:
+      %   k: kernel function value for x1 and x2.
       % ----------------------------------------------------------------------------------      
-      % Código incluído -------------------------
       if strcmp(obj.kernel_type,'poly')
         offset = 1.0;
-        k = (x*y' + offset).^kernel_arg;
+        k = (x1*x2' + offset).^kernel_arg;
       else
-        % -----------------------------------------
         gamma = 1/(2*kernel_arg^2);
-        diff = x-y;
+        diff = x1-x2;
         k = exp(-(diff * diff')*gamma);
       end
     end

@@ -48,7 +48,7 @@ classdef SvmND < handle
 
     function experiment = runOneSVMExperiments(obj,num_experiments,plot_metric)
       %-----------------------------------------------------------------------------------
-      % This method runs validation experiments and hyperparameter search for OneSVM.
+      % This method runs validation experiments and hyperparameter search.
       %
       % Input args
       %   num_experiments: number of validation experiments.
@@ -87,7 +87,7 @@ classdef SvmND < handle
         RK = [];
         for j=1:obj.num_kernels
           fprintf('\nOne SVM \tTest %d/%d \tKernel %d/%d\n',i,num_experiments,j,obj.num_kernels);
-          evaluations{i,j} = obj.evaluateOneSVM(xtrain,ytrain,xtest,ytest,obj.kernel(j));
+          evaluations{i,j} = obj.evaluateOneClassSVM(xtrain,ytrain,xtest,ytest,obj.kernel(j));
           evaluations{i,j}.kernel = obj.kernel(j);
           MCC(i,j) = evaluations{i,j}.MCC;
           F1(i,j) = evaluations{i,j}.F1;
@@ -176,18 +176,9 @@ classdef SvmND < handle
     end
 
     function experiment = runMultiSVMExperiments(obj,num_experiments,plot_metric)
-      %-----------------------------------------------------------------------------------
-      % This method runs validation experiments and hyperparameter search for MultiSVM.
-      %
-      % Input args
-      %   num_experiments: number of validation experiments.
-      %   random_select_classes: enable/disable random selection of untrained classes (a
-      %     boolean value).
-      %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
-      %
-      % Output args
-      %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
+      % Executa experimentos de detecção de novidade e busca de hiperparâmetros
+      % ----------------------------------------------------------------------------------      
       split_exp = cell(num_experiments,1);
       
       MCC = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
@@ -232,7 +223,7 @@ classdef SvmND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
-            evaluations{j,k,i} = obj.evaluateMultiSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),obj.threshold(k));
+            evaluations{j,k,i} = obj.evaluateMultiClassSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),obj.threshold(k));
             evaluations{j,k,i}.kernel = obj.kernel(j);
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
             F1(j,k,i) = evaluations{j,k,i}.F1;
@@ -336,9 +327,9 @@ classdef SvmND < handle
       
       figure; pcolor(obj.threshold,obj.kernel,mean_afr); colorbar;
       ('threshold'); ylabel('kernel'); title('AFR');
-    end
+    end  xlabel
     
-    function model = validationOneClass(obj,n_validations,plot_error)
+    function model = validationOneClass(obj,n_validations,view_plot_error)
       % ----------------------------------------------------------------------------------
       % Validação do algoritmo one class svm
       % ----------------------------------------------------------------------------------      
@@ -357,10 +348,10 @@ classdef SvmND < handle
         RK = [];
         for j=1:obj.num_kernels
           fprintf('\nOne SVM \tVal: %d/%d \tKernel %d/%d',i,n_validations,j,obj.num_kernels);
-          result = obj.evaluateOneSVM(xtrain,ytrain,xval,yval,obj.kernel(j));
+          result = obj.evaluateOneClassSVM(xtrain,ytrain,xval,yval,obj.kernel(j));
           result.kernel = obj.kernel(j);
           mcc(i,j) = result.MCC;
-          if plot_error
+          if view_plot_error
             RK = cat(1,RK,mcc(i,j));
             figure(1);
             clf('reset');
@@ -385,9 +376,9 @@ classdef SvmND < handle
       model.mean_mcc = max_mean_mcc;
     end
 
-    function model = validationMultiClass(obj,n_validations,plot_error)
+    function model = validationMultiClass(obj,n_validations,view_plot_error)
       %-----------------------------------------------------------------------------------
-      % This method runs validation experiments and hyperparameter search for MultiSVM.
+      % This method runs validation experiments and hyperparameter search for Mult.
       %
       % Input args
       %   num_experiments: number of validation experiments.
@@ -427,10 +418,10 @@ classdef SvmND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tThreshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,obj.num_thresholds);
-            result = obj.evaluateMultiSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),obj.threshold(k));
+            result = obj.evaluateMultiClassSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),obj.threshold(k));
             result.kernel = obj.kernel(j);
             mcc(j,k,i) = result.MCC;
-            if plot_error
+            if view_plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               pause(0.01);
@@ -445,7 +436,7 @@ classdef SvmND < handle
               pause(0.01);
             end
           end
-          if plot_error
+          if view_plot_error
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
@@ -472,116 +463,68 @@ classdef SvmND < handle
       model.mean_mcc = max_mean_mcc;
     end
     
-    function [results,evaluations] = evaluateOneSVMModel(obj,model,num_tests)
+    function [results,evaluations] = evaluateOneClassModel(obj,model,n_tests)
       % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the OneSVM prediction with multi-class novelty 
-      % detection on a trained model.
-      %
-      % Input args
-      %   model: trained model.
-      %   num_tests: number of tests to be performed.
-      %
-      % Output args
-      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
-      % -----------------------------------------------------------------------------------
-      evaluations = cell(num_tests,1);
-      for i=1:num_tests
+      % Avalia o modelo one class svm treinado
+      % ----------------------------------------------------------------------------------      
+      evaluations = cell(n_tests,1);
+      for i=1:n_tests
         rng(i);
-        fprintf('\nONE CLASS Test: %d/%d\n',i,num_tests);
+        fprintf('\nONE CLASS Test: %d/%d\n',i,n_tests);
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluateOneSVM(xtrain,ytrain,xtest,ytest,model.kernel);
+        evaluations{i} = obj.evaluateOneClassSVM(xtrain,ytrain,xtest,ytest,model.kernel);
       end
       results = struct2table(cell2mat(evaluations));
     end
     
-    function [results,evaluations] = evaluateOneSVMTests(obj,xtrain,ytrain,xtest,ytest,model)
+    function [results,evaluations] = evaluateOneClassTests(obj,xtrain,ytrain,xtest,ytest,model)
       % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the OneSVM prediction with multi-class novelty 
-      % detection on test sets.
-      %
-      % Input args
-      %   xtrain: training data [num_train x dimensions].
-      %   ytrain: training labels [num_train x 1].
-      %   xtest: test data [num_test x dimensions].
-      %   ytest: test labels [num_test x 1].
-      %   model: trained model.
-      %
-      % Output args
-      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
-      % ----------------------------------------------------------------------------------  
-      num_tests = size(xtest,3);
-      evaluations = cell(num_tests,1);
-      for i=1:num_tests
-        fprintf('\nONE CLASS \tTest: %d/%d\n',i,num_tests);
-        evaluations{i} = obj.evaluateOneSVM(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel);
+      % Avalia o modelo treinado em conjuntos de testes
+      % ----------------------------------------------------------------------------------      
+      n_tests = size(xtest,3);
+      evaluations = cell(n_tests,1);
+      for i=1:n_tests
+        fprintf('\nONE CLASS \tTest: %d/%d\n',i,n_tests);
+        evaluations{i} = obj.evaluateOneClassSVM(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel);
       end
       results = struct2table(cell2mat(evaluations));
     end
     
-    function [results,evaluations] = evaluateMultiSVMModel(obj,model,num_tests)
+    function [results,evaluations] = evaluateMultiClassModel(obj,model,n_tests)
       % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the MultiSVM prediction with multi-class novelty 
-      % detection on a trained model.
-      %
-      % Input args
-      %   model: trained model.
-      %   num_tests: number of tests to be performed.
-      %
-      % Output args
-      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
-      % -----------------------------------------------------------------------------------
-
-      evaluations = cell(num_tests,1);
-      for i=1:num_tests
+      % Avalia o modelo multi class svm treinado
+      % ----------------------------------------------------------------------------------      
+      evaluations = cell(n_tests,1);
+      for i=1:n_tests
         rng(i);
-        fprintf('\nMULTI CLASS Test: %d/%d\n',i,num_tests);
+        fprintf('\nMULTI CLASS Test: %d/%d\n',i,n_tests);
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluateMultiSVM(xtrain,ytrain,xtest,ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluateMultiClassSVM(xtrain,ytrain,xtest,ytest,model.kernel,model.threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
 
-    function [results,evaluations] = evaluateMultiSVMTests(obj,xtrain,ytrain,xtest,ytest,model)
+    function [results,evaluations] = evaluateMultiClassTests(obj,xtrain,ytrain,xtest,ytest,model)
       % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the MultiSVM prediction with multi-class novelty 
-      % detection on test sets.
-      %
-      % Input args
-      %   xtrain: training data [num_train x dimensions].
-      %   ytrain: training labels [num_train x 1].
-      %   xtest: test data [num_test x dimensions].
-      %   ytest: test labels [num_test x 1].
-      %   model: trained model.
-      %
-      % Output args
-      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
-      % ----------------------------------------------------------------------------------  
-      num_tests = size(xtest,3);
-      evaluations = cell(num_tests,1);
-      for i=1:num_tests
-        fprintf('\nMULTI CLASS \tTest: %d/%d\n',i,num_tests);
-        evaluations{i} = obj.evaluateMultiSVM(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
+      % Avalia o modelo treinado em conjuntos de testes
+      % ----------------------------------------------------------------------------------      
+      n_tests = size(xtest,3);
+      evaluations = cell(n_tests,1);
+      for i=1:n_tests
+        fprintf('\nMULTI CLASS \tTest: %d/%d\n',i,n_tests);
+        evaluations{i} = obj.evaluateMultiClassSVM(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
     
-    function predictions = predictOneSVM(obj,xtrain,ytrain,xtest,kernel_arg)
+    function predictions = predictOneClassSVM(obj,xtrain,ytrain,xtest,kernel_arg)
       % ----------------------------------------------------------------------------------
-      % This method is used to run OneSVM prediction with multi-class novelty detection.
-      %
-      % Input args
-      %   xtrain: training data [num_train x dimensions].
-      %   ytrain: training labels [num_train x 1].
-      %   xtest: test data [num_test x dimensions].
-      %   kernel_arg: kernel parameter.
-      %
-      % Output args:
-      %   predictions: prediction with multi-class novelty detection.
-      % ----------------------------------------------------------------------------------
+      % Avalia o one class svm
+      % ----------------------------------------------------------------------------------      
       % Classes treinadas
       ctrain = unique(ytrain);
       
@@ -613,22 +556,10 @@ classdef SvmND < handle
       end
     end
     
-    function result = evaluateOneSVM(obj,xtrain,ytrain,xtest,ytest,kernel_arg)
+    function result = evaluateOneClassSVM(obj,xtrain,ytrain,xtest,ytest,kernel_arg)
       % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the OneSVM prediction with multi-class novelty 
-      % detection.
-      %
-      % Input args
-      %   xtrain: training data [num_train x dimensions].
-      %   ytrain: training labels [num_train x 1].
-      %   xtest: test data [num_test x dimensions].
-      %   ytest: test labels [num_test x 1].
-      %   kernel_arg: kernel parameter.
-      %
-      % Output args
-      %   result: metrics report for multi-class prediction and novelty detection.
-      % ----------------------------------------------------------------------------------
-
+      % Avalia o one class svm
+      % ----------------------------------------------------------------------------------      
       % Classes treinadas
       ctrain = unique(ytrain);
       
@@ -689,21 +620,9 @@ classdef SvmND < handle
         kernel_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
 
-    function result = evaluateMultiSVM(obj,xtrain,ytrain,xtest,ytest,kernel_arg,threshold_arg)
+    function result = evaluateMultiClassSVM(obj,xtrain,ytrain,xtest,ytest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the MultiClass prediction with multi-class novelty 
-      % detection.
-      %
-      % Input args
-      %   xtrain: training data [num_train x dimensions].
-      %   ytrain: training labels [num_train x 1].
-      %   xtest: test data [num_test x dimensions].
-      %   ytest: test labels [num_test x 1].
-      %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
-      %
-      % Output args
-      %   result: metrics report for multi-class prediction and novelty detection.
+      % Avalia o multi class svm
       % ----------------------------------------------------------------------------------
       % Classes treinadas
       ctrain = unique(ytrain);
@@ -768,23 +687,10 @@ classdef SvmND < handle
         kernel_arg,threshold_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
 
-    function result = evaluateMultiSVMAux(obj,model,ctrain,xtest,ytest,kernel_arg,threshold_arg)
+    function result = evaluateMultiClassSVMAux(obj,model,ctrain,xtest,ytest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the MultiClass prediction with multi-class novelty 
-      % detection in validation experiments.
-      %
-      % Input args
-      %   model: MultiSVM model.
-      %   ctrain: trained classes
-      %   xtest: test data [num_test x dimensions].
-      %   ytest: test labels [num_test x 1].
-      %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
-      %
-      % Output args
-      %   result: metrics report for multi-class prediction and novelty detection.
-      % ----------------------------------------------------------------------------------
-
+      % Auxilia a validação do multi class svm
+      % ----------------------------------------------------------------------------------      
       probability_score = zeros(numel(ytest),numel(ctrain));
       for i=1:numel(ctrain)
         [~,score] = predict(model{i},xtest);
@@ -835,21 +741,10 @@ classdef SvmND < handle
         kernel_arg,threshold_arg,report.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
     
-    function predictions = predictMultiSVM(obj,xtrain,ytrain,xtest,kernel_arg,threshold_arg)
+    function predictions = predictMultiClassSVM(obj,xtrain,ytrain,xtest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % This method is used to run MultiSVM prediction with multi-class novelty detection.
-      %
-      % Input args
-      %   xtrain: training data [num_train x dimensions].
-      %   ytrain: training labels [num_train x 1].
-      %   xtest: test data [num_test x dimensions].
-      %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
-      %
-      % Output args:
-      %   predictions: prediction with multi-class novelty detection.
-      % ----------------------------------------------------------------------------------
-
+      % Avalia o multi class svm
+      % ----------------------------------------------------------------------------------      
       % Classes treinadas
       ctrain = unique(ytrain);
       

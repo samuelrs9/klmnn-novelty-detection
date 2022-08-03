@@ -23,7 +23,7 @@ classdef LmnnND < handle
   end
   
   methods
-    function obj = LmnnND(X,Y,knn_arg,knn_threshold,num_classes,untrained_classes,training_ratio)
+    function obj = LmnnND(X,Y,knn_arg,knn_threshold,untrained_classes,training_ratio)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
@@ -31,17 +31,16 @@ classdef LmnnND < handle
       %   X: data samples [num_samples x dimension].
       %   Y: labels [num_samples x 1].
       %   knn_arg: K parameter described in the published paper.
-      %   knn_threshold: kappa parameter described in the published paper.
-      %   num_classes: number of classes in the dataset.
+      %   knn_threshold: kappa parameter described in the published paper.   
       %   untrained_classes: number of untrained classes, this parameter can
       %     be used to simulate novelty data in the dataset.
       %   training_ratio: training sample rate.
       % ----------------------------------------------------------------------------------
       obj.X = X;
       obj.Y = Y;
+      obj.num_classes = numel(unique(Y));
       obj.knn_arg = knn_arg;
       obj.knn_threshold = knn_threshold;
-      obj.num_classes = num_classes;
       obj.training_ratio = 0.7;
       if nargin>=6
         obj.untrained_classes = untrained_classes;
@@ -217,7 +216,7 @@ classdef LmnnND < handle
       xlabel('threshold'); ylabel('afr'); title('AFR');
     end
     
-    function model = validation(obj,num_validations,view_plot_error)
+    function model = validation(obj,num_validations,plot_error)
       %-----------------------------------------------------------------------------------
       % Runs a cross-validation algorithm.
       %
@@ -264,7 +263,7 @@ classdef LmnnND < handle
           result = knn.evaluate(xtraing,ytrain,xvalg,yval,obj.threshold(j),a);
           
           mcc(i,j) = result.MCC;
-          if view_plot_error
+          if plot_error
             RT = cat(1,RT,mcc(i,j));
             figure(1);
             clf('reset');

@@ -6,8 +6,8 @@ classdef KnfstND < handle
   % By Samuel Silva (samuelrs@usp.br).
   % --------------------------------------------------------------------------------------  
   properties
-    X = [];                  % data samples [num_samples x dimension]
-    Y = [];                  % labels [num_samples x 1]
+    X = [];                  % samples [num_samples x dimension]
+    Y = [];                  % sample labels [num_samples x 1]
     num_samples = 0;         % number of samples in dataset
     dimension = 0;           % data dimension
     num_classes = 0;         % number of classes
@@ -23,13 +23,20 @@ classdef KnfstND < handle
   end
   
   methods
-    function obj = KnfstND(X,Y,num_classes,untrained_classes,training_ratio)
+    function obj = KnfstND(X,Y,untrained_classes,training_ratio)
       % ----------------------------------------------------------------------------------
-      % Construtor.
-      % ----------------------------------------------------------------------------------
+      % Constructor.
+      %
+      % Args
+      %   X: samples [num_samples x dimension].
+      %   Y: sample labels [num_samples x 1].
+      %   untrained_classes: number of untrained classes, this parameter can
+      %     be used to simulate novelty data in the dataset.
+      %   training_ratio: training sample rate.
+      % ----------------------------------------------------------------------------------]
       obj.X = X;
-      obj.Y = Y;
-      obj.num_classes = num_classes;
+      obj.Y = Y;      
+      obj.num_classes = numel(unique(Y));
       obj.training_ratio = 0.7;
       if nargin>=4
         obj.untrained_classes = untrained_classes;
@@ -39,10 +46,19 @@ classdef KnfstND < handle
       end
     end
 
-    function experiment = runExperiments(obj,num_experiments,plot_metric)
+    function experiment = runExperiments(obj,num_experiments,random_select_classes,plot_metric)
+      %-----------------------------------------------------------------------------------
+      % This method runs validation experiments and hyperparameter search.
+      %
+      % Input args
+      %   num_experiments: number of validation experiments.
+      %   random_select_classes: enable/disable random selection of untrained classes (a
+      %     boolean value).
+      %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
+      %
+      % Output args
+      %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
-      % Executa experimentos de detecção de novidade e busca de hiperparâmetros
-      % ----------------------------------------------------------------------------------      
       split_exp = cell(num_experiments,1);
       
       MCC = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
@@ -189,7 +205,7 @@ classdef KnfstND < handle
       xlabel('threshold'); ylabel('kernel'); title('AFR');
     end
     
-    function model = validation(obj,n_validations,view_plot_error)
+    function model = validation(obj,n_validations,plot_error)
       % ----------------------------------------------------------------------------------
       % Validação do algoritmo knfst
       % ----------------------------------------------------------------------------------      
@@ -220,7 +236,7 @@ classdef KnfstND < handle
             result = obj.evaluateAux(KTr,ytrain,KVa,yval,kernel_arg,threshold_arg);
             result.kernel = kernel_arg;
             mcc(j,k,i) = result.MCC;
-            if view_plot_error
+            if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               clf('reset');
@@ -234,7 +250,7 @@ classdef KnfstND < handle
               pause(0.01);
             end
           end
-          if view_plot_error
+          if plot_error
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
@@ -261,14 +277,22 @@ classdef KnfstND < handle
       model.mean_mcc = max_mean_mcc;
     end
     
-    function [results,evaluations] = evaluateModel(obj,model,n_tests)
+    function [results,evaluations] = evaluateModel(obj,model,num_tests)
       % ----------------------------------------------------------------------------------
-      % Avalia o modelo treinado
-      % ----------------------------------------------------------------------------------      
-      evaluations = cell(n_tests,1);
-      for i=1:n_tests
+      % This method is used to evaluate the KNFST prediction with multi-class novelty 
+      % detection on a trained model.
+      %
+      % Input args
+      %   model: trained model.
+      %   num_tests: number of tests to be performed.
+      %
+      % Output args
+      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
+      % -----------------------------------------------------------------------------------
+      evaluations = cell(num_tests,1);
+      for i=1:num_tests
         rng(i);
-        fprintf('\nKNFST Test: %d/%d\n',i,n_tests);
+        fprintf('\nKNFST Test: %d/%d\n',i,num_tests);
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
@@ -279,12 +303,23 @@ classdef KnfstND < handle
 
     function [results,evaluations] = evaluateTests(obj,xtrain,ytrain,xtest,ytest,model)
       % ----------------------------------------------------------------------------------
-      % Avalia o modelo treinado em conjuntos de testes
-      % ----------------------------------------------------------------------------------      
-      n_tests = size(xtest,3);
-      evaluations = cell(n_tests,1);
-      for i=1:n_tests
-        fprintf('\nKNFST \tTest: %d/%d\n',i,n_tests);
+      % This method is used to evaluate the KNFST prediction with multi-class novelty 
+      % detection on test sets.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   model: trained model.
+      %
+      % Output args
+      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
+      % ----------------------------------------------------------------------------------
+      num_tests = size(xtest,3);
+      evaluations = cell(num_tests,1);
+      for i=1:num_tests
+        fprintf('\nKNFST \tTest: %d/%d\n',i,num_tests);
         evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
       end
       results = struct2table(cell2mat(evaluations));
@@ -292,8 +327,19 @@ classdef KnfstND < handle
     
     function result = evaluate(obj,xtrain,ytrain,xtest,ytest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % Avalia o algoritmo knfst
-      % ----------------------------------------------------------------------------------      
+      % This method is used to evaluate the KNFST prediction with multi-class novelty detection.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   kernel_arg: kernel parameter.
+      %   threshold_arg: decision threshold parameter.
+      %
+      % Output args
+      %   result: metrics report for multi-class prediction and novelty detection.
+      % ----------------------------------------------------------------------------------
       % Converte as classes de treinamento para uma indexção sequencial.
       % Ex: se as classes treinadas forem 2,3,5,6 a nova indexação
       % será 1,2,3 e 4. Classes não treinadas recebem rótulo -1.
@@ -364,10 +410,21 @@ classdef KnfstND < handle
         kernel_arg,threshold_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
     
-    function result = evaluateAux(obj,KTr,ytrain,KVa,ytest,kernel_arg,threshold_arg)
+    function result = evaluateAux(obj,KTr,ytrain,KTe,ytest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % Avalia o algoritmo knfst passsando como entrada as matrizes de
-      % kernels
+      % This method is used to evaluate the KNFST prediction with multi-class novelty 
+      % detection in validation experiments.
+      %
+      % Input args
+      %   KTr: training kernel matrix [num_train x num_train].
+      %   ytrain: training labels [num_train x 1].
+      %   KTe: test kernel matrix [num_train x num_test].
+      %   ytest: test labels [num_test x 1].
+      %   kernel_arg: kernel parameter.
+      %   threshold_arg: decision threshold parameter.
+      %
+      % Output args
+      %   result: metrics report for multi-class prediction and novelty detection.
       % ----------------------------------------------------------------------------------      
       % Converte as classes de treinamento para uma indexção sequencial.
       % Ex: se as classes treinadas forem 2,3,5,6 a nova indexação
@@ -383,7 +440,7 @@ classdef KnfstND < handle
       end
       
       model = learn_multiClassNovelty_knfst(KTr,ytrain_k);
-      [scores,predictions_k] = test_multiClassNovelty_knfst(model,KVa);
+      [scores,predictions_k] = test_multiClassNovelty_knfst(model,KTe);
       %pcolor(reshape(scores,[200,200]);
       
       dist_target_points = zeros(size(model.target_points,1), size(model.target_points,1));
@@ -437,8 +494,18 @@ classdef KnfstND < handle
     
     function predictions = predict(obj,xtrain,ytrain,xtest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
-      % Avalia o algoritmo knfst
-      % ----------------------------------------------------------------------------------      
+      % This method is used to run KNFST prediction with multi-class novelty detection.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   kernel_arg: kernel parameter.
+      %   threshold_arg: decision threshold parameter.
+      %
+      % Output args:
+      %   predictions: prediction with multi-class novelty detection.
+      % ----------------------------------------------------------------------------------
       % Converte as classes de treinamento para uma indexção sequencial.
       % Ex: se as classes treinadas forem 2,3,5,6 a nova indexação
       % será 1,2,3 e 4. Classes não treinadas recebem rótulo -1.
@@ -477,7 +544,16 @@ classdef KnfstND < handle
     
     function K = kernelMatrix(obj,X1,X2,kernel_arg)
       % ----------------------------------------------------------------------------------
-      % Matriz de kernel
+      % This method is used to calculate the kernel matrix with respect to two sets of 
+      % samples X1 and X2.
+      %
+      % Input args
+      %   X1: samples 1.
+      %   X2: samples 2.
+      %   kernel_arg: kernel parameter.
+      %
+      % Output args:
+      %   K: kernel matrix.
       % ----------------------------------------------------------------------------------      
       if strcmp(obj.kernel_type,'poly')
         offset = 0.5;

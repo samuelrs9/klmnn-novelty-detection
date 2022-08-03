@@ -8,7 +8,7 @@ classdef KnnND < handle
   properties
     X = [];                  % data samples [num_samples x dimension]
     Y = [];                  % labels [num_samples x 1]
-    num_samples = 0;         % Number of samples in dataset
+    num_samples = 0;         % number of samples in dataset
     dimension = 0;           % data dimension
     num_classes = 0;         % number of classes
     untrained_classes = 0;   % number of untrained classes
@@ -22,25 +22,24 @@ classdef KnnND < handle
   end
   
   methods
-    function obj = KnnND(X,Y,knn_arg,knn_threshold,num_classes,untrained_classes,training_ratio)
+    function obj = KnnND(X,Y,knn_arg,knn_threshold,untrained_classes,training_ratio)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
       % Input args
-      %   X: Data samples [num_samples x dimension].
-      %   Y: labels [num_samples x 1].
+      %   X: samples [num_samples x dimension].
+      %   Y: sample labels [num_samples x 1].
       %   knn_arg: K parameter described in the published paper.
       %   knn_threshold: kappa parameter described in the published paper.
-      %   num_classes: Number of classes in the dataset.
-      %   untrained_classes: Number of untrained classes, this parameter can
+      %   untrained_classes: number of untrained classes, this parameter can
       %     be used to simulate novelty data in the dataset.
-      %   training_ratio: Training sample rate.
+      %   training_ratio: training sample rate.
       % ----------------------------------------------------------------------------------
       obj.X = X;
       obj.Y = Y;
+      obj.num_classes = numel(unique(Y));
       obj.knn_arg = knn_arg;
-      obj.knn_threshold = knn_threshold;
-      obj.num_classes = num_classes;
+      obj.knn_threshold = knn_threshold;      
       obj.training_ratio = 0.7;
       if nargin>=6
         obj.untrained_classes = untrained_classes;
