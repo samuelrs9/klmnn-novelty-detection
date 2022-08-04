@@ -14,8 +14,8 @@ classdef LmnnND < handle
     untrained_classes = 0;   % number of untrained classes
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
-    num_thresholds = 0;      % number of "tau" thresholds
-    threshold = [];          % "tau" thresholds list (the best needs to be found)
+    num_thresholds = 0;      % number of decision thresholds
+    threshold = [];          % decision thresholds list (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -27,7 +27,7 @@ classdef LmnnND < handle
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
-      % Args
+      % Input args
       %   X: data samples [num_samples x dimension].
       %   Y: labels [num_samples x 1].
       %   knn_arg: K parameter described in the published paper.

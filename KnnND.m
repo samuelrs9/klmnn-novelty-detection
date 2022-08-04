@@ -14,8 +14,8 @@ classdef KnnND < handle
     untrained_classes = 0;   % number of untrained classes
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
-    num_thresholds = 0;      % number of "tau" thresholds
-    threshold = [];          % "tau" thresholds (the best needs to be found)
+    num_thresholds = 0;      % number of decision thresholds
+    threshold = [];          % decision thresholds (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -211,7 +211,7 @@ classdef KnnND < handle
     function [results,evaluations] = evaluateModel(obj,model,num_tests)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KNN prediction with multi-class novelty 
-      % detection on a trained model.
+      % detection using a trained model.
       %
       % Input args
       %   model: trained model.

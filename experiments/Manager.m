@@ -1,33 +1,54 @@
 classdef Manager < handle
-  
+  % --------------------------------------------------------------------------------------
+  % This class is used to manage the executions and reports of the novelty 
+  % detection algorithms.
+  %
+  % Version 2.0, July 2022.
+  % By Samuel Silva (samuelrs@usp.br).
+  % --------------------------------------------------------------------------------------  
   properties
-      X = [];
-      y = [];
-      method = [];
-      parameters = [];
-      out_dir = [];
-      num_experiments = [];
-      num_classes = [];
-      untrained_classes = [];
-      training_ratio = [];
-      knn_arg = [];
-      knn_threshold = [];
-      plot_metric = [];    
+      X = [];                   % data samples [num_samples x dimension]
+      y = [];                   % labels [num_samples x 1]
+      method = [];              % novelty detection method used
+      parameters = [];          % hyperparameters of the novelty detection method used
+      out_dir = [];             % output directory
+      num_experiments = [];     % number of validation experiments
+      num_classes = [];         % number of classes
+      untrained_classes = [];   % number of untrained classes
+      training_ratio = [];      % sample training ratio
+      knn_arg = [];             % knn argument for knn methods
+      knn_threshold = [];       % kappa threshold argument for knn methods
+      plot_metric = [];         % enable/disable metric plotting
   end
   
   methods
     function obj = Manager(X,y,method,parameters,out_dir,num_experiments,...
-      num_classes,untrained_classes,training_ratio,knn_arg,knn_threshold,plot_metric)
+      untrained_classes,training_ratio,knn_arg,knn_threshold,plot_metric)
       % ----------------------------------------------------------------------------------
       % Constructor.
-      % ----------------------------------------------------------------------------------    
+      %
+      % Input args
+      %   X: data samples [num_samples x dimension].
+      %   y: labels [num_samples x 1].
+      %   method: string corresponding to the novelty detection method used
+      %     It can be 'knn','lmnn','klmnn','knfst','one_svm','multi_svm' or 'kpca'.
+      %   parameters: a stuct corresponding to the hyperparameters of the novelty 
+      %     detection method used.
+      %   out_dir: output directory of validation experiments.
+      %   untrained_classes: number of untrained classes, this can be used to simulate 
+      %     novelty data in the dataset.
+      %   training_ratio: training sample rate.
+      %   knn_arg: K parameter described in the published paper for knn methods.
+      %   knn_threshold: kappa parameter described in the published paper for knn methods.        
+      %   plot_metric: a boolean that enable/disable metric plotting.
+      % ----------------------------------------------------------------------------------
       obj.X = X;
       obj.y = y;
+      obj.num_classes = numel(unique(y));
       obj.method = method;
       obj.parameters = parameters;
       obj.out_dir = out_dir;
-      obj.num_experiments = num_experiments;
-      obj.num_classes = num_classes;
+      obj.num_experiments = num_experiments;      
       obj.untrained_classes = untrained_classes;
       obj.training_ratio = training_ratio;
       obj.knn_arg = knn_arg;
@@ -36,8 +57,9 @@ classdef Manager < handle
     end
     
     function runExperiments(obj)
-      % ----------------------------------------------------------------------------------
-      % Roda experimentos de validação e calibração de hiperparâmetros.
+      %-----------------------------------------------------------------------------------
+      % This method runs validation experiments and hyperparameter search for the 
+      % chosen algorithm.
       % ----------------------------------------------------------------------------------
       knn_dir = strcat(obj.out_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
       if ~exist(knn_dir,'dir')
@@ -48,7 +70,7 @@ classdef Manager < handle
           case 'knn'
             try
               % Cria um objeto da classe KnnND
-              knn = KnnND(obj.X,obj.y,knn_arg,knn_threshold,obj.num_classes,...
+              knn = KnnND(obj.X,obj.y,obj.knn_arg,obj.knn_threshold,obj.num_classes,...
                 obj.untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
               knn.num_thresholds = obj.parameters{1}.num_thresholds;
@@ -68,7 +90,7 @@ classdef Manager < handle
           case 'lmnn'
             try
               % Cria um objeto da classe LmnnND
-              lmnn = LmnnND(obj.X,obj.y,knn_arg,knn_threshold,obj.num_classes,...
+              lmnn = LmnnND(obj.X,obj.y,obj.knn_arg,obj.knn_threshold,obj.num_classes,...
                 obj.untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
               lmnn.num_thresholds = obj.parameters{2}.num_thresholds;
@@ -88,7 +110,7 @@ classdef Manager < handle
           case 'klmnn'
             try
               % Cria um objeto da classe KlmnnND
-              klmnn = KlmnnND(obj.X,obj.y,knn_arg,knn_threshold,obj.num_classes,...
+              klmnn = KlmnnND(obj.X,obj.y,obj.knn_arg,obj.knn_threshold,obj.num_classes,...
                 obj.untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
               klmnn.num_thresholds = obj.parameters{3}.num_thresholds;
@@ -213,14 +235,15 @@ classdef Manager < handle
     end
     
     function runExperimentsForKnnMethods(obj)
+      %-----------------------------------------------------------------------------------
+      % This method runs validation experiments and hyperparameter search for the 
+      % knn methods.
       % ----------------------------------------------------------------------------------
-      % Calibra os parâmetros do knn, lmnn e klmnn para diferentes valores de K e kappa
-      % ----------------------------------------------------------------------------------      
       for K = 1:5
         for kappa = K:-1:K-3
           if kappa >= 1
             fprintf('\nK = %d \tkappa = %d\n',K,kappa);
-            Manager.runExperiments(obj.X,obj.y,obj.method,obj.parameters,obj.out_dir,num_experiments,obj.num_classes,...
+            Manager.runExperiments(obj.X,obj.y,obj.method,obj.parameters,obj.out_dir,obj.num_experiments,obj.num_classes,...
               obj.untrained_classes,obj.training_ratio,K,kappa,obj.plot_metric);
           end
         end
@@ -229,9 +252,9 @@ classdef Manager < handle
     
     function runEvaluationModels(obj)
       % ----------------------------------------------------------------------------------
-      % Avalia os parâmetros ótimos usando uma parte das amostras não
-      % utilizadas na validação
-      % ----------------------------------------------------------------------------------      
+      % This method is used to evaluate the predictions with multi-class novelty 
+      % detection using a trained model for the chosen algorithm.
+      % ----------------------------------------------------------------------------------
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
@@ -249,7 +272,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_knn = tic;
               [knn_evaluations.results,knn_evaluations.evaluations] = ...
-                knn.evaluateModel(knn_model,num_experiments);-+0
+                knn.evaluateModel(knn_model,obj.num_experiments);
               knn_evaluations.model = knn_model;
               knn_evaluations.evaluation_time = toc(t0_knn);
               % Salva avaliação
@@ -267,7 +290,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_lmnn = tic;
               [lmnn_evaluations.results,lmnn_evaluations.evaluations] = ...
-                lmnn.evaluateModel(lmnn_model,num_experiments);
+                lmnn.evaluateModel(lmnn_model,obj.num_experiments);
               lmnn_evaluations.model = lmnn_model;
               lmnn_evaluations.evaluation_time = toc(t0_lmnn);
               % Salva avaliação
@@ -285,7 +308,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_klmnn = tic;
               [klmnn_evaluations.results,klmnn_evaluations.evaluations] = ...
-                klmnn.evaluateModel(klmnn_model,num_experiments);
+                klmnn.evaluateModel(klmnn_model,obj.num_experiments);
               klmnn_evaluations.model = klmnn_model;
               klmnn_evaluations.evaluation_time = toc(t0_klmnn);
               % Salva avaliação
@@ -303,7 +326,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_knfst = tic;
               [knfst_evaluations.results,knfst_evaluations.evaluations] = ...
-                knfst.evaluateModel(knfst_model,num_experiments);
+                knfst.evaluateModel(knfst_model,obj.num_experiments);
               knfst_evaluations.model = knfst_model;
               knfst_evaluations.evaluation_time = toc(t0_knfst);
               % Salva avaliação
@@ -321,7 +344,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_one_svm = tic;
               [one_svm_evaluations.results,one_svm_evaluations.evaluations] = ...
-                one_svm.evaluateOneClassModel(one_svm_model,num_experiments);
+                one_svm.evaluateOneClassModel(one_svm_model,obj.num_experiments);
               one_svm_evaluations.model = one_svm_model;
               one_svm_evaluations.evaluation_time = toc(t0_one_svm);
               % Salva avaliação
@@ -339,7 +362,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_multi_svm = tic;
               [multi_svm_evaluations.results,multi_svm_evaluations.evaluations] = ...
-                multi_svm.evaluateMultiClassModel(multi_svm_model,num_experiments);
+                multi_svm.evaluateMultiClassModel(multi_svm_model,obj.num_experiments);
               multi_svm_evaluations.model = multi_svm_model;
               multi_svm_evaluations.evaluation_time = toc(t0_multi_svm);
               % Salva avaliação
@@ -357,7 +380,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_kpca = tic;
               [kpca_evaluations.results,kpca_evaluations.evaluations] = ...
-                kpca.evaluateModel(kpca_model,num_experiments);
+                kpca.evaluateModel(kpca_model,obj.num_experiments);
               kpca_evaluations.model = kpca_model;
               kpca_evaluations.evaluation_time = toc(t0_kpca);
               % Salva avaliação
@@ -371,8 +394,9 @@ classdef Manager < handle
     
     function runEvaluationTests(obj,xtrain,ytrain,xtest,ytest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Avalia os parâmetros ótimos em conjuntos de testes
-      % ----------------------------------------------------------------------------------    
+      % This method is used to evaluate the predictions with multi-class novelty 
+      % detection on test sets for the chosen algorithm.
+      % ----------------------------------------------------------------------------------
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
@@ -519,17 +543,19 @@ classdef Manager < handle
       end
     end
     
-    function runEvaluationModelsForKnnMethods(obj,model_dir,num_experiments)
+    function runEvaluationModelsForKnnMethods(obj,model_dir)
       % ----------------------------------------------------------------------------------
-      % Avalia os modelos dos métodos knn, lmnn e klmnn usando uma parte das amostras não
-      % utilizadas na validação
-      % ----------------------------------------------------------------------------------      
-      % Testes
+      % This method is used to evaluate the predictions with multi-class novelty 
+      % detection using a trained model for the knn methods.
+      % 
+      % Input args
+      %   model_dir: model output directory.
+      % ----------------------------------------------------------------------------------
       for K = 1:5
         for kappa = K:-1:K-3
           if kappa >= 1
             fprintf('\nK = %d \tkappa = %d\n',K,kappa);
-            Manager.runEvaluationModels(obj.method,model_dir,num_experiments,K,kappa);
+            Manager.runEvaluationModels(obj.method,model_dir,obj.num_experiments,K,kappa);
           end
         end
       end
@@ -537,7 +563,15 @@ classdef Manager < handle
     
     function runEvaluations(obj,xtrain,ytrain,xtest,ytest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Avalia os métodos em um conjunto de testes com os parâmetros ótimos.
+      % This method is used to evaluate the prediction with multi-class novelty detection 
+      % using a trained model for the chosen algorithm.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   model_dir: model directory.
       % ----------------------------------------------------------------------------------    
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
       if ~exist(knn_dir,'dir')
@@ -649,15 +683,22 @@ classdef Manager < handle
     
     function runEvaluationsForKnnMethods(obj,xtrain,ytrain,xtest,ytest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Avalia os modelos dos métodos knn, lmnn e klmnn
-      % ----------------------------------------------------------------------------------
-      % Testes
+      % This method is used to evaluate the prediction with multi-class novelty detection 
+      % using a trained model for the knn methods.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   model_dir: model directory.
+      % ----------------------------------------------------------------------------------    
       for K = 1:5
         for kappa = K:-1:K-3
           if kappa >= 1
             fprintf('\nK = %d \tkappa = %d\n',K,kappa);
             Manager.runEvaluations(obj,xtrain,ytrain,xtest,ytest,obj.method,...
-              model_dir,num_experiments,K,kappa);
+              model_dir,obj.num_experiments,K,kappa);
           end
         end
       end
@@ -665,9 +706,16 @@ classdef Manager < handle
     
     function runEvaluationsParameter(obj,xtrain,ytrain,xtest,ytest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Avalia os métodos em um conjunto de testes
-      % qualquer passando manualmente os parâmetros
-      % ----------------------------------------------------------------------------------    
+      % This method is used to evaluate the prediction with multi-class novelty detection 
+      % in a test set passing the hyperparameters for the chosen algorithm.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   model_dir: model output directory.
+      % ----------------------------------------------------------------------------------          
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
@@ -678,7 +726,7 @@ classdef Manager < handle
             fprintf('\n-> KNN Novelty Detection\n\n');
             % Avalia os parâmetros
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
+            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
             knn_evaluation = knn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{1}.threshold_arg);
             knn_evaluation.evaluation_time = toc(t0_knn);
@@ -688,7 +736,7 @@ classdef Manager < handle
             fprintf('\n-> LMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
+            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
             lmnn_evaluation = lmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{2}.threshold_arg);
             lmnn_evaluation.evaluation_time = toc(t0_lmnn);
@@ -699,7 +747,7 @@ classdef Manager < handle
             fprintf('\n-> KLMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
+            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
             klmnn.kernel_type = obj.parameters{3}.kernel_type;
             klmnn_evaluation = klmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{3}.kernel_arg,obj.parameters{3}.threshold_arg);
@@ -761,9 +809,13 @@ classdef Manager < handle
     
     function runPredictions(obj,xtest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Executa as predições dos métodos em um conjunto de testes
-      % qualquer com os parâmetros ótimos
-      % ----------------------------------------------------------------------------------      
+      % This method is used to run the prediction with multi-class novelty detection 
+      % in a test set for the chosen algorithm.
+      %
+      % Input args
+      %   xtest: test data [num_test x dimensions].
+      %   model_dir: model directory.
+      % ----------------------------------------------------------------------------------          
       xtrain = obj.X(obj.y~=-1,:);
       ytrain = obj.y(obj.y~=-1);
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
@@ -918,16 +970,20 @@ classdef Manager < handle
     
     function runPredictionsForKnnMethods(obj,xtrain,ytrain,xtest,ytest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Avalia os modelos dos métodos knn, lmnn e klmnn usando uma parte das amostras não
-      % utilizadas na validação
-      % ----------------------------------------------------------------------------------    
+      % This method is used to run the prediction with multi-class novelty detection 
+      % in a test set for the knn methods.
+      %
+      % Input args
+      %   xtest: test data [num_test x dimensions].
+      %   model_dir: model directory.
+      % ----------------------------------------------------------------------------------          
       % Testes
       for K = 1:5
         for kappa = K:-1:K-3
           if kappa >= 1
             fprintf('\nK = %d \tkappa = %d\n',K,kappa);
             Manager.runPredict(obj,xtrain,ytrain,xtest,ytest,obj.method,...
-              model_dir,num_experiments,K,kappa);
+              model_dir,obj.num_experiments,K,kappa);
           end
         end
       end
@@ -935,9 +991,13 @@ classdef Manager < handle
     
     function runPredictionsParameter(obj,xtest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Executa as predições dos métodos em um conjunto de testes
-      % qualquer passando manualmente os parâmetros
-      % ----------------------------------------------------------------------------------    
+      % This method is used to run the prediction with multi-class novelty detection 
+      % in a test set passing the hyperparameters for the chosen algorithm.
+      %
+      % Input args
+      %   xtest: test data [num_test x dimensions].
+      %   model_dir: model output directory.
+      % ----------------------------------------------------------------------------------          
       xtrain = obj.X(obj.y~=-1,:);
       ytrain = obj.y(obj.y~=-1);
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
@@ -949,7 +1009,7 @@ classdef Manager < handle
           case 'knn'
             fprintf('\n-> KNN Novelty Detection \n');
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
+            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
             % Avalia os parâmetros
             knn_predictions = knn.predict(obj,xtrain,ytrain,xtest,obj.parameters{1}.threshold_arg);
             prediction_time = toc(t0_knn);
@@ -959,7 +1019,7 @@ classdef Manager < handle
           case 'lmnn'
             fprintf('\n-> LMNN Novelty Detection\n');
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
+            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
             % Avalia os parâmetros
             lmnn_predictions = lmnn.predict(obj,xtrain,ytrain,xtest,obj.parameters{2}.threshold_arg);
             prediction_time = toc(t0_lmnn);
@@ -969,7 +1029,7 @@ classdef Manager < handle
           case 'klmnn'
             fprintf('\n-> KLMNN Novelty Detection\n');
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,knn_arg,knn_threshold,obj.num_classes);
+            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
             klmnn.kernel_type = obj.parameters{3}.kernel_type;
             % Avalia os parâmetros
             klmnn_predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
@@ -1032,10 +1092,16 @@ classdef Manager < handle
     
     function runPredictionsParametersForKnnMethods(obj,xtrain,ytrain,xtest,ytest,model_dir)
       % ----------------------------------------------------------------------------------
-      % Avalia os modelos dos métodos knn, lmnn e klmnn usando uma parte das amostras não
-      % utilizadas na validação
-      % ----------------------------------------------------------------------------------    
-      % Testes
+      % This method is used to run the prediction with multi-class novelty detection 
+      % in a test set passing the hyperparameters for knn methods.
+      %
+      % Input args
+      %   xtrain: training data [num_train x dimensions].
+      %   ytrain: training labels [num_train x 1].
+      %   xtest: test data [num_test x dimensions].
+      %   ytest: test labels [num_test x 1].
+      %   model_dir: model output directory.
+      % ----------------------------------------------------------------------------------          
       for K = 1:5
         for kappa = K:-1:K-3
           if kappa >= 1
@@ -1049,8 +1115,11 @@ classdef Manager < handle
 
     function reportExperimentResults(obj,model_dir)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa os resultados dos experimentos de detecção de
-      % novidade
+      % This method is used to load and process results of novelty detection experiments 
+      % for the chosen algorithm.
+      %
+      % Inputa args
+      %   model_dir: model directory.      
       % ----------------------------------------------------------------------------------      
       fprintf('\nProcessing results... ');
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
@@ -1175,8 +1244,11 @@ classdef Manager < handle
     
     function reportExperimentsForKnnMethods(obj,model_dir)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa as métricas de acurácia dos métodos knn,
-      % lmnn e klmnn para vários parâmetros de K e kappa
+      % This method is used to load and process results of novelty detection experiments 
+      % for knn methods.
+      %
+      % Inputa args
+      %   model_dir: model directory.
       % ----------------------------------------------------------------------------------      
       fprintf('\nLoading experiment results... ');
       % KNN
@@ -1290,7 +1362,10 @@ classdef Manager < handle
     
     function reportEvaluation(obj,model_dir)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa avaliações dos métodos de detecção de novidade
+      % This method is used to load and process one evaluation for the chosen algorithm.
+      %
+      % Inputa args
+      %   model_dir: model directory.
       % ----------------------------------------------------------------------------------      
       fprintf('\nProcessing results... ');
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
@@ -1415,8 +1490,12 @@ classdef Manager < handle
     
     function reportEvaluations(obj,model_dir)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa avaliações dos métodos de detecção de novidade
-      % ----------------------------------------------------------------------------------      
+      % This method is used to load evaluations and compute accuracy metrics for a 
+      % chosen algorithm.
+      %
+      % Inputa args
+      %   model_dir: model directory.
+      % ----------------------------------------------------------------------------------            
       fprintf('\nProcessing results... ');
       knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
       TPR = zeros(obj.num_experiments,7);
@@ -1604,9 +1683,12 @@ classdef Manager < handle
     
     function reportTestResultsForKnnMethods(obj,model_dir)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa as métricas de acurácia dos métodos knn,
-      % lmnn e klmnn para vários parâmetros de K e kappa
-      % ----------------------------------------------------------------------------------      
+      % This method is used to load evaluations and compute accuracy metrics for
+      % knn algorithms.
+      %
+      % Inputa args
+      %   model_dir: model directory.
+      % ----------------------------------------------------------------------------------                  
       fprintf('\nComputing test results... ');
       % KNN
       KNN.TPR = nan*zeros(5,4); KNN.TNR = nan*zeros(5,4);
@@ -1728,9 +1810,12 @@ classdef Manager < handle
     
     function reportEvaluationForKnnMethods(obj,model_dir)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa as métricas de acurácia dos métodos knn,
-      % lmnn e klmnn para vários parâmetros de K e kappa
-      % ----------------------------------------------------------------------------------      
+      % This method is used to load evaluations and compute accuracy metrics for 
+      % knn algorithms.
+      %
+      % Inputa args
+      %   model_dir: model directory.
+      % ----------------------------------------------------------------------------------            
       fprintf('\nComputing test results... ');
       % KNN
       KNN.TPR = nan*zeros(5,4); KNN.TNR = nan*zeros(5,4);
@@ -1849,9 +1934,15 @@ classdef Manager < handle
     
     function reportExecutionTimeAndMetrics(obj,model_dir,N,DIM)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa o experimento de tempo de execução e avalia métricas
-      % ----------------------------------------------------------------------------------      
-      % Eobj.XPERIMENTO 1 (QUANTIDADE DE DADOS DE TREINO)
+      % This method is used to load runtime and calculate accuracy metrics
+      % of a test set for an study simulation.
+      %
+      % Input args
+      %   model_dir: model directory.
+      %   N: number of samples in the training set.
+      %   DIM: spatial dimension of samples in the training set.
+      % ----------------------------------------------------------------------------------            
+      % EXPERIMENTO 1 (QUANTIDADE DE DADOS DE TREINO)
       exp1.MCC = zeros(7,numel(N));
       exp1.F1 = zeros(7,numel(N));
       exp1.val_time = zeros(7,numel(N));
@@ -2165,8 +2256,14 @@ classdef Manager < handle
     
     function reportExecutionTimeAndMetricsTests(obj,model_dir,N,DIM)
       % ----------------------------------------------------------------------------------
-      % Carrega e processa o experimento de tempo de execução e avalia métricas
-      % ----------------------------------------------------------------------------------
+      % This method is used to load runtime and calculate accuracy metrics
+      % of test sets for an study simulation.
+      %
+      % Input args
+      %   model_dir: model directory.
+      %   N: number of samples in the training set.
+      %   DIM: spatial dimension of samples in the training set.
+      % ----------------------------------------------------------------------------------            
       exp1_file = strcat(model_dir,'/report_experiment_1.mat');
       if ~exist(exp1_file,'file')
         % Eobj.XPERIMENTO 1 (QUANTIDADE DE DADOS DE TREINO)

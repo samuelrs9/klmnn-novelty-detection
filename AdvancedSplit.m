@@ -1,7 +1,7 @@
-classdef SplitData < handle
+classdef AdvancedSplit< handle
   % --------------------------------------------------------------------------------------
-  % This class is used to manage the random splitting of dataset into training, validation 
-  % and test sets. 
+  % This class is used to manage a more advanced random splitting of dataset into 
+  % training, validation and test sets. 
   %
   % Version 2.0, July 2022.
   % By Samuel Silva (samuelrs@usp.br).
@@ -26,11 +26,11 @@ classdef SplitData < handle
   end
   
   methods    
-    function obj = SplitData(X,Y,training_ratio,num_untrained)
+    function obj = AdvancedSplit(X,Y,training_ratio,num_untrained)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
-      % Args
+      % Input args
       %   X: samples [num_samples x dimension].
       %   Y: sample labels [num_samples x 1].
       %   training_ratio: training sample rate.

@@ -4,7 +4,7 @@ classdef KlmnnND < handle
   %
   % Version 2.0, July 2022.
   % By Samuel Silva (samuelrs@usp.br).
-  % --------------------------------------------------------------------------------------  
+  % --------------------------------------------------------------------------------------    
   properties
     X = [];                  % samples [num_samples x dimension]
     Y = [];                  % sample labels [num_samples x 1]
@@ -14,8 +14,8 @@ classdef KlmnnND < handle
     untrained_classes = 0;   % number of untrained classes
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
-    num_thresholds = 0;      % number of "tau" thresholds
-    threshold = [];          % "tau" thresholds list (the best needs to be found)
+    num_thresholds = 0;      % number of decision thresholds
+    threshold = [];          % decision thresholds list (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -29,7 +29,7 @@ classdef KlmnnND < handle
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
-      % Args
+      % Input args
       %   X: samples [num_samples x dimension].
       %   Y: sample labels [num_samples x 1].
       %   knn_arg: K parameter described in the published paper.
@@ -365,7 +365,7 @@ classdef KlmnnND < handle
     function [results,evaluations] = evaluateModel(obj,model,num_tests)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KLMNN prediction with multi-class novelty 
-      % detection on a trained model.
+      % detection using a trained model.
       %
       % Input args
       %   model: trained model.
@@ -412,7 +412,7 @@ classdef KlmnnND < handle
       results = struct2table(cell2mat(evaluations));
     end
     
-    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,kernel,threshold)
+    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KLMNN prediction with multi-class novelty detection.
       %
@@ -421,8 +421,8 @@ classdef KlmnnND < handle
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
-      %   kernel: kernel parameter for kpca algorithm.
-      %   threshold: kappa threshold parameter.
+      %   kernel_arg: kernel parameter for kpca algorithm.
+      %   threshold_arg: kappa threshold parameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
@@ -438,7 +438,7 @@ classdef KlmnnND < handle
       xtest = xtest/max_train;
       
       % KPCA
-      kpca = obj.kpcaModel(kernel);
+      kpca = obj.kpcaModel(kernel_arg);
       xtrainp = kpca.train(xtrain);
       xtestp = kpca.test(xtest);
       
@@ -460,11 +460,11 @@ classdef KlmnnND < handle
       
       % KNN
       knn = KnnNovDetection(xtrainpg,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes,obj.untrained_classes);
-      result = knn.evaluate(xtrainpg,ytrain,xtestpg,ytest,threshold);
+      result = knn.evaluate(xtrainpg,ytrain,xtestpg,ytest,threshold_arg);
       result.kpca_model = kpca;
     end
     
-    function predictions = predict(obj,xtrain,ytrain,xtest,kernel,threshold)
+    function predictions = predict(obj,xtrain,ytrain,xtest,kernel_arg,threshold_arg)
       % ----------------------------------------------------------------------------------
       % This method is used to run KLMNN prediction with multi-class novelty detection.
       %
@@ -472,7 +472,8 @@ classdef KlmnnND < handle
       %   xtrain: training data [num_train x dimensions].
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
-      %   threshold: kappa threshold parameter.
+      %   kernel_arg: kernel parameter.
+      %   threshold_arg: kappa threshold parameter.
       %
       % Output args:
       %   predictions: prediction with multi-class novelty detection.
@@ -488,7 +489,7 @@ classdef KlmnnND < handle
       xtest = xtest/max_train;
       
       % KPCA
-      kpca = obj.kpcaModel(kernel);
+      kpca = obj.kpcaModel(kernel_arg);
       xtrainp = kpca.train(xtrain);
       xtestp = kpca.test(xtest);
       
@@ -510,7 +511,7 @@ classdef KlmnnND < handle
       
       % KNN
       knn = KnnNovDetection(xtrainpg,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes,obj.untrained_classes);
-      predictions = knn.predict(xtrainpg,ytrain,xtestpg,threshold);
+      predictions = knn.predict(xtrainpg,ytrain,xtestpg,threshold_arg);
     end
     
     function model = kpcaModel(obj,kernel_arg)

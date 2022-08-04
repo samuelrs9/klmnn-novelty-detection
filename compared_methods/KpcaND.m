@@ -27,7 +27,7 @@ classdef KpcaND < handle
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
-      % Args
+      % Input args
       %   X: samples [num_samples x dimension].
       %   Y: sample labels [num_samples x 1].
       %   untrained_classes: number of untrained classes, this parameter can
@@ -267,7 +267,7 @@ classdef KpcaND < handle
     function [results,evaluations] = evaluateModel(obj,model,num_tests)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KPCA prediction with multi-class novelty 
-      % detection on a trained model.
+      % detection using a trained model.
       %
       % Input args
       %   model: trained model.
