@@ -15,7 +15,7 @@ classdef KnnND < handle
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
     num_thresholds = 0;      % number of decision thresholds
-    threshold = [];          % decision thresholds (the best needs to be found)
+    decision_thresholds = [];% decision thresholds (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -109,7 +109,7 @@ classdef KnnND < handle
         for j=1:obj.num_thresholds
           fprintf('\nKNN (K=%d kappa=%d) \tTest %d/%d \tThreshold %d/%d\n',...
             obj.knn_arg,obj.knn_threshold,i,num_experiments,j,obj.num_thresholds);
-          evaluations{i,j} = obj.evaluate(xtrain,ytrain,xtest,ytest,obj.threshold(j));
+          evaluations{i,j} = obj.evaluate(xtrain,ytrain,xtest,ytest,obj.decision_thresholds(j));
           MCC(i,j) = evaluations{i,j}.MCC;
           F1(i,j) = evaluations{i,j}.F1;
           AFR(i,j) = evaluations{i,j}.AFR;
@@ -121,12 +121,12 @@ classdef KnnND < handle
             RT = cat(1,RT,MCC(i,j));
             figure(1);
             clf('reset');
-            plot(obj.threshold(1:j),RT,'-','LineWidth',3);
-            xlim([obj.threshold(1),obj.threshold(end)]);
+            plot(obj.decision_thresholds(1:j),RT,'-','LineWidth',3);
+            xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['KNN [ test ',num2str(i),'/',num2str(num_experiments),' | threshold ',...
+            title(['KNN [ test ',num2str(i),'/',num2str(num_experiments),' | decision threshold ',...
               num2str(j),'/',num2str(obj.num_thresholds),' ]']);
             drawnow;
             pause(0.01);
@@ -142,7 +142,7 @@ classdef KnnND < handle
         split_exp{i}.ytest = ytest;
       end
       close all;
-      % Finds the threshold index that gives the best average matthews correlation 
+      % Finds the decision threshold index that gives the best average matthews correlation 
       % coefficient on all validation experiments
       mean_mcc = mean(MCC,1);
       [~,best_threshold_id] = max(mean_mcc);
@@ -166,7 +166,7 @@ classdef KnnND < handle
       
       model.training_ratio = obj.training_ratio;
       model.best_threshold_id = best_threshold_id;
-      model.threshold = obj.threshold(best_threshold_id);
+      model.decision_thresholds = obj.decision_thresholds(best_threshold_id);
       model.untrained_classes = obj.untrained_classes;
       model.knn_arg = obj.knn_arg;
       model.knn_threshold = obj.knn_threshold;
@@ -194,16 +194,16 @@ classdef KnnND < handle
         experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
       figure;
-      plot(obj.threshold,mean_mcc);
-      xlim([obj.threshold(1),obj.threshold(end)]);
-      xlabel('threshold');
+      plot(obj.decision_thresholds,mean_mcc);
+      xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
+      xlabel('decision_thresholds');
       ylabel('mcc');
       title('MCC');
       
       figure;
-      plot(obj.threshold,mean_afr);
-      xlim([obj.threshold(1),obj.threshold(end)]);
-      xlabel('threshold');
+      plot(obj.decision_thresholds,mean_afr);
+      xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
+      xlabel('decision_thresholds');
       ylabel('afr');
       title('AFR');
     end
@@ -227,7 +227,7 @@ classdef KnnND < handle
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.decision_thresholds);
       end
       results = struct2table(cell2mat(evaluations));
     end
@@ -251,12 +251,12 @@ classdef KnnND < handle
       evaluations = cell(num_tests,1);
       for i=1:num_tests
         fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_tests);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.decision_thresholds);
       end
       results = struct2table(cell2mat(evaluations));
     end
     
-    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,threshold)
+    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KNN prediction with multi-class novelty detection.
       %
@@ -265,12 +265,12 @@ classdef KnnND < handle
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
-      %   threshold: kappa threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
       % ----------------------------------------------------------------------------------
-      predictions = obj.predict(xtrain,ytrain,xtest,threshold);
+      predictions = obj.predict(xtrain,ytrain,xtest,decision_threshold);
       
       % Report outliers
       outlier_gt = -ones(size(ytest));
@@ -284,7 +284,7 @@ classdef KnnND < handle
       % General report
       report = MetricsReportReport(ytest,predictions);
       
-      result.threshold =  threshold;
+      result.decision_threshold =  decision_threshold;
       result.predictions = predictions;
       result.outlier_predictions = outlier_predictions;
       result.TPR = report_outliers.TPR(2);
@@ -299,11 +299,11 @@ classdef KnnND < handle
       result.outlier_conf_matrix = report_outliers.CM;
       
       fprintf('\nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f ...\nACC: %f\nAFR: %f\n',...
-        threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),...
+        decision_threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),...
         report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
     
-    function predictions = predict(obj,xtrain,ytrain,xtest,threshold)
+    function predictions = predict(obj,xtrain,ytrain,xtest,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to run KNN prediction with multi-class novelty detection.
       %
@@ -311,15 +311,15 @@ classdef KnnND < handle
       %   xtrain: training data [num_train x dimensions].
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
-      %   threshold: kappa threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args:
       %   predictions: prediction with multi-class novelty detection.
       % ----------------------------------------------------------------------------------
       [epsilons,means,medians,stds,iqrs,maxs] =  obj.computeEpsilons(xtrain,ytrain);
-      %epsilons =  medians + threshold * iqrs;
-      %epsilons =  means + threshold * stds;
-      epsilons =  threshold * epsilons;
+      %epsilons =  medians + decision_threshold * iqrs;
+      %epsilons =  means + decision_threshold * stds;
+      epsilons =  decision_threshold * epsilons;
       
       NTe = size(xtest,1);
       

@@ -15,7 +15,7 @@ classdef LmnnND < handle
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
     num_thresholds = 0;      % number of decision thresholds
-    threshold = [];          % decision thresholds list (the best needs to be found)
+    decision_thresholds = [];% decision thresholds list (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -125,7 +125,7 @@ classdef LmnnND < handle
         RT = [];
         for j=1:obj.num_thresholds
           fprintf('\nLMNN (K=%d kappa=%d) \tTest %d/%d \tThreshold %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_experiments,j,obj.num_thresholds);
-          evaluations{i,j} = knn.evaluate(xtraing,ytrain,xtestg,ytest,obj.threshold(j));
+          evaluations{i,j} = knn.evaluate(xtraing,ytrain,xtestg,ytest,obj.decision_thresholds(j));
           MCC(i,j) = evaluations{i,j}.MCC;
           F1(i,j) = evaluations{i,j}.F1;
           AFR(i,j) = evaluations{i,j}.AFR;
@@ -137,12 +137,12 @@ classdef LmnnND < handle
             RT = cat(1,RT,MCC(i,j));
             figure(1);
             clf('reset');
-            plot(obj.threshold(1:j),RT,'-','LineWidth',3);
-            xlim([obj.threshold(1),obj.threshold(end)]);
+            plot(obj.decision_thresholds(1:j),RT,'-','LineWidth',3);
+            xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['LMNN [ test ',num2str(i),'/',num2str(num_experiments),' | threshold ',num2str(j),'/',num2str(obj.num_thresholds),' ]']);
+            title(['LMNN [ test ',num2str(i),'/',num2str(num_experiments),' | decision_threshold ',num2str(j),'/',num2str(obj.num_thresholds),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -180,7 +180,7 @@ classdef LmnnND < handle
       
       model.training_ratio = obj.training_ratio;
       model.best_threshold_id = best_threshold_id;
-      model.threshold = obj.threshold(best_threshold_id);
+      model.decision_threshold = obj.decision_thresholds(best_threshold_id);
       model.untrained_classes = obj.untrained_classes;
       model.knn_arg = obj.knn_arg;
       model.knn_threshold = obj.knn_threshold;
@@ -207,13 +207,13 @@ classdef LmnnND < handle
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiment.mcc_score,experiment.f1_score,experiment.afr_score);
       
-      figure; plot(obj.threshold,mean_mcc);
-      xlim([obj.threshold(1),obj.threshold(end)]);
-      xlabel('threshold'); ylabel('mcc'); title('MCC');
+      figure; plot(obj.decision_thresholds,mean_mcc);
+      xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
+      xlabel('decision_threshold'); ylabel('mcc'); title('MCC');
       
-      figure; plot(obj.threshold,mean_afr);
-      xlim([obj.threshold(1),obj.threshold(end)]);
-      xlabel('threshold'); ylabel('afr'); title('AFR');
+      figure; plot(obj.decision_thresholds,mean_afr);
+      xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
+      xlabel('decision_threshold'); ylabel('afr'); title('AFR');
     end
     
     function model = validation(obj,num_validations,plot_error)
@@ -260,19 +260,19 @@ classdef LmnnND < handle
         for j=1:obj.num_thresholds
           fprintf('\nLMNN (K=%d kappa=%d) \tVal %d/%d \tThreshold %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_validations,j,obj.num_thresholds);
           
-          result = knn.evaluate(xtraing,ytrain,xvalg,yval,obj.threshold(j),a);
+          result = knn.evaluate(xtraing,ytrain,xvalg,yval,obj.decision_thresholds(j),a);
           
           mcc(i,j) = result.MCC;
           if plot_error
             RT = cat(1,RT,mcc(i,j));
             figure(1);
             clf('reset');
-            plot(obj.threshold(1:j),RT,'-','LineWidth',3);
-            xlim([obj.threshold(1),obj.threshold(end)]);
+            plot(obj.decision_thresholds(1:j),RT,'-','LineWidth',3);
+            xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['LMNN [ test ',num2str(i),'/',num2str(num_validations),' | threshold ',num2str(j),'/',num2str(obj.num_thresholds),' ]']);
+            title(['LMNN [ test ',num2str(i),'/',num2str(num_validations),' | decision_threshold ',num2str(j),'/',num2str(obj.num_thresholds),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -284,7 +284,7 @@ classdef LmnnND < handle
       [max_mean_mcc,ID] = max(mean_mcc);
       
       model.training_ratio = obj.training_ratio;
-      model.threshold = obj.threshold(ID);
+      model.decision_threshold = obj.decision_thresholds(ID);
       model.untrained_classes = obj.untrained_classes;
       model.knn_arg = obj.knn_arg;
       model.knn_threshold = obj.knn_threshold;
@@ -310,7 +310,7 @@ classdef LmnnND < handle
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
@@ -335,12 +335,12 @@ classdef LmnnND < handle
       evaluations = cell(num_tests,1);
       for i=1:num_tests
         fprintf('\nLMNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_tests);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
     
-    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,threshold)
+    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the LMNN prediction with multi-class novelty detection.
       %
@@ -349,7 +349,7 @@ classdef LmnnND < handle
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
-      %   threshold: kappa threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
@@ -372,11 +372,11 @@ classdef LmnnND < handle
       % KNN
       knn = KnnNovDetection(xtraing,ytrain,obj.knn_arg,...
         obj.knn_threshold,obj.num_classes,obj.untrained_classes);
-      result = knn.evaluate(obj,xtraing,ytrain,xtestg,ytest,threshold);
-      %result = evaluate@KnnND(obj,xtraing,ytrain,xtestg,ytest,threshold);
+      result = knn.evaluate(obj,xtraing,ytrain,xtestg,ytest,decision_threshold);
+      %result = evaluate@KnnND(obj,xtraing,ytrain,xtestg,ytest,decision_threshold);
     end
     
-    function predictions = predict(obj,xtrain,ytrain,xtest,threshold)
+    function predictions = predict(obj,xtrain,ytrain,xtest,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to run LMNN prediction with multi-class novelty detection.
       %
@@ -384,7 +384,7 @@ classdef LmnnND < handle
       %   xtrain: training data [num_train x dimensions].
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
-      %   threshold: kappa threshold parameter.
+      %   decision_threshold: decisino threshold hyparameter.
       %
       % Output args:
       %   predictions: prediction with multi-class novelty detection.

@@ -13,7 +13,7 @@ classdef KpcaND < handle
     num_classes = 0;         % number of classes
     untrained_classes = 0;   % number of untrained classes
     num_thresholds = 0;      % number of score thresholds
-    threshold = [];          % score thresholds list (the best needs to be found)
+    decision_thresholds = [];% score thresholds list (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -90,8 +90,8 @@ classdef KpcaND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nKPCA Nov \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
-            threshold_arg = obj.threshold(k);
-            evaluations{j,k,i} = obj.evaluate(xtrain,xtest,ytest,kernel_arg,threshold_arg);
+            decision_threshold = obj.decision_thresholds(k);
+            evaluations{j,k,i} = obj.evaluate(xtrain,xtest,ytest,kernel_arg,decision_threshold);
             evaluations{j,k,i}.kernel = kernel_arg;
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
             F1(j,k,i) = evaluations{j,k,i}.F1;
@@ -104,12 +104,12 @@ classdef KpcaND < handle
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.threshold(1),obj.threshold(end)]);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KPCA Nov [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['KPCA Nov [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -164,7 +164,7 @@ classdef KpcaND < handle
       model.training_ratio = obj.training_ratio;
       model.best_threshold_id = best_threshold_id;
       model.best_kernel_id = best_kernel_id;
-      model.threshold = obj.threshold(best_threshold_id);
+      model.decision_threshold = obj.decision_thresholds(best_threshold_id);
       model.kernel = obj.kernel(best_kernel_id);
       model.untrained_classes = obj.untrained_classes;
       
@@ -190,11 +190,11 @@ classdef KpcaND < handle
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiment.mcc_score,experiment.f1_score,experiment.afr_score);
       
-      figure; pcolor(obj.threshold,obj.kernel,mean_mcc); colorbar;
-      xlabel('threshold'); ylabel('kernel'); title('MCC');
+      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_mcc); colorbar;
+      xlabel('decision_threshold'); ylabel('kernel'); title('MCC');
       
-      figure; pcolor(obj.threshold,obj.kernel,mean_afr); colorbar;
-      xlabel('threshold'); ylabel('kernel'); title('AFR');
+      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_afr); colorbar;
+      xlabel('decision_threshold'); ylabel('kernel'); title('AFR');
     end
     
     function model = validation(obj,n_validations,plot_error)
@@ -218,20 +218,20 @@ classdef KpcaND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nKPCA \tVal: %d/%d \tKernel %d/%d \tThreshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,obj.num_thresholds);
-            threshold_arg = obj.threshold(k);
-            result = obj.evaluate(xtrain,xval,yval,kernel_arg,threshold_arg);
+            decision_threshold = obj.decision_thresholds(k);
+            result = obj.evaluate(xtrain,xval,yval,kernel_arg,decision_threshold);
             result.kernel = kernel_arg;
             mcc(j,k,i) = result.MCC;
             if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.threshold(1),obj.threshold(end)]);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KPCA [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['KPCA [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -259,7 +259,7 @@ classdef KpcaND < handle
       
       model.training_ratio = obj.training_ratio;
       model.kernel = obj.kernel(id_k);
-      model.threshold = obj.threshold(id_t);
+      model.decision_threshold = obj.decision_thresholds(id_t);
       model.untrained_classes = obj.untrained_classes;
       model.mean_mcc = max_mean_mcc;
     end
@@ -284,7 +284,7 @@ classdef KpcaND < handle
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,~] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluate(xtrain,xtest,ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,xtest,ytest,model.kernel,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
@@ -308,12 +308,12 @@ classdef KpcaND < handle
       evaluations = cell(num_tests,1);
       for i=1:num_tests
         fprintf('\nKPCA NOV \tTest: %d/%d\n',i,num_tests);
-        evaluations{i} = obj.evaluate(xtrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,xtest(:,:,i),ytest,model.kernel,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
 
-    function result = evaluate(obj,xtrain,xtest,ytest,kernel_arg,threshold_arg)
+    function result = evaluate(obj,xtrain,xtest,ytest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KPCA prediction with multi-class novelty detection.
       %
@@ -323,13 +323,13 @@ classdef KpcaND < handle
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
       % ----------------------------------------------------------------------------------
       % Predição
-      outlier_predictions = obj.predictNovelty(xtrain,xtest,kernel_arg,threshold_arg);
+      outlier_predictions = obj.predictNovelty(xtrain,xtest,kernel_arg,decision_threshold);
       
       % Report outliers
       outlier_gt = -ones(size(ytest));
@@ -338,7 +338,7 @@ classdef KpcaND < handle
       report_outliers = ClassificationReport(outlier_gt,outlier_predictions);
       
       result.kernel =  kernel_arg;
-      result.threshold =  threshold_arg;
+      result.decision_threshold =  decision_threshold;
       result.outlier_predictions = outlier_predictions;
       result.TPR = report_outliers.TPR(2);
       result.TNR = report_outliers.TNR(2);
@@ -351,10 +351,10 @@ classdef KpcaND < handle
       result.outlier_conf_matrix = report_outliers.CM;
       
       fprintf('\n\nkernel: %f \nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',...
-        kernel_arg,threshold_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
+        kernel_arg,decision_threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
    
-    function [predictions,errors] = predict(obj,xtrain,xtest,kernel_arg,threshold_arg)
+    function [predictions,errors] = predict(obj,xtrain,xtest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to KPCA prediction with multi-class novelty detection.
       %
@@ -363,14 +363,14 @@ classdef KpcaND < handle
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args:
       %   predictions: prediction with multi-class novelty detection.
       % ----------------------------------------------------------------------------------
 
       % Modelo
-      model = obj.kpcaModel(xtrain,kernel_arg,threshold_arg);
+      model = obj.kpcaModel(xtrain,kernel_arg,decision_threshold);
       % Teste
       predictions = ones(size(xtest,1),1);
       errors = zeros(size(xtest,1),1);

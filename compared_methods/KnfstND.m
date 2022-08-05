@@ -13,7 +13,7 @@ classdef KnfstND < handle
     num_classes = 0;         % number of classes
     untrained_classes = 0;   % number of untrained classes
     num_thresholds = 0;      % number of decision thresholds
-    threshold = [];          % decision thresholds list (the best needs to be found)
+    decision_thresholds = [];% decision thresholds list (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -97,8 +97,8 @@ classdef KnfstND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nKNFST \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
-            threshold_arg = obj.threshold(k);
-            evaluations{j,k,i} = obj.evaluateAux(KTr,ytrain,KTe,ytest,kernel_arg,threshold_arg);
+            decision_threshold = obj.decision_thresholds(k);
+            evaluations{j,k,i} = obj.evaluateAux(KTr,ytrain,KTe,ytest,kernel_arg,decision_threshold);
             evaluations{j,k,i}.kernel = kernel_arg;
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
             F1(j,k,i) = evaluations{j,k,i}.F1;
@@ -111,12 +111,12 @@ classdef KnfstND < handle
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.threshold(1),obj.threshold(end)]);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KNFST [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['KNFST [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -171,7 +171,7 @@ classdef KnfstND < handle
       model.training_ratio = obj.training_ratio;
       model.best_threshold_id = best_threshold_id;
       model.best_kernel_id = best_kernel_id;
-      model.threshold = obj.threshold(best_threshold_id);
+      model.decision_threshold = obj.decision_thresholds(best_threshold_id);
       model.kernel = obj.kernel(best_kernel_id);
       model.untrained_classes = obj.untrained_classes;
       
@@ -198,11 +198,11 @@ classdef KnfstND < handle
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiment.mcc_score,experiment.f1_score,experiment.afr_score);
       
-      figure;  pcolor(obj.threshold,obj.kernel,mean_mcc); colorbar;
-      xlabel('threshold'); ylabel('kernel'); title('MCC');
+      figure;  pcolor(obj.decision_thresholds,obj.kernel,mean_mcc); colorbar;
+      xlabel('decision_threshold'); ylabel('kernel'); title('MCC');
       
-      figure; pcolor(obj.threshold,obj.kernel,mean_afr); colorbar;
-      xlabel('threshold'); ylabel('kernel'); title('AFR');
+      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_afr); colorbar;
+      xlabel('decision_threshold'); ylabel('kernel'); title('AFR');
     end
     
     function model = validation(obj,n_validations,plot_error)
@@ -232,20 +232,20 @@ classdef KnfstND < handle
             %if rem(k,20) == 0
             fprintf('\nKNFST \tVal: %d/%d \tKernel %d/%d \tThreshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,obj.num_thresholds);
             %end
-            threshold_arg = obj.threshold(k);
-            result = obj.evaluateAux(KTr,ytrain,KVa,yval,kernel_arg,threshold_arg);
+            decision_threshold = obj.decision_thresholds(k);
+            result = obj.evaluateAux(KTr,ytrain,KVa,yval,kernel_arg,decision_threshold);
             result.kernel = kernel_arg;
             mcc(j,k,i) = result.MCC;
             if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.threshold(1),obj.threshold(end)]);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KNFST [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['KNFST [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -272,7 +272,7 @@ classdef KnfstND < handle
       
       model.training_ratio = obj.training_ratio;
       model.kernel = obj.kernel(id_k);
-      model.threshold = obj.threshold(id_t);
+      model.decision_threshold = obj.decision_thresholds(id_t);
       model.untrained_classes = obj.untrained_classes;
       model.mean_mcc = max_mean_mcc;
     end
@@ -296,7 +296,7 @@ classdef KnfstND < handle
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.kernel,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
@@ -320,12 +320,12 @@ classdef KnfstND < handle
       evaluations = cell(num_tests,1);
       for i=1:num_tests
         fprintf('\nKNFST \tTest: %d/%d\n',i,num_tests);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
     
-    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,kernel_arg,threshold_arg)
+    function result = evaluate(obj,xtrain,ytrain,xtest,ytest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KNFST prediction with multi-class novelty detection.
       %
@@ -335,7 +335,7 @@ classdef KnfstND < handle
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
@@ -369,7 +369,7 @@ classdef KnfstND < handle
       end
       
       min_dist = min(dist_target_points(dist_target_points>0));
-      dist_threshold = threshold_arg * min_dist;
+      dist_threshold = decision_threshold * min_dist;
       
       predictions_k(scores >= dist_threshold) = -1;
       
@@ -392,7 +392,7 @@ classdef KnfstND < handle
       report = ClassificationReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
-      result.threshold =  threshold_arg;
+      result.decision_threshold =  decision_threshold;
       result.predictions = predictions;
       result.outlier_predictions = outlier_predictions;
       result.TPR = report_outliers.TPR(2);
@@ -407,10 +407,10 @@ classdef KnfstND < handle
       result.outlier_conf_matrix = report_outliers.CM;
       
       fprintf('\n\nkernel: %f \nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',...
-        kernel_arg,threshold_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
+        kernel_arg,decision_threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
     
-    function result = evaluateAux(obj,KTr,ytrain,KTe,ytest,kernel_arg,threshold_arg)
+    function result = evaluateAux(obj,KTr,ytrain,KTe,ytest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KNFST prediction with multi-class novelty 
       % detection in validation experiments.
@@ -421,7 +421,7 @@ classdef KnfstND < handle
       %   KTe: test kernel matrix [num_train x num_test].
       %   ytest: test labels [num_test x 1].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision decision_threshold parameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
@@ -451,7 +451,7 @@ classdef KnfstND < handle
       end
       
       min_dist = min(dist_target_points(dist_target_points>0));
-      dist_threshold = threshold_arg * min_dist;
+      dist_threshold = decision_threshold * min_dist;
       
       predictions_k(scores >= dist_threshold) = -1;
       
@@ -474,7 +474,7 @@ classdef KnfstND < handle
       report = ClassificationReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
-      result.threshold =  threshold_arg;
+      result.decision_threshold =  decision_threshold;
       result.predictions = predictions;
       result.outlier_predictions = outlier_predictions;
       result.TPR = report_outliers.TPR(2);
@@ -489,10 +489,10 @@ classdef KnfstND < handle
       result.outlier_conf_matrix = report_outliers.CM;
       
       fprintf('\n\nkernel: %f \nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',...
-        kernel_arg,threshold_arg,report.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
+        kernel_arg,decision_threshold,report.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
     
-    function predictions = predict(obj,xtrain,ytrain,xtest,kernel_arg,threshold_arg)
+    function predictions = predict(obj,xtrain,ytrain,xtest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to run KNFST prediction with multi-class novelty detection.
       %
@@ -501,7 +501,7 @@ classdef KnfstND < handle
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision threshold parameter.
       %
       % Output args:
       %   predictions: prediction with multi-class novelty detection.
@@ -531,7 +531,7 @@ classdef KnfstND < handle
       end
       
       min_dist = min(dist_target_points(dist_target_points>0));
-      dist_threshold = threshold_arg * min_dist;
+      dist_threshold = decision_threshold * min_dist;
       
       predictions_k(scores >= dist_threshold) = -1;
       

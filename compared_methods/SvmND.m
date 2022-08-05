@@ -13,7 +13,7 @@ classdef SvmND < handle
     num_classes = 0;         % number of classes
     untrained_classes = 0;   % number of untrained classes
     num_thresholds = 0;      % number of score thresholds
-    threshold = [];          % score thresholds list (the best needs to be found)
+    decision_thresholds = [];% score thresholds list (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -232,7 +232,7 @@ classdef SvmND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
-            evaluations{j,k,i} = obj.evaluateMultiSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),obj.threshold(k));
+            evaluations{j,k,i} = obj.evaluateMultiSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),obj.decision_thresholds(k));
             evaluations{j,k,i}.kernel = obj.kernel(j);
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
             F1(j,k,i) = evaluations{j,k,i}.F1;
@@ -245,12 +245,12 @@ classdef SvmND < handle
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.threshold(1),obj.threshold(end)]);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -305,7 +305,7 @@ classdef SvmND < handle
       model.training_ratio = obj.training_ratio;
       model.best_threshold_id = best_threshold_id;
       model.best_kernel_id = best_kernel_id;
-      model.threshold = obj.threshold(best_threshold_id);
+      model.decision_threshold = obj.decision_thresholds(best_threshold_id);
       model.kernel = obj.kernel(best_kernel_id);
       model.untrained_classes = obj.untrained_classes;
       
@@ -331,11 +331,11 @@ classdef SvmND < handle
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiment.mcc_score,experiment.f1_score,experiment.afr_score);
       
-      figure; pcolor(obj.threshold,obj.kernel,mean_mcc); colorbar;
-      xlabel('threshold'); ylabel('kernel');  title('MCC');
+      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_mcc); colorbar;
+      xlabel('decision_threshold'); ylabel('kernel');  title('MCC');
       
-      figure; pcolor(obj.threshold,obj.kernel,mean_afr); colorbar;
-      ('threshold'); ylabel('kernel'); title('AFR');
+      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_afr); colorbar;
+      ('decision_threshold'); ylabel('kernel'); title('AFR');
     end
     
     function model = validationOneClass(obj,n_validations,plot_error)
@@ -427,19 +427,19 @@ classdef SvmND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tThreshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,obj.num_thresholds);
-            result = obj.evaluateMultiSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),obj.threshold(k));
+            result = obj.evaluateMultiSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),obj.decision_thresholds(k));
             result.kernel = obj.kernel(j);
             mcc(j,k,i) = result.MCC;
             if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               pause(0.01);
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
               xlim([0,1]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               legend off;
               drawnow;
               pause(0.01);
@@ -467,7 +467,7 @@ classdef SvmND < handle
       
       model.training_ratio = obj.training_ratio;
       model.kernel = obj.kernel(id_k);
-      model.threshold = obj.threshold(id_t);
+      model.decision_threshold = obj.decision_thresholds(id_t);
       model.untrained_classes = obj.untrained_classes;
       model.mean_mcc = max_mean_mcc;
     end
@@ -540,7 +540,7 @@ classdef SvmND < handle
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluateMultiSVM(xtrain,ytrain,xtest,ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluateMultiSVM(xtrain,ytrain,xtest,ytest,model.kernel,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
@@ -564,7 +564,7 @@ classdef SvmND < handle
       evaluations = cell(num_tests,1);
       for i=1:num_tests
         fprintf('\nMULTI CLASS \tTest: %d/%d\n',i,num_tests);
-        evaluations{i} = obj.evaluateMultiSVM(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluateMultiSVM(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
@@ -689,7 +689,7 @@ classdef SvmND < handle
         kernel_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
 
-    function result = evaluateMultiSVM(obj,xtrain,ytrain,xtest,ytest,kernel_arg,threshold_arg)
+    function result = evaluateMultiSVM(obj,xtrain,ytrain,xtest,ytest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the MultiClass prediction with multi-class novelty 
       % detection.
@@ -700,7 +700,7 @@ classdef SvmND < handle
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
@@ -729,7 +729,7 @@ classdef SvmND < handle
       [max_prob,predictions_k] = max(probability_score,[],2);
       
       % Classifica outliers
-      predictions_k(max_prob < threshold_arg) = -1;
+      predictions_k(max_prob < decision_threshold) = -1;
       
       % Converte para a indexação das classes treinadas
       predictions = predictions_k;
@@ -750,7 +750,7 @@ classdef SvmND < handle
       report = ClassificationReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
-      result.threshold =  threshold_arg;
+      result.decision_threshold =  decision_threshold;
       result.predictions = predictions;
       result.outlier_predictions = outlier_predictions;
       result.TPR = report_outliers.TPR(2);
@@ -765,10 +765,10 @@ classdef SvmND < handle
       result.outlier_conf_matrix = report_outliers.CM;
       
       fprintf('\n\nkernel: %f \nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',...
-        kernel_arg,threshold_arg,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
+        kernel_arg,decision_threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
 
-    function result = evaluateMultiSVMAux(obj,model,ctrain,xtest,ytest,kernel_arg,threshold_arg)
+    function result = evaluateMultiSVMAux(obj,model,ctrain,xtest,ytest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the MultiClass prediction with multi-class novelty 
       % detection in validation experiments.
@@ -779,7 +779,7 @@ classdef SvmND < handle
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
@@ -796,7 +796,7 @@ classdef SvmND < handle
       [max_prob,predictions_k] = max(probability_score,[],2);
       
       % Classifica outliers
-      predictions_k(max_prob < threshold_arg) = -1;
+      predictions_k(max_prob < decision_threshold) = -1;
       
       % Converte para a indexação das classes treinadas
       predictions = predictions_k;
@@ -817,7 +817,7 @@ classdef SvmND < handle
       report = ClassificationReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
-      result.threshold =  threshold_arg;
+      result.decision_threshold =  decision_threshold;
       result.predictions = predictions;
       result.outlier_predictions = outlier_predictions;
       result.TPR = report_outliers.TPR(2);
@@ -832,10 +832,10 @@ classdef SvmND < handle
       result.outlier_conf_matrix = report_outliers.CM;
       
       fprintf('\n\nkernel: %f \nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',...
-        kernel_arg,threshold_arg,report.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
+        kernel_arg,decision_threshold,report.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
     
-    function predictions = predictMultiSVM(obj,xtrain,ytrain,xtest,kernel_arg,threshold_arg)
+    function predictions = predictMultiSVM(obj,xtrain,ytrain,xtest,kernel_arg,decision_threshold)
       % ----------------------------------------------------------------------------------
       % This method is used to run MultiSVM prediction with multi-class novelty detection.
       %
@@ -844,7 +844,7 @@ classdef SvmND < handle
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: decision threshold parameter.
+      %   decision_threshold: decision threshold hyperparameter.
       %
       % Output args:
       %   predictions: prediction with multi-class novelty detection.
@@ -874,7 +874,7 @@ classdef SvmND < handle
       [max_prob,predictions_k] = max(probability_score,[],2);
       
       % Classifica outliers
-      predictions_k(max_prob < threshold_arg) = -1;
+      predictions_k(max_prob < decision_threshold) = -1;
       
       % Converte para a indexação das classes treinadas
       predictions = predictions_k;

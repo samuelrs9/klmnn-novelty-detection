@@ -15,7 +15,7 @@ classdef KlmnnND < handle
     knn_arg = 0;             % K parameter described in the published paper
     knn_threshold = 0;       % kappa parameter described in the published paper
     num_thresholds = 0;      % number of decision thresholds
-    threshold = [];          % decision thresholds list (the best needs to be found)
+    decision_thresholds = []; % decision thresholds list (the best needs to be found)
     training_ratio = 0;      % training sample rate
     split = {};              % holds a split object that helps the cross-validation process
     samples_per_classe = []; % samples per class
@@ -148,7 +148,7 @@ classdef KlmnnND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nKLMNN (K=%d kappa=%d) \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',obj.knn_arg,obj.knn_threshold,i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
-            evaluations{j,k,i} = knn.evaluate(xtrainpg,ytrain,xtestpg,ytest,obj.threshold(k));
+            evaluations{j,k,i} = knn.evaluate(xtrainpg,ytrain,xtestpg,ytest,obj.decision_thresholds(k));
             evaluations{j,k,i}.kernel = kernel_arg;
             evaluations{j,k,i}.kpca_model = kpca;
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
@@ -162,12 +162,12 @@ classdef KlmnnND < handle
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.threshold(1),obj.threshold(end)]);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KLMNN [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['KLMNN [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.0001);
             end
@@ -222,7 +222,7 @@ classdef KlmnnND < handle
       model.training_ratio = obj.training_ratio;
       model.best_threshold_id = best_threshold_id;
       model.best_kernel_id = best_kernel_id;
-      model.threshold = obj.threshold(best_threshold_id);
+      model.decision_threshold = obj.decision_thresholds(best_threshold_id);
       model.kernel = obj.kernel(best_kernel_id);
       model.untrained_classes = obj.untrained_classes;
       model.knn_arg = obj.knn_arg;
@@ -251,11 +251,11 @@ classdef KlmnnND < handle
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiment.mcc_score,experiment.f1_score,experiment.afr_score);
       
-      figure; pcolor(obj.threshold,obj.kernel,mean_mcc); colorbar;
-      xlabel('threshold'); ylabel('kernel');  title('MCC');
+      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_mcc); colorbar;
+      xlabel('decision_threshold'); ylabel('kernel');  title('MCC');
       
-      figure; pcolor(obj.threshold,obj.kernel,mean_afr); colorbar;
-      xlabel('threshold'); ylabel('kernel'); title('AFR');
+      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_afr); colorbar;
+      xlabel('decision_threshold'); ylabel('kernel'); title('AFR');
     end
         
     function model = validation(obj,n_validations,plot_error)
@@ -315,19 +315,19 @@ classdef KlmnnND < handle
           RT = [];
           for k=1:obj.num_thresholds
             fprintf('\nKLMNN (K=%d kappa=%d) \tVal: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',obj.knn_arg,obj.knn_threshold,i,n_validations,j,obj.num_kernels,k,obj.num_thresholds);
-            result = knn.evaluate(xtrainpg,ytrain,xvalpg,yval,obj.threshold(k));
+            result = knn.evaluate(xtrainpg,ytrain,xvalpg,yval,obj.decision_thresholds(k));
             result.kernel = kernel_arg;
             mcc(j,k,i) = result.MCC;
             if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.threshold(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.threshold(1),obj.threshold(end)]);
+              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KLMNN [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['KLMNN [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -355,7 +355,7 @@ classdef KlmnnND < handle
       
       model.training_ratio = obj.training_ratio;
       model.kernel = obj.kernel(id_k);
-      model.threshold = obj.threshold(id_t);
+      model.decision_threshold = obj.decision_thresholds(id_t);
       model.untrained_classes = obj.untrained_classes;
       model.knn_arg = obj.knn_arg;
       model.knn_threshold = obj.knn_threshold;
@@ -381,7 +381,7 @@ classdef KlmnnND < handle
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.kernel,model.decision_threshold);
         evaluations{i}.kernel = model.kernel;
       end
       results = struct2table(cell2mat(evaluations));
@@ -406,7 +406,7 @@ classdef KlmnnND < handle
       evaluations = cell(num_tests,1);
       for i=1:num_tests
         fprintf('\nKLMNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_tests);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.threshold);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.kernel,model.decision_threshold);
         evaluations{i}.kernel = model.kernel;
       end
       results = struct2table(cell2mat(evaluations));
@@ -422,7 +422,7 @@ classdef KlmnnND < handle
       %   xtest: test data [num_test x dimensions].
       %   ytest: test labels [num_test x 1].
       %   kernel_arg: kernel parameter for kpca algorithm.
-      %   threshold_arg: kappa threshold parameter.
+      %   threshold_arg: kappa decision_threshold parameter.
       %
       % Output args
       %   result: metrics report for multi-class prediction and novelty detection.
@@ -473,7 +473,7 @@ classdef KlmnnND < handle
       %   ytrain: training labels [num_train x 1].
       %   xtest: test data [num_test x dimensions].
       %   kernel_arg: kernel parameter.
-      %   threshold_arg: kappa threshold parameter.
+      %   threshold_arg: kappa decision_threshold parameter.
       %
       % Output args:
       %   predictions: prediction with multi-class novelty detection.
