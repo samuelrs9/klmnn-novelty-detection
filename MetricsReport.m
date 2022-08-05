@@ -1,5 +1,10 @@
 classdef MetricsReport < handle
-  
+  % --------------------------------------------------------------------------------------
+  % This class contains implementations of popular accuracy metrics in machine learning.
+  %
+  % Version 2.0, July 2022.
+  % By Samuel Silva (samuelrs@usp.br).
+  % --------------------------------------------------------------------------------------      
   properties
     CM = []; % Confusion matrix
     
@@ -26,12 +31,20 @@ classdef MetricsReport < handle
   end
   
   methods
-    % Construtor
     function obj = MetricsReport(arg1,arg2)
+      % ----------------------------------------------------------------------------------
+      % Constructor.
+      %
+      % Input args
+      %   arg1: if the number of arguments (nargin) is 1 then this argument must match
+      %     the confusion matrix, on the other hand if nargin is 2 then this argument 
+      %     must match the ground-truth labels.
+      %   arg2: if the number of arguments (nargin) is 2 then this argument must match
+      %     the prediction labels.
+      % ----------------------------------------------------------------------------------
       if nargin==2
         ground_truth = arg1;
         prediction = arg2;
-        % Confusion matrix
         obj.CM = confusionmat(ground_truth,prediction);
       elseif nargin==1
         obj.CM = arg1;
