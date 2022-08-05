@@ -3,7 +3,7 @@ classdef MetricsReport < handle
   % This class contains implementations of popular accuracy metrics in machine learning.
   %
   % Version 2.0, July 2022.
-  % By Samuel Silva (samuelrs@usp.br).
+  % By Samuel Silva (samuelrs@usp.br). 
   % --------------------------------------------------------------------------------------      
   properties
     CM = []; % Confusion matrix
