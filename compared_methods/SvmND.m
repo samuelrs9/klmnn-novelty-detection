@@ -6,20 +6,20 @@ classdef SvmND < handle
   % By Samuel Silva (samuelrs@usp.br).
   % --------------------------------------------------------------------------------------    
   properties
-    X = [];                  % data samples [num_samples x dimension]
-    Y = [];                  % labels [num_samples x 1]
-    num_samples = 0;         % number of samples in dataset
-    dimension = 0;           % data dimension
-    num_classes = 0;         % number of classes
-    untrained_classes = 0;   % number of untrained classes
-    num_thresholds = 0;      % number of score thresholds
-    decision_thresholds = [];% score thresholds list (the best needs to be found)
-    training_ratio = 0;      % training sample rate
-    split = {};              % holds a split object that helps the cross-validation process
-    samples_per_classe = []; % samples per class
-    kernel_type = [];        % kernel function type
-    num_kernels = 0;         % number of kernel values
-    kernel = [];             % kernel list for svm algorithm (the best must be found)    
+    X = [];                       % data samples [num_samples x dimension]
+    Y = [];                       % labels [num_samples x 1]
+    num_samples = 0;              % number of samples in dataset
+    dimension = 0;                % data dimension
+    num_classes = 0;              % number of classes
+    untrained_classes = 0;        % number of untrained classes
+    num_decision_thresholds = 0;  % number of score thresholds
+    decision_thresholds = [];     % score thresholds list (the best needs to be found)
+    training_ratio = 0;           % training sample rate
+    split = {};                   % holds a split object that helps the cross-validation process
+    samples_per_classe = [];      % samples per class
+    kernel_type = [];             % kernel function type
+    num_kernels = 0;              % number of kernel values
+    kernel = [];                  % kernel list for svm algorithm (the best must be found)    
   end
   
   methods
@@ -37,11 +37,11 @@ classdef SvmND < handle
       obj.X = X;
       obj.Y = Y;
       obj.num_classes = numel(unique(Y));
-      obj.training_ratio = 0.7;
+      training_ratio = 0.7;
       if nargin>=4
         obj.untrained_classes = untrained_classes;
         if nargin==5
-          obj.training_ratio = training_ratio;
+          training_ratio = training_ratio;
         end
       end
     end
@@ -69,16 +69,16 @@ classdef SvmND < handle
       FPR = zeros(num_experiments,obj.num_kernels);
       FNR = zeros(num_experiments,obj.num_kernels);
       
-      evaluations = cell(num_experiments,obj.num_thresholds);
+      evaluations = cell(num_experiments,num_untrained_classes);
       
       for i=1:num_experiments
         rng(i);
         % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = Split.selectClasses(obj.num_classes,obj.untrained_classes);
+        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(obj.num_classes,obj.untrained_classes);
         
         % Divide os índices em treino e teste
-        [idx_train,idx_test] = Split.trainTestIdx(obj.X,obj.Y,obj.training_ratio,obj.num_classes,is_trained_class);
-        [xtrain,xtest,ytrain,ytest] = Split.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
+        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,obj.num_classes,is_trained_class);
+        [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
         % Todas as amostras não treinadas são definidas
         % como outliers (label -1)
@@ -141,7 +141,7 @@ classdef SvmND < handle
       all_metrics.FNR = FNR;
       experiment.all_metrics = all_metrics;
       
-      model.training_ratio = obj.training_ratio;
+      model.training_ratio = training_ratio;
       model.best_kernel_id = best_kernel_id;
       model.kernel = obj.kernel(best_kernel_id);
       model.untrained_classes = obj.untrained_classes;
@@ -190,24 +190,24 @@ classdef SvmND < handle
       % ----------------------------------------------------------------------------------
       split_exp = cell(num_experiments,1);
       
-      MCC = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      AFR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      F1 = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      TPR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      TNR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      FPR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
-      FNR = zeros(obj.num_kernels,obj.num_thresholds,num_experiments);
+      MCC = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      AFR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      F1 = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      TPR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      TNR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      FPR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      FNR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
       
-      evaluations = cell(obj.num_kernels,obj.num_thresholds,num_experiments);
+      evaluations = cell(obj.num_kernels,num_untrained_classes,num_experiments);
       
       for i=1:num_experiments
         rng(i);
         % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = Split.selectClasses(obj.num_classes,obj.untrained_classes);
+        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(obj.num_classes,obj.untrained_classes);
         
         % Divide os índices em treino e teste
-        [idx_train,idx_test] = Split.trainTestIdx(obj.X,obj.Y,obj.training_ratio,obj.num_classes,is_trained_class);
-        [xtrain,xtest,ytrain,ytest] = Split.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
+        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,obj.num_classes,is_trained_class);
+        [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
         % Todas as amostras não treinadas são definidas
         % como outliers (label -1)
@@ -230,9 +230,9 @@ classdef SvmND < handle
           end
           
           RT = [];
-          for k=1:obj.num_thresholds
-            fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tThreshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,obj.num_thresholds);
-            evaluations{j,k,i} = obj.evaluateMultiSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),obj.decision_thresholds(k));
+          for k=1:num_untrained_classes
+            fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tDecision threshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,num_untrained_classes);
+            evaluations{j,k,i} = obj.evaluateMultiSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),hyperparameters.decision_thresholds(k));
             evaluations{j,k,i}.kernel = obj.kernel(j);
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
             F1(j,k,i) = evaluations{j,k,i}.F1;
@@ -245,12 +245,12 @@ classdef SvmND < handle
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
-              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
-              xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
+              plot(hyperparameters.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_untrained_classes),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -302,10 +302,10 @@ classdef SvmND < handle
       all_metrics.FNR = FNR;
       experiment.all_metrics = all_metrics;
       
-      model.training_ratio = obj.training_ratio;
+      model.training_ratio = training_ratio;
       model.best_threshold_id = best_threshold_id;
       model.best_kernel_id = best_kernel_id;
-      model.decision_threshold = obj.decision_thresholds(best_threshold_id);
+      model.decision_threshold = hyperparameters.decision_thresholds(best_threshold_id);
       model.kernel = obj.kernel(best_kernel_id);
       model.untrained_classes = obj.untrained_classes;
       
@@ -331,10 +331,10 @@ classdef SvmND < handle
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiment.mcc_score,experiment.f1_score,experiment.afr_score);
       
-      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_mcc); colorbar;
+      figure; pcolor(hyperparameters.decision_thresholds,obj.kernel,mean_mcc); colorbar;
       xlabel('decision_threshold'); ylabel('kernel');  title('MCC');
       
-      figure; pcolor(obj.decision_thresholds,obj.kernel,mean_afr); colorbar;
+      figure; pcolor(hyperparameters.decision_thresholds,obj.kernel,mean_afr); colorbar;
       ('decision_threshold'); ylabel('kernel'); title('AFR');
     end
     
@@ -350,7 +350,7 @@ classdef SvmND < handle
         % Cria um objeto split. Particiona a base em dois conjuntos
         % de classes treinadas e não treinadas. Separa uma
         % parte para treinamento e outra para teste
-        obj.split{i}    = SplitData(obj.X,obj.Y,obj.training_ratio,obj.untrained_classes);
+        obj.split{i}    = SplitData(obj.X,obj.Y,training_ratio,obj.untrained_classes);
         % Separa uma parte do treinamento para validação
         [id_train,id_val] = obj.split{i}.idTrainVal();
         [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
@@ -379,7 +379,7 @@ classdef SvmND < handle
       mean_mcc = mean(mcc,1);
       [max_mean_mcc,id_max] = max(mean_mcc);
       
-      model.training_ratio = obj.training_ratio;
+      model.training_ratio = training_ratio;
       model.kernel = obj.kernel(id_max);
       model.untrained_classes = obj.untrained_classes;
       model.mean_mcc = max_mean_mcc;
@@ -399,13 +399,13 @@ classdef SvmND < handle
       %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
       obj.split = cell(n_validations,1);
-      mcc = zeros(obj.num_kernels,obj.num_thresholds,n_validations);
+      mcc = zeros(obj.num_kernels,num_untrained_classes,n_validations);
       for i=1:n_validations
         rng(i);
         % Cria um objeto split. Particiona a base em dois conjuntos
         % de classes treinadas e não treinadas. Separa uma
         % parte para treinamento e outra para teste
-        obj.split{i}    = SplitData(obj.X,obj.Y,obj.training_ratio,obj.untrained_classes);
+        obj.split{i}    = SplitData(obj.X,obj.Y,training_ratio,obj.untrained_classes);
         % Separa uma parte do treinamento para validação
         [id_train,id_val] = obj.split{i}.idTrainVal();
         [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
@@ -425,21 +425,21 @@ classdef SvmND < handle
             model_svm{c} = fitSVMPosterior(svm_model);
           end
           RT = [];
-          for k=1:obj.num_thresholds
-            fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tThreshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,obj.num_thresholds);
-            result = obj.evaluateMultiSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),obj.decision_thresholds(k));
+          for k=1:num_untrained_classes
+            fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tDecision threshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,num_untrained_classes);
+            result = obj.evaluateMultiSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),hyperparameters.decision_thresholds(k));
             result.kernel = obj.kernel(j);
             mcc(j,k,i) = result.MCC;
             if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               pause(0.01);
-              plot(obj.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              plot(hyperparameters.decision_thresholds(1:k),RT,'-r','LineWidth',3);
               xlim([0,1]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(obj.num_thresholds),' ]']);
+              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_untrained_classes),' ]']);
               legend off;
               drawnow;
               pause(0.01);
@@ -465,9 +465,9 @@ classdef SvmND < handle
       [id_k,id_t] = find(mean_mcc == max_mean_mcc);
       id_k = id_k(1); id_t = id_t(1);
       
-      model.training_ratio = obj.training_ratio;
+      model.training_ratio = training_ratio;
       model.kernel = obj.kernel(id_k);
-      model.decision_threshold = obj.decision_thresholds(id_t);
+      model.decision_threshold = hyperparameters.decision_thresholds(id_t);
       model.untrained_classes = obj.untrained_classes;
       model.mean_mcc = max_mean_mcc;
     end

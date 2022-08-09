@@ -7,23 +7,22 @@ classdef Manager < handle
   % By Samuel Silva (samuelrs@usp.br).
   % --------------------------------------------------------------------------------------  
   properties
-      X = [];                   % data samples [num_samples x dimension]
-      y = [];                   % labels [num_samples x 1]
-      method = [];              % novelty detection method used
-      %parameters = [];          % hyperparameters of the novelty detection method used
-      out_dir = [];             % output directory
-      num_experiments = [];     % number of validation experiments
-      num_classes = [];         % number of classes
-      untrained_classes = [];   % number of untrained classes
-      training_ratio = [];      % sample training ratio
-      knn_arg = [];             % knn argument for knn methods
-      knn_threshold = [];       % kappa threshold argument for knn methods
-      plot_metric = [];         % enable/disable metric plotting
+      X = [];                       % data samples [num_samples x dimension]
+      y = [];                       % labels [num_samples x 1]
+      method = [];                  % novelty detection method used
+      %parameters = [];             % hyperparameters of the novelty detection method used
+      out_dir = [];                 % output directory
+      num_experiments = [];         % number of validation experiments
+      num_classes = [];             % number of classes
+      num_untrained_classes = [];       % number of untrained classes
+      training_ratio = [];          % sample training ratio
+      random_select_classes = true; % enable/disable random selection of untrained classes            
+      plot_metric = false;          % enable/disable metric plotting
   end
   
   methods
     function obj = Manager(X,y,out_dir,num_experiments,...
-      untrained_classes,training_ratio,plot_metric)
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       % ----------------------------------------------------------------------------------
       % Constructor. (FALTA ATUALIZAR)
       %
@@ -31,23 +30,22 @@ classdef Manager < handle
       %   X: data samples [num_samples x dimension].
       %   y: labels [num_samples x 1].
       %   out_dir: output directory of validation experiments.
-      %   untrained_classes: number of untrained classes, this can be used to simulate 
+      %   num_experiments: number of validation experiments.
+      %   num_untrained_classes: number of untrained classes, this can be used to simulate 
       %     novelty data in the dataset.
       %   training_ratio: training sample rate.
-      %   knn_arg: K parameter described in the published paper for knn methods.
-      %   knn_threshold: kappa parameter described in the published paper for knn methods.        
+      %   random_select_classes: a boolean that enable/disable random selection of 
+      %     untrained classes.
       %   plot_metric: a boolean that enable/disable metric plotting.
       % ----------------------------------------------------------------------------------
       obj.X = X;      
       obj.y = y;
       obj.out_dir = out_dir;
-      obj.num_classes = numel(unique(y));
-      %obj.parameters = parameters;      
+      obj.num_classes = numel(unique(y));      
       obj.num_experiments = num_experiments;      
-      obj.untrained_classes = untrained_classes;
+      obj.num_untrained_classes = num_untrained_classes;
       obj.training_ratio = training_ratio;
-      %obj.knn_arg = knn_arg;
-      %obj.knn_threshold = knn_threshold;
+      obj.random_select_classes = random_select_classes;
       obj.plot_metric = plot_metric;
     end
     
@@ -60,7 +58,7 @@ classdef Manager < handle
       %   method: a cell array of strings corresponding to the novelty detection methods 
       %     used. Elements can be 'knn','lmnn','klmnn','knfst','one_svm','multi_svm' 
       %     or 'kpca'.
-      %   hyperparameters: a cell array of structs corresponding to the hyperparameters 
+      %   hyperparameters: a cell array corresponding to the hyperparameters 
       %     of the novelty detection methods used.
       % ----------------------------------------------------------------------------------
       for i=1:numel(methods)
@@ -69,23 +67,22 @@ classdef Manager < handle
             try
               % It creates the output directory
               knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
-                ' kappa=',int2str(hyperparameters{i}.knn_threshold));
+                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end              
               % It creates an object of class KnnND
-              knn = KnnND(obj.X,obj.y,hyperparameters{i}.knn_arg,...
-                hyperparameters{i}.knn_threshold,obj.untrained_classes,obj.training_ratio);              
-              % It sets hyperparameter search ranges
-              knn.num_thresholds = hyperparameters{i}.num_thresholds;
-              knn.decision_thresholds = hyperparameters{i}.decision_thresholds;
+              knn = KnnND(obj.X,obj.y);              
               % It starts experiments
               t0_knn = tic;              
-              experiments = knn.runExperiments(obj.num_experiments,obj.plot_metric);              
-              experiments.experiment_time = toc(t0_knn);
-              experiments.num_validations = obj.num_experiments;
-              experiments.search_thresholds = knn.decision_thresholds;
-              experiments.num_search_parameters = knn.num_thresholds;
+              experiments = knn.runExperiments(...
+                hyperparameters{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
+              experiments.total_time = toc(t0_knn);
               % Salva experimentos
               save(strcat(knn_dir,'/knn_experiments.mat'),'-struct','experiments');
             catch
@@ -95,15 +92,15 @@ classdef Manager < handle
             try
               % It creates the output directory
               knn_dir = strcat(obj.out_dir,'/K=',int2str(obj.parameter.lmnn.knn_arg),...
-                ' kappa=',int2str(obj.parameter.lmnn.knn_threshold));
+                ' kappa=',int2str(obj.parameter.lmnn.kappa_threshold));
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
               % Cria um objeto da classe LmnnND
-              lmnn = LmnnND(obj.X,obj.y,obj.knn_arg,obj.knn_threshold,obj.num_classes,...
-                obj.untrained_classes,obj.training_ratio);
+              lmnn = LmnnND(obj.X,obj.y,obj.knn_arg,obj.kappa_threshold,obj.num_classes,...
+                obj.num_untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
-              lmnn.num_thresholds = obj.parameters{2}.num_thresholds;
+              lmnn.num_decision_thresholds = obj.parameters{2}.num_decision_thresholds;
               lmnn.decision_thresholds = obj.parameters{2}.decision_thresholds;
               % Inicia experimentos
               t0_lmnn = tic;
@@ -111,7 +108,7 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_lmnn);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = lmnn.decision_thresholds;
-              experiments.num_search_parameters = lmnn.num_thresholds;
+              experiments.num_search_parameters = lmnn.num_decision_thresholds;
               % Salva experimentos
               save(strcat(knn_dir,'/lmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -121,15 +118,15 @@ classdef Manager < handle
             try
               % It creates the output directory
               knn_dir = strcat(obj.out_dir,'/K=',int2str(obj.parameter.klmnn.knn_arg),...
-                ' kappa=',int2str(obj.parameter.klmnn.knn_threshold));
+                ' kappa=',int2str(obj.parameter.klmnn.kappa_threshold));
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
               % Cria um objeto da classe KlmnnND
-              klmnn = KlmnnND(obj.X,obj.y,obj.knn_arg,obj.knn_threshold,obj.num_classes,...
-                obj.untrained_classes,obj.training_ratio);
+              klmnn = KlmnnND(obj.X,obj.y,obj.knn_arg,obj.kappa_threshold,obj.num_classes,...
+                obj.num_untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
-              klmnn.num_thresholds = obj.parameters{3}.num_thresholds;
+              klmnn.num_decision_thresholds = obj.parameters{3}.num_decision_thresholds;
               klmnn.decision_thresholds = obj.parameters{3}.decision_thresholds;
               klmnn.kernel_type = obj.parameters{3}.kernel_type;
               klmnn.num_kernels = obj.parameters{3}.num_kernels;
@@ -140,10 +137,10 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_klmnn);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = klmnn.decision_thresholds;
-              experiments.num_search_parameters = klmnn.num_thresholds;
+              experiments.num_search_parameters = klmnn.num_decision_thresholds;
               experiments.kernel_type = klmnn.kernel_type;
               experiments.search_kernels = klmnn.kernel;
-              experiments.num_search_parameters = klmnn.num_thresholds * klmnn.num_kernels;
+              experiments.num_search_parameters = klmnn.num_decision_thresholds * klmnn.num_kernels;
               % Salva experimentos
               save(strcat(knn_dir,'/klmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -152,9 +149,9 @@ classdef Manager < handle
           case 'knfst'
             try
               % Cria um objeto da classe KnfstND
-              knfst = KnfstND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              knfst = KnfstND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
-              knfst.num_thresholds = obj.parameters{4}.num_thresholds;
+              knfst.num_decision_thresholds = obj.parameters{4}.num_decision_thresholds;
               knfst.decision_thresholds = obj.parameters{4}.decision_thresholds;
               knfst.kernel_type = obj.parameters{4}.kernel_type;
               knfst.num_kernels = obj.parameters{4}.num_kernels;
@@ -165,10 +162,10 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_knfst);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = knfst.decision_thresholds;
-              experiments.num_search_parameters = knfst.num_thresholds;
+              experiments.num_search_parameters = knfst.num_decision_thresholds;
               experiments.kernel_type = knfst.kernel_type;
               experiments.search_kernels = knfst.kernel;
-              experiments.num_search_parameters = knfst.num_thresholds * knfst.num_kernels;
+              experiments.num_search_parameters = knfst.num_decision_thresholds * knfst.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/knfst_experiments.mat'),'-struct','experiments');
             catch
@@ -177,7 +174,7 @@ classdef Manager < handle
           case 'one_svm'
             try
               % Cria um objeto da classe SvmND
-              one_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              one_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
               one_svm.kernel_type = obj.parameters{5}.kernel_type;
               one_svm.num_kernels = obj.parameters{5}.num_kernels;
@@ -199,9 +196,9 @@ classdef Manager < handle
           case 'multi_svm'
             try
               % Cria um objeto da classe SvmND
-              multi_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              multi_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
-              multi_svm.num_thresholds = obj.parameters{6}.num_thresholds;
+              multi_svm.num_decision_thresholds = obj.parameters{6}.num_decision_thresholds;
               multi_svm.decision_thresholds = obj.parameters{6}.decision_thresholds;
               multi_svm.kernel_type = obj.parameters{6}.kernel_type;
               multi_svm.num_kernels = obj.parameters{6}.num_kernels;
@@ -216,7 +213,7 @@ classdef Manager < handle
               experiments.kernel_type = multi_svm.kernel_type;
               experiments.search_kernels = multi_svm.kernel;
               experiments.num_search_parameters = ...
-                multi_svm.num_thresholds * multi_svm.num_kernels;
+                multi_svm.num_decision_thresholds * multi_svm.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/multi_svm_experiments.mat'),'-struct','experiments');
             catch
@@ -225,9 +222,9 @@ classdef Manager < handle
           case 'kpca'
             try
               % Cria um objeto da classe KpcaND
-              kpca = KpcaND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              kpca = KpcaND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
               % Define intervalos de busca de parâmetros
-              kpca.num_thresholds = obj.parameters{7}.num_thresholds;
+              kpca.num_decision_thresholds = obj.parameters{7}.num_decision_thresholds;
               kpca.decision_thresholds = obj.parameters{7}.decision_thresholds;
               kpca.kernel_type = obj.parameters{7}.kernel_type;
               kpca.num_kernels = obj.parameters{7}.num_kernels;
@@ -240,7 +237,7 @@ classdef Manager < handle
               experiments.search_thresholds = kpca.decision_thresholds;
               experiments.kernel_type = kpca.kernel_type;
               experiments.search_kernels = kpca.kernel;
-              experiments.num_search_parameters = kpca.num_thresholds * kpca.num_kernels;
+              experiments.num_search_parameters = kpca.num_decision_thresholds * kpca.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/kpca_experiments.mat'),'-struct','experiments');
             catch
@@ -266,7 +263,7 @@ classdef Manager < handle
             % Its sets K and kappa hyperparameters for knn methods.
             for i=1:numel(methods)
               hyperparameters{i}.knn_arg = K;
-              hyperparameters{i}.knn_threshold = kappa;
+              hyperparameters{i}.kappa_threshold = kappa;
             end
             obj.runExperiments(methods,hyperparameters);
           end
@@ -279,7 +276,7 @@ classdef Manager < handle
       % This method is used to evaluate the predictions with multi-class novelty 
       % detection using a trained model for the chosen algorithm.
       % ----------------------------------------------------------------------------------
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
       end
@@ -425,7 +422,7 @@ classdef Manager < handle
       %   method: a list of strings corresponding to the novelty detection methods used
       %     It can be 'knn','lmnn','klmnn','knfst','one_svm','multi_svm' or 'kpca'.
       % ----------------------------------------------------------------------------------
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
       end
@@ -441,7 +438,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_knn = tic;
               knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,...
-                knn_model.obj.knn_threshold,obj.num_classes);
+                knn_model.obj.kappa_threshold,obj.num_classes);
               [knn_evaluations.results,knn_evaluations.evaluations] = ...
                 knn.evaluateTests(obj,xtrain,ytrain,xtest,ytest,knn_model);
               knn_evaluations.model = knn_model;
@@ -460,7 +457,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_lmnn = tic;
               lmnn = LmnnND(obj,xtrain,ytrain,lmnn_model.obj.knn_arg,...
-                lmnn_model.obj.knn_threshold,obj.num_classes);
+                lmnn_model.obj.kappa_threshold,obj.num_classes);
               [lmnn_evaluations.results,lmnn_evaluations.evaluations] = ...
                 lmnn.evaluateTests(obj,xtrain,ytrain,xtest,ytest,lmnn_model);
               lmnn_evaluations.model = lmnn_model;
@@ -480,7 +477,7 @@ classdef Manager < handle
               % Inicia avaliação
               t0_klmnn = tic;
               klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
-                klmnn_model.obj.knn_threshold,obj.num_classes);
+                klmnn_model.obj.kappa_threshold,obj.num_classes);
               [klmnn_evaluations.results,klmnn_evaluations.evaluations] = ...
                 klmnn.evaluateTests(obj,xtrain,ytrain,xtest,ytest,klmnn_model);
               klmnn_evaluations.model = klmnn_model;
@@ -603,7 +600,7 @@ classdef Manager < handle
       %   ytest: test labels [num_test x 1].
       %   model_dir: model directory.
       % ----------------------------------------------------------------------------------    
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
       end
@@ -616,7 +613,7 @@ classdef Manager < handle
             knn_model = knn_model.knn_model;
             % Avalia o modelo
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,knn_model.obj.knn_threshold,obj.num_classes);
+            knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,knn_model.obj.kappa_threshold,obj.num_classes);
             knn_evaluation = knn.evaluate(obj,xtrain,ytrain,xtest,ytest,knn_model.decision_thresholds);
             knn_evaluation.evaluation_time = toc(t0_knn);
             % Salva avaliação
@@ -629,7 +626,7 @@ classdef Manager < handle
             % Avalia o modelo
             t0_lmnn = tic;
             lmnn = LmnnND(obj,xtrain,ytrain,lmnn_model.obj.knn_arg,...
-              lmnn_model.obj.knn_threshold,obj.num_classes);
+              lmnn_model.obj.kappa_threshold,obj.num_classes);
             lmnn_evaluation = lmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,lmnn_model.decision_thresholds);
             lmnn_evaluation.evaluation_time = toc(t0_lmnn);
             % Salva avaliação
@@ -642,7 +639,7 @@ classdef Manager < handle
             % Avalia o modelo
             t0_klmnn = tic;
             klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
-              klmnn_model.obj.knn_threshold,obj.num_classes);
+              klmnn_model.obj.kappa_threshold,obj.num_classes);
             klmnn.kernel_type = klmnn_model.kernel_type;
             klmnn_evaluation = klmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               klmnn_model.kernel,klmnn_model.decision_thresholds);
@@ -746,7 +743,7 @@ classdef Manager < handle
       %   ytest: test labels [num_test x 1].
       %   model_dir: model output directory.
       % ----------------------------------------------------------------------------------          
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
       end
@@ -756,7 +753,7 @@ classdef Manager < handle
             fprintf('\n-> KNN Novelty Detection\n\n');
             % Avalia os parâmetros
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
+            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             knn_evaluation = knn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               hyperparameters{i}.threshold_arg);
             knn_evaluation.evaluation_time = toc(t0_knn);
@@ -766,7 +763,7 @@ classdef Manager < handle
             fprintf('\n-> LMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
+            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             lmnn_evaluation = lmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{2}.threshold_arg);
             lmnn_evaluation.evaluation_time = toc(t0_lmnn);
@@ -777,7 +774,7 @@ classdef Manager < handle
             fprintf('\n-> KLMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
+            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             klmnn.kernel_type = obj.parameters{3}.kernel_type;
             klmnn_evaluation = klmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{3}.kernel_arg,obj.parameters{3}.threshold_arg);
@@ -848,7 +845,7 @@ classdef Manager < handle
       % ----------------------------------------------------------------------------------          
       xtrain = obj.X(obj.y~=-1,:);
       ytrain = obj.y(obj.y~=-1);
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
       end
@@ -861,7 +858,7 @@ classdef Manager < handle
             knn_model = knn_model.knn_model;
             % Avalia o modelo
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,knn_model.obj.knn_threshold,obj.num_classes);
+            knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,knn_model.obj.kappa_threshold,obj.num_classes);
             predictions = knn.predict(obj,xtrain,ytrain,xtest,knn_model.decision_thresholds);
             prediction_time = toc(t0_knn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
@@ -880,7 +877,7 @@ classdef Manager < handle
             % Avalia o modelo
             t0_lmnn = tic;
             lmnn = LmnnND(obj,xtrain,ytrain,lmnn_model.obj.knn_arg,...
-              lmnn_model.obj.knn_threshold,obj.num_classes);
+              lmnn_model.obj.kappa_threshold,obj.num_classes);
             predictions = lmnn.predict(obj,xtrain,ytrain,xtest,lmnn_model.decision_thresholds);
             prediction_time = toc(t0_lmnn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
@@ -899,7 +896,7 @@ classdef Manager < handle
             % Avalia o modelo
             t0_klmnn = tic;
             klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
-              klmnn_model.obj.knn_threshold,obj.num_classes);
+              klmnn_model.obj.kappa_threshold,obj.num_classes);
             klmnn.kernel_type = klmnn_model.kernel_type;
             %klmnn_predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
             % klmnn_model.kernel,klmnn_model.decision_thresholds);
@@ -1030,7 +1027,7 @@ classdef Manager < handle
       % ----------------------------------------------------------------------------------          
       xtrain = obj.X(obj.y~=-1,:);
       ytrain = obj.y(obj.y~=-1);
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       if ~exist(knn_dir,'dir')
         mkdir(knn_dir);
       end
@@ -1039,7 +1036,7 @@ classdef Manager < handle
           case 'knn'
             fprintf('\n-> KNN Novelty Detection \n');
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
+            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             % Avalia os parâmetros
             knn_predictions = knn.predict(obj,xtrain,ytrain,xtest,hyperparameters{i}.threshold_arg);
             prediction_time = toc(t0_knn);
@@ -1049,7 +1046,7 @@ classdef Manager < handle
           case 'lmnn'
             fprintf('\n-> LMNN Novelty Detection\n');
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
+            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             % Avalia os parâmetros
             lmnn_predictions = lmnn.predict(obj,xtrain,ytrain,xtest,obj.parameters{2}.threshold_arg);
             prediction_time = toc(t0_lmnn);
@@ -1059,7 +1056,7 @@ classdef Manager < handle
           case 'klmnn'
             fprintf('\n-> KLMNN Novelty Detection\n');
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.knn_threshold,obj.num_classes);
+            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             klmnn.kernel_type = obj.parameters{3}.kernel_type;
             % Avalia os parâmetros
             klmnn_predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
@@ -1152,7 +1149,7 @@ classdef Manager < handle
       %   model_dir: model directory.      
       % ----------------------------------------------------------------------------------      
       fprintf('\nProcessing results... ');
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       TPR = zeros(1,7);
       TNR = zeros(1,7);
       FPR = zeros(1,7);
@@ -1398,7 +1395,7 @@ classdef Manager < handle
       %   model_dir: model directory.
       % ----------------------------------------------------------------------------------      
       fprintf('\nProcessing results... ');
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       TPR = zeros(1,7);
       TNR = zeros(1,7);
       FPR = zeros(1,7);
@@ -1527,7 +1524,7 @@ classdef Manager < handle
       %   model_dir: model directory.
       % ----------------------------------------------------------------------------------            
       fprintf('\nProcessing results... ');
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
       TPR = zeros(obj.num_experiments,7);
       TNR = zeros(obj.num_experiments,7);
       FPR = zeros(obj.num_experiments,7);
@@ -1572,7 +1569,7 @@ classdef Manager < handle
             case 'klmnn'
               try
                 klmnn_evaluations = load(strcat(model_dir,'/K=',int2str(obj.knn_arg),...
-                  ' kappa=',int2str(obj.knn_threshold),'/klmnn_evaluations.mat'));
+                  ' kappa=',int2str(obj.kappa_threshold),'/klmnn_evaluations.mat'));
                 klmnn_evaluations = klmnn_evaluations.klmnn_evaluations;
                 TPR(j,3) = klmnn_evaluations.evaluations{j}.TPR;
                 TNR(j,3) = klmnn_evaluations.evaluations{j}.TNR;
@@ -1982,7 +1979,7 @@ classdef Manager < handle
         dim = 10;
         exp_dir = strcat(model_dir,'/N=',int2str(N(j)),' DIM=',int2str(dim));
         for i=1:numel(methods)
-          knn_dir = strcat(exp_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+          knn_dir = strcat(exp_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
           switch methods{i}
             case 'knn'
               try
@@ -2106,7 +2103,7 @@ classdef Manager < handle
         n = 400;
         exp_dir = strcat(model_dir,'/N=',int2str(n),' DIM=',int2str(DIM(j)));
         for i=1:numel(methods)
-          knn_dir = strcat(exp_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+          knn_dir = strcat(exp_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
           switch methods{i}
             case 'knn'
               try
@@ -2307,7 +2304,7 @@ classdef Manager < handle
           dim = 10;
           exp_dir = strcat(model_dir,'/N=',int2str(N(j)),' DIM=',int2str(dim));
           for i=1:numel(methods)
-            knn_dir = strcat(exp_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.knn_threshold));
+            knn_dir = strcat(exp_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
             switch methods{i}
               case 'knn'
                 try
@@ -2440,7 +2437,7 @@ classdef Manager < handle
           exp_dir = strcat(model_dir,'/N=',int2str(n),' DIM=',int2str(DIM(j)));
           for i=1:numel(methods)
             knn_dir = strcat(exp_dir,'/K=',int2str(obj.knn_arg),...
-              ' kappa=',int2str(obj.knn_threshold));
+              ' kappa=',int2str(obj.kappa_threshold));
             switch methods{i}
               case 'knn'
                 try

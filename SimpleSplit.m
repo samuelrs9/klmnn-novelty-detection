@@ -23,48 +23,48 @@ classdef SimpleSplit < handle
       % ----------------------------------------------------------------------------------      
       num_classes = numel(unique(Y));
       numInst = size(X,1);
-      n_per_class=zeros(1,num_classes);
+      n_per_class = zeros(1,num_classes);
       idx = randperm(numInst);
       
       for i=1:numInst
-        n_per_class(Y(i))=n_per_class(Y(i))+1;
+        n_per_class(Y(i)) = n_per_class(Y(i))+1;
       end
-      train_per_class=zeros(1,num_classes);
-      numTrain=0;
-      test_samples_untrained=zeros(1,num_classes);
+      train_per_class = zeros(1,num_classes);
+      numTrain = 0;
+      test_samples_untrained = zeros(1,num_classes);
       for k=1:num_classes
         if ~istrained(k)
-          train_per_class(k)=0;
-          test_samples_untrained(k)=(n_per_class(k)-floor(n_per_class(k)*training_ratio));
+          train_per_class(k) = 0;
+          test_samples_untrained(k) = (n_per_class(k)-floor(n_per_class(k)*training_ratio));
           continue;
         end
-        aux=floor(n_per_class(k)*training_ratio);
-        train_per_class(k)=aux;
-        numTrain=numTrain+aux;
+        aux = floor(n_per_class(k)*training_ratio);
+        train_per_class(k) = aux;
+        numTrain = numTrain+aux;
       end
       
-      inserted_per_class=zeros(1,num_classes);
+      inserted_per_class = zeros(1,num_classes);
       counter = 0;
-      counter_test=0;
-      i=1;
+      counter_test = 0;
+      i = 1;
       idx_train = zeros(1,numTrain);
-      idx_test=zeros(1,numInst-numTrain);
-      counter_untrained=zeros(1,num_classes);
+      idx_test = zeros(1,numInst-numTrain);
+      counter_untrained = zeros(1,num_classes);
       while i<=numInst
-        curr_label=Y(idx(i));
+        curr_label = Y(idx(i));
         if(inserted_per_class(curr_label)<train_per_class(curr_label))
-          counter=counter+1;
-          idx_train(counter)=idx(i);
-          inserted_per_class(Y(idx(i)))=inserted_per_class(Y(idx(i)))+1;
+          counter = counter+1;
+          idx_train(counter) = idx(i);
+          inserted_per_class(Y(idx(i))) = inserted_per_class(Y(idx(i)))+1;
         else
           if ~istrained(curr_label)
             if counter_untrained(curr_label)<test_samples_untrained(curr_label)
-              counter_untrained(curr_label)=counter_untrained(curr_label)+1;
-              counter_test=counter_test+1;
+              counter_untrained(curr_label) = counter_untrained(curr_label)+1;
+              counter_test = counter_test+1;
               idx_test(counter_test) = idx(i);
             end
           else
-            counter_test=counter_test+1;
+            counter_test = counter_test+1;
             idx_test(counter_test) = idx(i);
           end
         end

@@ -6,23 +6,19 @@ classdef KnnND < handle
   % By Samuel Silva (samuelrs@usp.br).
   % --------------------------------------------------------------------------------------
   properties
-    X = [];                  % data samples [num_samples x dimension]
-    Y = [];                  % labels [num_samples x 1]
-    num_samples = 0;         % number of samples in dataset
-    dimension = 0;           % data dimension
-    num_classes = 0;         % number of classes
-    untrained_classes = 0;   % number of untrained classes
-    knn_arg = 0;             % K parameter described in the published paper
-    knn_threshold = 0;       % kappa parameter described in the published paper
-    num_thresholds = 0;      % number of decision thresholds
-    decision_thresholds = [];% decision thresholds (the best needs to be found)
-    training_ratio = 0;      % training sample rate
-    split = {};              % holds a split object that helps the cross-validation process
-    samples_per_classe = []; % samples per class
+    X = [];                       % data samples [num_samples x dimension]
+    Y = [];                       % labels [num_samples x 1]
+    num_samples = 0;              % number of samples in dataset
+    dimension = 0;                % data dimension
+    num_classes = 0;              % number of classes    
+    knn_arg = 0;                  % K parameter described in the published paper
+    kappa_threshold = 0;          % kappa parameter described in the published paper    
+    decision_threshold = [];      % decision thresholds
+    samples_per_classe = [];      % samples per class
   end
   
   methods
-    function obj = KnnND(X,Y,knn_arg,knn_threshold,untrained_classes,training_ratio)
+    function obj = KnnND(X,Y,knn_arg,kappa_threshold,decision_threshold)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
@@ -30,61 +26,67 @@ classdef KnnND < handle
       %   X: samples [num_samples x dimension].
       %   Y: sample labels [num_samples x 1].
       %   knn_arg: K parameter described in the published paper.
-      %   knn_threshold: kappa parameter described in the published paper.
-      %   untrained_classes: number of untrained classes, this parameter can
-      %     be used to simulate novelty data in the dataset.
-      %   training_ratio: training sample rate.
+      %   kappa_threshold: kappa parameter described in the published paper.
+      %   decision_threshold: decision threshold hyperparameter.
       % ----------------------------------------------------------------------------------
       obj.X = X;
-      obj.Y = Y;
-      obj.num_classes = numel(unique(Y));
-      obj.knn_arg = knn_arg;
-      obj.knn_threshold = knn_threshold;      
-      obj.training_ratio = 0.7;
-      if nargin>=6
-        obj.untrained_classes = untrained_classes;
-        if nargin==7
-          obj.training_ratio = training_ratio;
-        end
+      obj.Y = Y;      
+      if nargin==2
+        obj.knn_arg = 5;
+        obj.kappa_threshold = 2;
+        obj.decision_threshold = 1.2;
+      elseif nargin==5
+        obj.knn_arg = knn_arg;
+        obj.kappa_threshold = kappa_threshold;
+        obj.decision_threshold = decision_threshold;
+      else 
+        error(['Number of input arguments is wrong! You must pass all 3 arguments' ...'
+          '(knn_arg, kappa_threshold and decision_threshold) or none of them.']);
       end
+      obj.num_classes = numel(unique(Y));
       obj.samples_per_classe = sum(Y==unique(Y)',1);
       [obj.samples_per_classe,id] = sort(obj.samples_per_classe,'descend');
       obj.samples_per_classe = cat(1,id,obj.samples_per_classe);
     end
     
-    function experiments = runExperiments(obj,num_experiments,random_select_classes,plot_metric)
+    function experiments = runExperiments(obj,hyperparameters,num_experiments,...
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search.
       %
       % Input args
-      %   num_experiments: number of validation experiments.
+      %   hyperparameters: a cell array corresponding to the hyperparameters 
+      %     of the novelty detection methods used.      
+      %   num_experiments: number of validation experiments.      
+      %   num_untrained_classes: number of untrained classes, this parameter can
+      %     be used to simulate novelty data in the dataset.
+      %   training_ratio: training sample rate.      
       %   random_select_classes: enable/disable random selection of untrained classes (a
       %     boolean value).
       %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
       %
       % Output args
       %   experiments: experiments report.
-      % ----------------------------------------------------------------------------------
+      % ----------------------------------------------------------------------------------      
       split_exp = cell(num_experiments,1);
       
-      MCC = zeros(num_experiments,obj.num_thresholds);
-      AFR = zeros(num_experiments,obj.num_thresholds);
-      F1 = zeros(num_experiments,obj.num_thresholds);
-      TPR = zeros(num_experiments,obj.num_thresholds);
-      TNR = zeros(num_experiments,obj.num_thresholds);
-      FPR = zeros(num_experiments,obj.num_thresholds);
-      FNR = zeros(num_experiments,obj.num_thresholds);
+      MCC = zeros(num_experiments,num_untrained_classes);
+      AFR = zeros(num_experiments,num_untrained_classes);
+      F1 = zeros(num_experiments,num_untrained_classes);
+      TPR = zeros(num_experiments,num_untrained_classes);
+      TNR = zeros(num_experiments,num_untrained_classes);
+      FPR = zeros(num_experiments,num_untrained_classes);
+      FNR = zeros(num_experiments,num_untrained_classes);
       
-      evaluations = cell(num_experiments,obj.num_thresholds);
+      evaluations = cell(num_experiments,num_untrained_classes);
       
       classes_id = 1:obj.num_classes;
-      random_select_classes = true;
       for i=1:num_experiments
         rng(i);        
         if random_select_classes
           % Randomly selects trained and untrained classes
-          [trained,untrained,is_trained_class] = Split.selectClasses(...
-            obj.num_classes,obj.untrained_classes);
+          [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
+            obj.num_classes,num_untrained_classes);
         else
           % In each experiment selects only one untrained class
           classe_unt = rem(i-1,obj.num_classes)+1;
@@ -97,19 +99,19 @@ classdef KnnND < handle
         end
         
         % Split indices into training and testing indices
-        [idx_train,idx_test] = Split.trainTestIdx(...
-          obj.X,obj.Y,obj.training_ratio,obj.num_classes,is_trained_class);
-        [xtrain,xtest,ytrain,ytest] = Split.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
+        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,is_trained_class);
+        [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
-        % All untrained samples are defined
-        % as outliers (label -1)
+        % All untrained samples are defined as outliers (label -1)
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         RT = [];
-        for j=1:obj.num_thresholds
-          fprintf('\nKNN (K=%d kappa=%d) \tTest %d/%d \tThreshold %d/%d\n',...
-            obj.knn_arg,obj.knn_threshold,i,num_experiments,j,obj.num_thresholds);
-          evaluations{i,j} = obj.evaluate(xtrain,ytrain,xtest,ytest,obj.decision_thresholds(j));
+        obj.knn_arg = hyperparameters.knn_arg;
+        obj.kappa_threshold = hyperparameters.kappa_threshold;
+        for j=1:hyperparameters.num_decision_thresholds
+          fprintf('\nKNN (K=%d kappa=%d) \tTest %d/%d \tDecision threshold %d/%d\n',...
+            obj.knn_arg,obj.kappa_threshold,i,num_experiments,j,hyperparameters.num_decision_thresholds);          
+          evaluations{i,j} = obj.evaluate(xtrain,ytrain,xtest,ytest,hyperparameters.decision_thresholds(j));
           MCC(i,j) = evaluations{i,j}.MCC;
           F1(i,j) = evaluations{i,j}.F1;
           AFR(i,j) = evaluations{i,j}.AFR;
@@ -121,13 +123,13 @@ classdef KnnND < handle
             RT = cat(1,RT,MCC(i,j));
             figure(1);
             clf('reset');
-            plot(obj.decision_thresholds(1:j),RT,'-','LineWidth',3);
-            xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
+            plot(hyperparameters.decision_thresholds(1:j),RT,'-','LineWidth',2);
+            xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
             title(['KNN [ test ',num2str(i),'/',num2str(num_experiments),' | decision threshold ',...
-              num2str(j),'/',num2str(obj.num_thresholds),' ]']);
+              num2str(j),'/',num2str(num_untrained_classes),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -164,16 +166,21 @@ classdef KnnND < handle
       all_metrics.FNR = FNR;
       experiments.all_metrics = all_metrics;
       
-      model.training_ratio = obj.training_ratio;
-      model.best_threshold_id = best_threshold_id;
-      model.decision_thresholds = obj.decision_thresholds(best_threshold_id);
-      model.untrained_classes = obj.untrained_classes;
+      model.training_ratio = training_ratio;
+      model.best_threshold_id = best_threshold_id;      
+      model.num_untrained_classes = num_untrained_classes;
+      
+      model.decision_threshold = hyperparameters.decision_thresholds(best_threshold_id);
       model.knn_arg = obj.knn_arg;
-      model.knn_threshold = obj.knn_threshold;
+      model.kappa_threshold = obj.kappa_threshold;
+      
+      experiments.hyperparameters = hyperparameters;      
+      experiments.num_experiments = num_experiments;
       
       experiments.model = model;
       experiments.split = cell2mat(split_exp);
       experiments.evaluations = evaluations;
+      
       experiments.mean_mcc = mean_mcc;
       experiments.mean_f1 = mean_f1;
       experiments.mean_afr = mean_afr;
@@ -194,18 +201,18 @@ classdef KnnND < handle
         experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
       figure;
-      plot(obj.decision_thresholds,mean_mcc);
-      xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
-      xlabel('decision_thresholds');
+      plot(hyperparameters.decision_thresholds,mean_mcc,'LineWidth',2);
+      xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+      xlabel('decision-thresholds');
       ylabel('mcc');
       title('MCC');
       
       figure;
-      plot(obj.decision_thresholds,mean_afr);
-      xlim([obj.decision_thresholds(1),obj.decision_thresholds(end)]);
-      xlabel('decision_thresholds');
-      ylabel('afr');
-      title('AFR');
+      plot(hyperparameters.decision_thresholds,mean_f1,'LineWidth',2);
+      xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+      xlabel('decision-thresholds');
+      ylabel('f1-score');
+      title('F1-SCORE');
     end
     
     function [results,evaluations] = evaluateModel(obj,model,num_tests)
@@ -223,7 +230,7 @@ classdef KnnND < handle
       evaluations = cell(num_tests,1);
       for i=1:num_tests
         rng(i);
-        fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_tests);
+        fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_tests);
         id_test = obj.split{i}.idTest();
         [xtest,ytest] = obj.split{i}.dataTest(id_test);
         [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
@@ -250,7 +257,7 @@ classdef KnnND < handle
       num_tests = size(xtest,3);
       evaluations = cell(num_tests,1);
       for i=1:num_tests
-        fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.knn_threshold,i,num_tests);
+        fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_tests);
         evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.decision_thresholds);
       end
       results = struct2table(cell2mat(evaluations));
@@ -282,7 +289,7 @@ classdef KnnND < handle
       report_outliers = MetricsReport(outlier_gt,outlier_predictions);
       
       % General report
-      report = MetricsReportReport(ytest,predictions);
+      report = MetricsReport(ytest,predictions);
       
       result.decision_threshold =  decision_threshold;
       result.predictions = predictions;
@@ -298,7 +305,7 @@ classdef KnnND < handle
       result.general_conf_matrix = report.CM;
       result.outlier_conf_matrix = report_outliers.CM;
       
-      fprintf('\nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f ...\nACC: %f\nAFR: %f\n',...
+      fprintf('\nthreshold: %f \nTPR: %f \nTNR: %f \nFPR: %f \nFNR: %f \nF1: %f \nMCC: %f \nACC: %f\nAFR: %f\n',...
         decision_threshold,report_outliers.TPR(2),report_outliers.TNR(2),report_outliers.FPR(2),report_outliers.FNR(2),...
         report_outliers.F1(2),report_outliers.MCC(2),report_outliers.ACC(2),report_outliers.AFR(2));
     end
@@ -356,7 +363,7 @@ classdef KnnND < handle
           [~,d] = knnsearch(classes_kdtree{c},xtest(i,:),'k',obj.knn_arg);
           % Número de vizinhos suficientemente próximos
           n_nearest_neighbor = sum(d<epsilons(c));
-          if n_nearest_neighbor >= obj.knn_threshold
+          if n_nearest_neighbor >= obj.kappa_threshold
             isoutlier = false;
             break;
           end
