@@ -6,16 +6,14 @@ classdef LmnnND < handle
   % By Samuel Silva (samuelrs@usp.br).
   % --------------------------------------------------------------------------------------
   properties
-    X = [];                  % data samples [num_samples x dimension]
+    X = [];                       % data samples [num_samples x dimension]
     Y = [];                       % labels [num_samples x 1]
     num_samples = 0;              % number of samples in dataset
     dimension = 0;                % data dimension
     num_classes = 0;              % number of classes    
     knn_arg = 0;                  % K parameter described in the published paper
     kappa_threshold = 0;          % kappa parameter described in the published paper
-    decision_threshold = [];      % decision thresholds
-    training_ratio = 0;           % training sample rate
-    split = {};                   % holds a split object that helps the cross-validation process
+    decision_threshold = 0;       % decision thresholds
     samples_per_classe = [];      % samples per class
     max_iter = 500;               % maximum number of iterations of the lmnn algorithm
   end
@@ -34,17 +32,20 @@ classdef LmnnND < handle
       % ----------------------------------------------------------------------------------
       obj.X = X;
       obj.Y = Y;      
-      if nargin==2
-        obj.knn_arg = 5;
-        obj.kappa_threshold = 2;
-        obj.decision_threshold = 1.2;
-      elseif nargin==5
+      if nargin>=3
         obj.knn_arg = knn_arg;
+      else
+        obj.knn_arg = 5;
+      end
+      if nargin>=4
         obj.kappa_threshold = kappa_threshold;
+      else
+        obj.kappa_threshold = 2;
+      end
+      if nargin==5
         obj.decision_threshold = decision_threshold;
-      else 
-        error(['Number of input arguments is wrong! You must pass all 3 arguments' ...'
-          '(knn_arg, kappa_threshold and decision_threshold) or none of them.']);
+      else
+        obj.decision_threshold = 1.2;
       end
       obj.num_classes = numel(unique(Y));
       obj.samples_per_classe = sum(Y==unique(Y)',1);
@@ -53,19 +54,31 @@ classdef LmnnND < handle
       obj.max_iter = 500;
     end
     
-    function experiment = runExperiments(obj,num_experiments,plot_metric)
+    function experiment = runExperiments(obj,hyperparameters,num_experiments,...
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search.
       %
       % Input args
-      %   num_experiments: number of validation experiments.
+      %   hyperparameters: a cell array corresponding to the hyperparameters 
+      %     of the novelty detection methods used.      
+      %   num_experiments: number of validation experiments.      
+      %   num_untrained_classes: number of untrained classes, this parameter can
+      %     be used to simulate novelty data in the dataset.
+      %   training_ratio: training sample rate.      
       %   random_select_classes: enable/disable random selection of untrained classes (a
       %     boolean value).
       %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
       %
       % Output args
       %   experiments: experiments report.
-      % ----------------------------------------------------------------------------------
+      % ----------------------------------------------------------------------------------      
+      classes_id = 1:obj.num_classes;      
+      obj.knn_arg = hyperparameters.knn_arg;
+      obj.kappa_threshold = hyperparameters.kappa_threshold;        
+      num_decision_thresholds = hyperparameters.num_decision_thresholds;
+      decision_thresholds = hyperparameters.decision_thresholds;
+      
       split_exp = cell(num_experiments,1);
       
       MCC = zeros(num_experiments,num_untrained_classes);
@@ -76,8 +89,8 @@ classdef LmnnND < handle
       FPR = zeros(num_experiments,num_untrained_classes);
       FNR = zeros(num_experiments,num_untrained_classes);
       
-      evaluations = cell(num_experiments,num_untrained_classes);
-      
+      evaluations = cell(num_experiments,num_untrained_classes);      
+                        
       for i=1:num_experiments
         rng(i);
         if random_select_classes
@@ -96,11 +109,10 @@ classdef LmnnND < handle
         end
         
         % Split indices into training and testing indices
-        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,obj.num_classes,is_trained_class);
+        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,is_trained_class);
         [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
-        % All untrained samples are defined
-        % as outliers (label = -1)
+        % All untrained samples are defined as outliers (label = -1)
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         % Preprocessing for LMNN
@@ -117,16 +129,16 @@ classdef LmnnND < handle
         T = obj.computeTransform(xtrain,ytrain);
         xtraing = obj.transform(xtrain,T);
         xtestg = obj.transform(xtest,T);
-        
+                
         % KNN
-        knn = KnnNovDetection(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes,num_untrained_classes);
+        knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold);
+        knn.num_classes = obj.num_classes; % Number of classes of the original dataset
         
         RT = [];
-        obj.knn_arg = hyperparameters.knn_arg;
-        obj.kappa_threshold = hyperparameters.kappa_threshold;        
-        for j=1:hyperparameters.num_decision_thresholds
-          fprintf('\nLMNN (K=%d kappa=%d) \tTest %d/%d \tDecision threshold %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_experiments,j,num_untrained_classes);
-          evaluations{i,j} = knn.evaluate(xtraing,ytrain,xtestg,ytest,hyperparameters.decision_thresholds(j));
+        for j=1:num_decision_thresholds
+            fprintf('\nLMNN (K=%d kappa=%d) \tTest %d/%d \tDecision threshold %d/%d\n',...
+            obj.knn_arg,obj.kappa_threshold,i,num_experiments,j,num_decision_thresholds);          
+          evaluations{i,j} = knn.evaluate(xtraing,ytrain,xtestg,ytest,decision_thresholds(j));
           MCC(i,j) = evaluations{i,j}.MCC;
           F1(i,j) = evaluations{i,j}.F1;
           AFR(i,j) = evaluations{i,j}.AFR;
@@ -138,12 +150,13 @@ classdef LmnnND < handle
             RT = cat(1,RT,MCC(i,j));
             figure(1);
             clf('reset');
-            plot(hyperparameters.decision_thresholds(1:j),RT,'-','LineWidth',3);
-            xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+            plot(decision_thresholds(1:j),RT,'-','LineWidth',2);
+            xlim([decision_thresholds(1),decision_thresholds(end)]);
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['LMNN [ test ',num2str(i),'/',num2str(num_experiments),' | decision_threshold ',num2str(j),'/',num2str(num_untrained_classes),' ]']);
+            title(['LMNN [ test ',num2str(i),'/',num2str(num_experiments),' | decision-threshold ',...
+              num2str(j),'/',num2str(num_decision_thresholds),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -180,15 +193,20 @@ classdef LmnnND < handle
       experiment.all_metrics = all_metrics;
       
       model.training_ratio = training_ratio;
-      model.best_threshold_id = best_threshold_id;
-      model.decision_threshold = hyperparameters.decision_thresholds(best_threshold_id);
+      model.best_threshold_id = best_threshold_id;      
       model.num_untrained_classes = num_untrained_classes;
+      
       model.knn_arg = obj.knn_arg;
       model.kappa_threshold = obj.kappa_threshold;
+      model.decision_threshold = decision_thresholds(best_threshold_id);
+      
+      experiments.hyperparameters = hyperparameters;      
+      experiments.num_experiments = num_experiments;      
       
       experiment.model = model;
       experiment.split = cell2mat(split_exp);
       experiment.evaluations = evaluations;
+      
       experiment.mean_mcc = mean_mcc;
       experiment.mean_f1 = mean_f1;
       experiment.mean_afr = mean_afr;
@@ -208,13 +226,19 @@ classdef LmnnND < handle
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiment.mcc_score,experiment.f1_score,experiment.afr_score);
       
-      figure; plot(hyperparameters.decision_thresholds,mean_mcc);
-      xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
-      xlabel('decision_threshold'); ylabel('mcc'); title('MCC');
+      figure; 
+      plot(decision_thresholds,mean_mcc,'LineWidth',2);
+      xlim([decision_thresholds(1),decision_thresholds(end)]);
+      xlabel('decision-threshold'); 
+      ylabel('mcc'); 
+      title('MCC');
       
-      figure; plot(hyperparameters.decision_thresholds,mean_afr);
-      xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
-      xlabel('decision_threshold'); ylabel('afr'); title('AFR');
+      figure; 
+      plot(decision_thresholds,mean_f1,'LineWidth',2);
+      xlim([decision_thresholds(1),decision_thresholds(end)]);
+      xlabel('decision-threshold'); 
+      ylabel('f1-score'); 
+      title('F1-SCORE');
     end
     
     function model = validation(obj,num_validations,plot_error)
@@ -256,20 +280,20 @@ classdef LmnnND < handle
         xvalg = obj.transform(xval,T);
         
         % KNN
-        knn = KnnNovDetection(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes,num_untrained_classes);
+        knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes,num_untrained_classes);
         RT = [];
         for j=1:num_untrained_classes
           fprintf('\nLMNN (K=%d kappa=%d) \tVal %d/%d \tDecision threshold %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_validations,j,num_untrained_classes);
           
-          result = knn.evaluate(xtraing,ytrain,xvalg,yval,hyperparameters.decision_thresholds(j),a);
+          result = knn.evaluate(xtraing,ytrain,xvalg,yval,decision_thresholds(j),a);
           
           mcc(i,j) = result.MCC;
           if plot_error
             RT = cat(1,RT,mcc(i,j));
             figure(1);
             clf('reset');
-            plot(hyperparameters.decision_thresholds(1:j),RT,'-','LineWidth',3);
-            xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+            plot(decision_thresholds(1:j),RT,'-','LineWidth',3);
+            xlim([decision_thresholds(1),decision_thresholds(end)]);
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
@@ -285,7 +309,7 @@ classdef LmnnND < handle
       [max_mean_mcc,ID] = max(mean_mcc);
       
       model.training_ratio = training_ratio;
-      model.decision_threshold = hyperparameters.decision_thresholds(ID);
+      model.decision_threshold = decision_thresholds(ID);
       model.num_untrained_classes = num_untrained_classes;
       model.knn_arg = obj.knn_arg;
       model.kappa_threshold = obj.kappa_threshold;
@@ -371,8 +395,7 @@ classdef LmnnND < handle
       xtestg = obj.transform(xtest,T);
       
       % KNN
-      knn = KnnNovDetection(xtraing,ytrain,obj.knn_arg,...
-        obj.kappa_threshold,obj.num_classes,num_untrained_classes);
+      knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold);
       result = knn.evaluate(obj,xtraing,ytrain,xtestg,ytest,decision_threshold);
       %result = evaluate@KnnND(obj,xtraing,ytrain,xtestg,ytest,decision_threshold);
     end
@@ -408,7 +431,7 @@ classdef LmnnND < handle
       % Visualization.map(xtrain,xtrainp,ytrain)
       
       % KNN
-      knn = KnnNovDetection(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes,num_untrained_classes);
+      knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes,num_untrained_classes);
       predictions = knn.predict(xtraing,ytrain,xtestg,threshold);
     end
     

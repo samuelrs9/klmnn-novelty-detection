@@ -14,44 +14,37 @@ classdef Manager < handle
       out_dir = [];                 % output directory
       num_experiments = [];         % number of validation experiments
       num_classes = [];             % number of classes
-      untrained_classes = [];       % number of untrained classes
+      num_untrained_classes = [];       % number of untrained classes
       training_ratio = [];          % sample training ratio
-      knn_arg = [];                 % knn argument for knn methods
-      kappa_threshold = [];         % kappa threshold argument for knn methods
-      random_select_classes = true; % enable/disable random selection of untrained classes (a
-      boolean value).      
-            
-      plot_metric = false;         % enable/disable metric plotting
+      random_select_classes = true; % enable/disable random selection of untrained classes            
+      plot_metric = false;          % enable/disable metric plotting
   end
   
   methods
     function obj = Manager(X,y,out_dir,num_experiments,...
-      untrained_classes,training_ratio,random_select_classes,plot_metric)
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       % ----------------------------------------------------------------------------------
-      % Constructor. (FALTA ATUALIZAR)
+      % Constructor.
       %
       % Input args
       %   X: data samples [num_samples x dimension].
       %   y: labels [num_samples x 1].
       %   out_dir: output directory of validation experiments.
       %   num_experiments: number of validation experiments.
-      %   untrained_classes: number of untrained classes, this can be used to simulate 
+      %   num_untrained_classes: number of untrained classes, this can be used to simulate 
       %     novelty data in the dataset.
       %   training_ratio: training sample rate.
-      %   random_select_classes: enable/disable random selection of untrained classes (a
-      %     boolean value).      
+      %   random_select_classes: a boolean that enable/disable random selection of 
+      %     untrained classes.
       %   plot_metric: a boolean that enable/disable metric plotting.
       % ----------------------------------------------------------------------------------
       obj.X = X;      
       obj.y = y;
       obj.out_dir = out_dir;
-      obj.num_classes = numel(unique(y));
-      %obj.parameters = parameters;      
+      obj.num_classes = numel(unique(y));      
       obj.num_experiments = num_experiments;      
-      obj.untrained_classes = untrained_classes;
+      obj.num_untrained_classes = num_untrained_classes;
       obj.training_ratio = training_ratio;
-      %obj.knn_arg = knn_arg;
-      %obj.kappa_threshold = kappa_threshold;
       obj.random_select_classes = random_select_classes;
       obj.plot_metric = plot_metric;
     end
@@ -79,18 +72,17 @@ classdef Manager < handle
                 mkdir(knn_dir);
               end              
               % It creates an object of class KnnND
-              knn = KnnND(obj.X,obj.y,hyperparameters{i}.knn_arg,...
-                hyperparameters{i}.kappa_threshold,obj.untrained_classes,obj.training_ratio);              
-              % It sets hyperparameter search ranges
-              knn.num_thresholds = hyperparameters{i}.num_thresholds;
-              knn.decision_thresholds = hyperparameters{i}.decision_thresholds;
+              knn = KnnND(obj.X,obj.y);              
               % It starts experiments
               t0_knn = tic;              
-              experiments = knn.runExperiments(obj.num_experiments,obj.plot_metric);              
-              experiments.experiment_time = toc(t0_knn);
-              experiments.num_validations = obj.num_experiments;
-              experiments.search_thresholds = knn.decision_thresholds;
-              experiments.num_search_parameters = knn.num_thresholds;
+              experiments = knn.runExperiments(...
+                hyperparameters{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
+              experiments.total_time = toc(t0_knn);
               % Salva experimentos
               save(strcat(knn_dir,'/knn_experiments.mat'),'-struct','experiments');
             catch
@@ -99,24 +91,23 @@ classdef Manager < handle
           case 'lmnn'
             try
               % It creates the output directory
-              knn_dir = strcat(obj.out_dir,'/K=',int2str(obj.parameter.lmnn.knn_arg),...
-                ' kappa=',int2str(obj.parameter.lmnn.kappa_threshold));
+              knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
+                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
-              % Cria um objeto da classe LmnnND
-              lmnn = LmnnND(obj.X,obj.y,obj.knn_arg,obj.kappa_threshold,obj.num_classes,...
-                obj.untrained_classes,obj.training_ratio);
-              % Define intervalos de busca de parâmetros
-              lmnn.num_thresholds = obj.parameters{2}.num_thresholds;
-              lmnn.decision_thresholds = obj.parameters{2}.decision_thresholds;
-              % Inicia experimentos
+              % It creates an object of class LmnnND
+              lmnn = LmnnND(obj.X,obj.y);
+              % It starts experiments
               t0_lmnn = tic;
-              experiments = lmnn.runExperiments(obj.num_experiments,obj.plot_metric);
-              experiments.experiment_time = toc(t0_lmnn);
-              experiments.obj.num_experiments = obj.num_experiments;
-              experiments.search_thresholds = lmnn.decision_thresholds;
-              experiments.num_search_parameters = lmnn.num_thresholds;
+              experiments = lmnn.runExperiments(...
+                hyperparameters{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
+              experiments.total_time = toc(t0_lmnn);              
               % Salva experimentos
               save(strcat(knn_dir,'/lmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -125,30 +116,23 @@ classdef Manager < handle
           case 'klmnn'
             try
               % It creates the output directory
-              knn_dir = strcat(obj.out_dir,'/K=',int2str(obj.parameter.klmnn.knn_arg),...
-                ' kappa=',int2str(obj.parameter.klmnn.kappa_threshold));
+              knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
+                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
-              % Cria um objeto da classe KlmnnND
-              klmnn = KlmnnND(obj.X,obj.y,obj.knn_arg,obj.kappa_threshold,obj.num_classes,...
-                obj.untrained_classes,obj.training_ratio);
-              % Define intervalos de busca de parâmetros
-              klmnn.num_thresholds = obj.parameters{3}.num_thresholds;
-              klmnn.decision_thresholds = obj.parameters{3}.decision_thresholds;
-              klmnn.kernel_type = obj.parameters{3}.kernel_type;
-              klmnn.num_kernels = obj.parameters{3}.num_kernels;
-              klmnn.kernel = obj.parameters{3}.kernel;
-              % Inicia experimentos
+              % It creates an object of class KlmnnND
+              klmnn = KlmnnND(obj.X,obj.y);
+              % It starts experiments
               t0_klmnn = tic;
               experiments = klmnn.runExperiments(obj.num_experiments,obj.plot_metric);
               experiments.experiment_time = toc(t0_klmnn);
-              experiments.obj.num_experiments = obj.num_experiments;
+              experiments.num_experiments = obj.num_experiments;
               experiments.search_thresholds = klmnn.decision_thresholds;
-              experiments.num_search_parameters = klmnn.num_thresholds;
+              experiments.num_search_parameters = klmnn.num_decision_thresholds;
               experiments.kernel_type = klmnn.kernel_type;
               experiments.search_kernels = klmnn.kernel;
-              experiments.num_search_parameters = klmnn.num_thresholds * klmnn.num_kernels;
+              experiments.num_search_parameters = klmnn.num_decision_thresholds * klmnn.num_kernels;
               % Salva experimentos
               save(strcat(knn_dir,'/klmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -157,9 +141,9 @@ classdef Manager < handle
           case 'knfst'
             try
               % Cria um objeto da classe KnfstND
-              knfst = KnfstND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              knfst = KnfstND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
-              knfst.num_thresholds = obj.parameters{4}.num_thresholds;
+              knfst.num_decision_thresholds = obj.parameters{4}.num_decision_thresholds;
               knfst.decision_thresholds = obj.parameters{4}.decision_thresholds;
               knfst.kernel_type = obj.parameters{4}.kernel_type;
               knfst.num_kernels = obj.parameters{4}.num_kernels;
@@ -170,10 +154,10 @@ classdef Manager < handle
               experiments.experiment_time = toc(t0_knfst);
               experiments.obj.num_experiments = obj.num_experiments;
               experiments.search_thresholds = knfst.decision_thresholds;
-              experiments.num_search_parameters = knfst.num_thresholds;
+              experiments.num_search_parameters = knfst.num_decision_thresholds;
               experiments.kernel_type = knfst.kernel_type;
               experiments.search_kernels = knfst.kernel;
-              experiments.num_search_parameters = knfst.num_thresholds * knfst.num_kernels;
+              experiments.num_search_parameters = knfst.num_decision_thresholds * knfst.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/knfst_experiments.mat'),'-struct','experiments');
             catch
@@ -182,7 +166,7 @@ classdef Manager < handle
           case 'one_svm'
             try
               % Cria um objeto da classe SvmND
-              one_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              one_svm = SvmND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
               one_svm.kernel_type = obj.parameters{5}.kernel_type;
               one_svm.num_kernels = obj.parameters{5}.num_kernels;
@@ -204,9 +188,9 @@ classdef Manager < handle
           case 'multi_svm'
             try
               % Cria um objeto da classe SvmND
-              multi_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              multi_svm = SvmND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
-              multi_svm.num_thresholds = obj.parameters{6}.num_thresholds;
+              multi_svm.num_decision_thresholds = obj.parameters{6}.num_decision_thresholds;
               multi_svm.decision_thresholds = obj.parameters{6}.decision_thresholds;
               multi_svm.kernel_type = obj.parameters{6}.kernel_type;
               multi_svm.num_kernels = obj.parameters{6}.num_kernels;
@@ -221,7 +205,7 @@ classdef Manager < handle
               experiments.kernel_type = multi_svm.kernel_type;
               experiments.search_kernels = multi_svm.kernel;
               experiments.num_search_parameters = ...
-                multi_svm.num_thresholds * multi_svm.num_kernels;
+                multi_svm.num_decision_thresholds * multi_svm.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/multi_svm_experiments.mat'),'-struct','experiments');
             catch
@@ -230,9 +214,9 @@ classdef Manager < handle
           case 'kpca'
             try
               % Cria um objeto da classe KpcaND
-              kpca = KpcaND(obj.X,obj.y,obj.num_classes,obj.untrained_classes,obj.training_ratio);
+              kpca = KpcaND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
-              kpca.num_thresholds = obj.parameters{7}.num_thresholds;
+              kpca.num_decision_thresholds = obj.parameters{7}.num_decision_thresholds;
               kpca.decision_thresholds = obj.parameters{7}.decision_thresholds;
               kpca.kernel_type = obj.parameters{7}.kernel_type;
               kpca.num_kernels = obj.parameters{7}.num_kernels;
@@ -245,7 +229,7 @@ classdef Manager < handle
               experiments.search_thresholds = kpca.decision_thresholds;
               experiments.kernel_type = kpca.kernel_type;
               experiments.search_kernels = kpca.kernel;
-              experiments.num_search_parameters = kpca.num_thresholds * kpca.num_kernels;
+              experiments.num_search_parameters = kpca.num_decision_thresholds * kpca.num_kernels;
               % Salva experimentos
               save(strcat(obj.out_dir,'/kpca_experiments.mat'),'-struct','experiments');
             catch

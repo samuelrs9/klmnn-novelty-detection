@@ -24,7 +24,7 @@ classdef Manager < handle
     function obj = Manager(X,y,out_dir,num_experiments,...
       num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       % ----------------------------------------------------------------------------------
-      % Constructor. (FALTA ATUALIZAR)
+      % Constructor.
       %
       % Input args
       %   X: data samples [num_samples x dimension].
@@ -91,24 +91,23 @@ classdef Manager < handle
           case 'lmnn'
             try
               % It creates the output directory
-              knn_dir = strcat(obj.out_dir,'/K=',int2str(obj.parameter.lmnn.knn_arg),...
-                ' kappa=',int2str(obj.parameter.lmnn.kappa_threshold));
+              knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
+                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
-              % Cria um objeto da classe LmnnND
-              lmnn = LmnnND(obj.X,obj.y,obj.knn_arg,obj.kappa_threshold,obj.num_classes,...
-                obj.num_untrained_classes,obj.training_ratio);
-              % Define intervalos de busca de parâmetros
-              lmnn.num_decision_thresholds = obj.parameters{2}.num_decision_thresholds;
-              lmnn.decision_thresholds = obj.parameters{2}.decision_thresholds;
-              % Inicia experimentos
+              % It creates an object of class LmnnND
+              lmnn = LmnnND(obj.X,obj.y);
+              % It starts experiments
               t0_lmnn = tic;
-              experiments = lmnn.runExperiments(obj.num_experiments,obj.plot_metric);
-              experiments.experiment_time = toc(t0_lmnn);
-              experiments.obj.num_experiments = obj.num_experiments;
-              experiments.search_thresholds = lmnn.decision_thresholds;
-              experiments.num_search_parameters = lmnn.num_decision_thresholds;
+              experiments = lmnn.runExperiments(...
+                hyperparameters{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
+              experiments.total_time = toc(t0_lmnn);              
               % Salva experimentos
               save(strcat(knn_dir,'/lmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -117,30 +116,23 @@ classdef Manager < handle
           case 'klmnn'
             try
               % It creates the output directory
-              knn_dir = strcat(obj.out_dir,'/K=',int2str(obj.parameter.klmnn.knn_arg),...
-                ' kappa=',int2str(obj.parameter.klmnn.kappa_threshold));
+              knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
+                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
-              % Cria um objeto da classe KlmnnND
-              klmnn = KlmnnND(obj.X,obj.y,obj.knn_arg,obj.kappa_threshold,obj.num_classes,...
-                obj.num_untrained_classes,obj.training_ratio);
-              % Define intervalos de busca de parâmetros
-              klmnn.num_decision_thresholds = obj.parameters{3}.num_decision_thresholds;
-              klmnn.decision_thresholds = obj.parameters{3}.decision_thresholds;
-              klmnn.kernel_type = obj.parameters{3}.kernel_type;
-              klmnn.num_kernels = obj.parameters{3}.num_kernels;
-              klmnn.kernel = obj.parameters{3}.kernel;
-              % Inicia experimentos
+              % It creates an object of class KlmnnND
+              klmnn = KlmnnND(obj.X,obj.y);
+              % It starts experiments
               t0_klmnn = tic;
-              experiments = klmnn.runExperiments(obj.num_experiments,obj.plot_metric);
-              experiments.experiment_time = toc(t0_klmnn);
-              experiments.obj.num_experiments = obj.num_experiments;
-              experiments.search_thresholds = klmnn.decision_thresholds;
-              experiments.num_search_parameters = klmnn.num_decision_thresholds;
-              experiments.kernel_type = klmnn.kernel_type;
-              experiments.search_kernels = klmnn.kernel;
-              experiments.num_search_parameters = klmnn.num_decision_thresholds * klmnn.num_kernels;
+              experiments = klmnn.runExperiments(...
+                hyperparameters{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
+              experiments.total_time = toc(t0_klmnn);
               % Salva experimentos
               save(strcat(knn_dir,'/klmnn_experiments.mat'),'-struct','experiments');
             catch
@@ -149,7 +141,7 @@ classdef Manager < handle
           case 'knfst'
             try
               % Cria um objeto da classe KnfstND
-              knfst = KnfstND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
+              knfst = KnfstND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
               knfst.num_decision_thresholds = obj.parameters{4}.num_decision_thresholds;
               knfst.decision_thresholds = obj.parameters{4}.decision_thresholds;
@@ -174,7 +166,7 @@ classdef Manager < handle
           case 'one_svm'
             try
               % Cria um objeto da classe SvmND
-              one_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
+              one_svm = SvmND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
               one_svm.kernel_type = obj.parameters{5}.kernel_type;
               one_svm.num_kernels = obj.parameters{5}.num_kernels;
@@ -196,7 +188,7 @@ classdef Manager < handle
           case 'multi_svm'
             try
               % Cria um objeto da classe SvmND
-              multi_svm = SvmND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
+              multi_svm = SvmND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
               multi_svm.num_decision_thresholds = obj.parameters{6}.num_decision_thresholds;
               multi_svm.decision_thresholds = obj.parameters{6}.decision_thresholds;
@@ -222,7 +214,7 @@ classdef Manager < handle
           case 'kpca'
             try
               % Cria um objeto da classe KpcaND
-              kpca = KpcaND(obj.X,obj.y,obj.num_classes,obj.num_untrained_classes,obj.training_ratio);
+              kpca = KpcaND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
               kpca.num_decision_thresholds = obj.parameters{7}.num_decision_thresholds;
               kpca.decision_thresholds = obj.parameters{7}.decision_thresholds;
@@ -256,7 +248,7 @@ classdef Manager < handle
       %   method: a list of strings corresponding to the novelty detection methods used.
       %     It can be 'knn', 'lmnn' or 'klmnn'.
       % ----------------------------------------------------------------------------------            
-      for K = 1:5
+      for K = 2:5
         for kappa = K:-1:K-3
           if kappa >= 1
             fprintf('\nK = %d \tkappa = %d\n',K,kappa);

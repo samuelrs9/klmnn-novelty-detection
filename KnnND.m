@@ -13,7 +13,7 @@ classdef KnnND < handle
     num_classes = 0;              % number of classes    
     knn_arg = 0;                  % K parameter described in the published paper
     kappa_threshold = 0;          % kappa parameter described in the published paper    
-    decision_threshold = [];      % decision thresholds
+    decision_threshold = 0;       % decision thresholds
     samples_per_classe = [];      % samples per class
   end
   
@@ -31,17 +31,20 @@ classdef KnnND < handle
       % ----------------------------------------------------------------------------------
       obj.X = X;
       obj.Y = Y;      
-      if nargin==2
-        obj.knn_arg = 5;
-        obj.kappa_threshold = 2;
-        obj.decision_threshold = 1.2;
-      elseif nargin==5
+      if nargin>=3
         obj.knn_arg = knn_arg;
+      else
+        obj.knn_arg = 5;
+      end
+      if nargin>=4
         obj.kappa_threshold = kappa_threshold;
+      else
+        obj.kappa_threshold = 2;
+      end
+      if nargin>=5
         obj.decision_threshold = decision_threshold;
-      else 
-        error(['Number of input arguments is wrong! You must pass all 3 arguments' ...'
-          '(knn_arg, kappa_threshold and decision_threshold) or none of them.']);
+      else
+        obj.decision_threshold = 1.2;
       end
       obj.num_classes = numel(unique(Y));
       obj.samples_per_classe = sum(Y==unique(Y)',1);
@@ -67,20 +70,25 @@ classdef KnnND < handle
       %
       % Output args
       %   experiments: experiments report.
-      % ----------------------------------------------------------------------------------      
+      % ----------------------------------------------------------------------------------                  
+      classes_id = 1:obj.num_classes;      
+      obj.knn_arg = hyperparameters.knn_arg;
+      obj.kappa_threshold = hyperparameters.kappa_threshold;        
+      num_decision_thresholds = hyperparameters.num_decision_thresholds;
+      decision_thresholds = hyperparameters.decision_thresholds;
+      
       split_exp = cell(num_experiments,1);
       
-      MCC = zeros(num_experiments,num_untrained_classes);
-      AFR = zeros(num_experiments,num_untrained_classes);
-      F1 = zeros(num_experiments,num_untrained_classes);
-      TPR = zeros(num_experiments,num_untrained_classes);
-      TNR = zeros(num_experiments,num_untrained_classes);
-      FPR = zeros(num_experiments,num_untrained_classes);
-      FNR = zeros(num_experiments,num_untrained_classes);
+      MCC = zeros(num_experiments,num_decision_thresholds);
+      AFR = zeros(num_experiments,num_decision_thresholds);
+      F1 = zeros(num_experiments,num_decision_thresholds);
+      TPR = zeros(num_experiments,num_decision_thresholds);
+      TNR = zeros(num_experiments,num_decision_thresholds);
+      FPR = zeros(num_experiments,num_decision_thresholds);
+      FNR = zeros(num_experiments,num_decision_thresholds);
       
-      evaluations = cell(num_experiments,num_untrained_classes);
+      evaluations = cell(num_experiments,num_decision_thresholds);    
       
-      classes_id = 1:obj.num_classes;
       for i=1:num_experiments
         rng(i);        
         if random_select_classes
@@ -106,12 +114,10 @@ classdef KnnND < handle
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         RT = [];
-        obj.knn_arg = hyperparameters.knn_arg;
-        obj.kappa_threshold = hyperparameters.kappa_threshold;
-        for j=1:hyperparameters.num_decision_thresholds
+        for j=1:num_decision_thresholds
           fprintf('\nKNN (K=%d kappa=%d) \tTest %d/%d \tDecision threshold %d/%d\n',...
-            obj.knn_arg,obj.kappa_threshold,i,num_experiments,j,hyperparameters.num_decision_thresholds);          
-          evaluations{i,j} = obj.evaluate(xtrain,ytrain,xtest,ytest,hyperparameters.decision_thresholds(j));
+            obj.knn_arg,obj.kappa_threshold,i,num_experiments,j,num_decision_thresholds);          
+          evaluations{i,j} = obj.evaluate(xtrain,ytrain,xtest,ytest,decision_thresholds(j));
           MCC(i,j) = evaluations{i,j}.MCC;
           F1(i,j) = evaluations{i,j}.F1;
           AFR(i,j) = evaluations{i,j}.AFR;
@@ -123,13 +129,13 @@ classdef KnnND < handle
             RT = cat(1,RT,MCC(i,j));
             figure(1);
             clf('reset');
-            plot(hyperparameters.decision_thresholds(1:j),RT,'-','LineWidth',2);
-            xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+            plot(decision_thresholds(1:j),RT,'-','LineWidth',2);
+            xlim([decision_thresholds(1),decision_thresholds(end)]);
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['KNN [ test ',num2str(i),'/',num2str(num_experiments),' | decision threshold ',...
-              num2str(j),'/',num2str(num_untrained_classes),' ]']);
+            title(['KNN [ test ',num2str(i),'/',num2str(num_experiments),...
+              ' | decision threshold ',num2str(j),'/',num2str(num_decision_thresholds),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -169,10 +175,10 @@ classdef KnnND < handle
       model.training_ratio = training_ratio;
       model.best_threshold_id = best_threshold_id;      
       model.num_untrained_classes = num_untrained_classes;
-      
-      model.decision_threshold = hyperparameters.decision_thresholds(best_threshold_id);
+            
       model.knn_arg = obj.knn_arg;
       model.kappa_threshold = obj.kappa_threshold;
+      model.decision_threshold = decision_thresholds(best_threshold_id);
       
       experiments.hyperparameters = hyperparameters;      
       experiments.num_experiments = num_experiments;
@@ -201,15 +207,15 @@ classdef KnnND < handle
         experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
       figure;
-      plot(hyperparameters.decision_thresholds,mean_mcc,'LineWidth',2);
-      xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+      plot(decision_thresholds,mean_mcc,'LineWidth',2);
+      xlim([decision_thresholds(1),decision_thresholds(end)]);
       xlabel('decision-thresholds');
       ylabel('mcc');
       title('MCC');
       
       figure;
-      plot(hyperparameters.decision_thresholds,mean_f1,'LineWidth',2);
-      xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+      plot(decision_thresholds,mean_f1,'LineWidth',2);
+      xlim([decision_thresholds(1),decision_thresholds(end)]);
       xlabel('decision-thresholds');
       ylabel('f1-score');
       title('F1-SCORE');
