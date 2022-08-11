@@ -24,31 +24,32 @@ num_experiments = 5;
 num_untrained_classes = floor(0.25*num_classes);
 training_ratio = 0.8;
 random_select_classes = true;
-plot_metric = true;
+plot_metric = false;
 
 % Hyperparameters
 %K = 2;
 %kappa = 1;
+num_knn_args = 5;
 
 % This sets hyperparameter search ranges for the kernel parameter and decision threshold
 % KNN
-knn_par.num_decision_thresholds = 5;
+knn_par.num_decision_thresholds = 10;
 knn_par.decision_thresholds = linspace(0.5,1.5,knn_par.num_decision_thresholds)';
 
 % LMNN
-lmnn_par.num_decision_thresholds = 5;
+lmnn_par.num_decision_thresholds = 10;
 lmnn_par.decision_thresholds = linspace(0.5,1.5,lmnn_par.num_decision_thresholds)';
 
 % KLMNN
-klmnn_par.num_decision_thresholds = 5;
+klmnn_par.num_decision_thresholds = 10;
 klmnn_par.decision_thresholds = linspace(0.5,1.5,klmnn_par.num_decision_thresholds)';
-klmnn_par.num_kernels = 5;
+klmnn_par.num_kernels = 10;
 klmnn_par.kernel_type = 'gauss';
 klmnn_par.reduction_ratio = 1.0; % percent variability explained by principal components
 klmnn_par.kernels = linspace(15,20,klmnn_par.num_kernels)';
 
 % KNFST
-knfst_par.num_decision_thresholds = 50;
+knfst_par.num_decision_thresholds = 10;
 knfst_par.decision_thresholds = linspace(0.5,0.8,knfst_par.num_decision_thresholds)';
 knfst_par.kernel_type = 'gauss';
 knfst_par.num_kernels = 20;
@@ -81,25 +82,25 @@ hyperparameters = {knn_par,lmnn_par,klmnn_par,knfst_par,one_svm_par,multi_svm_pa
 manager = Manager(X,y,out_dir,num_experiments,...
   num_untrained_classes,training_ratio,random_select_classes,plot_metric);
 
-tutorial = 1;
+tutorial = 3;
 
 switch tutorial
   case 1
     % ------------------------------------------------------------------------------------
     % It runs novelty detection experiments for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------
-    manager.runExperimentsForKnnMethods(methods([3]),hyperparameters([3]));
+    manager.runExperimentsForKnnMethods(methods([1,2,3]),hyperparameters([1,2,3]),num_knn_args);
   case 2
     % ------------------------------------------------------------------------------------
     % It processes novelty detection results for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------
-    manager.reportExperimentsForKnnMethods(out_dir,hyperparameters);
+    manager.reportExperimentsForKnnMethods(out_dir,num_knn_args);
   case 3
     % ------------------------------------------------------------------------------------
     % Runs novelty detection experiments for KNFST, ONE SVM, MULTI SVM and KPCA 
     % based approaches.
     % ------------------------------------------------------------------------------------
-    manager.runExperiments(methods([4,5,6,7]));    
+    manager.runExperiments(methods([4]),hyperparameters([4]));    
   case 4
     % ------------------------------------------------------------------------------------
     % Process novelty detection results for KNFST, ONE SVM, MULTI SVM and KPCA 

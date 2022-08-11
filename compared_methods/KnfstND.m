@@ -10,40 +10,40 @@ classdef KnfstND < handle
     Y = [];                       % sample labels [num_samples x 1]
     num_samples = 0;              % number of samples in dataset
     dimension = 0;                % data dimension
-    num_classes = 0;              % number of classes
-    untrained_classes = 0;        % number of untrained classes
-    num_decision_thresholds = 0;  % number of decision thresholds
-    decision_thresholds = [];     % decision thresholds list (the best needs to be found)
-    training_ratio = 0;           % training sample rate
-    split = {};                   % holds a split object that helps the cross-validation process
+    num_classes = 0;              % number of classes    
+    decision_threshold = [];      % decision threshold
     samples_per_classe = [];      % samples per class
     kernel_type = [];             % kernel function type
-    num_kernels = 0;              % number of kernel values
-    kernel = [];                  % kernel list for svm algorithm (the best must be found)    
+    kernel = 0;                  % kernel list for svm algorithm (the best must be found)    
   end
   
   methods
-    function obj = KnfstND(X,Y,untrained_classes,training_ratio)
+    function obj = KnfstND(X,Y,decision_threshold,kernel)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
       % Input args
       %   X: samples [num_samples x dimension].
       %   Y: sample labels [num_samples x 1].
-      %   untrained_classes: number of untrained classes, this parameter can
-      %     be used to simulate novelty data in the dataset.
-      %   training_ratio: training sample rate.
+      %   decision_threshold: decision threshold hyperparameter.
+      %   kernel: kernel hyperparameter for knfst algorithm.
       % ----------------------------------------------------------------------------------]
       obj.X = X;
       obj.Y = Y;      
+      if nargin>=3
+        obj.decision_threshold = decision_threshold;
+      else
+          obj.decision_threshold = 1.2;
+      end      
+      if nargin==4
+        obj.kernel = kernel;
+      else
+          obj.kernel = 1.0;
+      end            
       obj.num_classes = numel(unique(Y));
-      training_ratio = 0.7;
-      if nargin>=4
-        obj.untrained_classes = untrained_classes;
-        if nargin==5
-          training_ratio = training_ratio;
-        end
-      end
+      obj.samples_per_classe = sum(Y==unique(Y)',1);
+      [obj.samples_per_classe,id] = sort(obj.samples_per_classe,'descend');
+      obj.samples_per_classe = cat(1,id,obj.samples_per_classe);      
     end
 
     function experiment = runExperiments(obj,num_experiments,random_select_classes,plot_metric)

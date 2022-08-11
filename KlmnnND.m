@@ -21,7 +21,7 @@ classdef KlmnnND < handle
   end
   
   methods
-    function obj = KlmnnND(X,Y,knn_arg,kappa_threshold,decision_threshold)
+    function obj = KlmnnND(X,Y,knn_arg,kappa_threshold,decision_threshold,kernel)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
@@ -31,6 +31,7 @@ classdef KlmnnND < handle
       %   knn_arg: K parameter described in the published paper.
       %   kappa_threshold: kappa parameter described in the published paper.
       %   decision_threshold: decision threshold hyperparameter.
+      %   kernel: kernel hyperparameter for kpca algorithm.
       % ----------------------------------------------------------------------------------]
       obj.X = X;
       obj.Y = Y;
@@ -44,11 +45,16 @@ classdef KlmnnND < handle
       else
         obj.kappa_threshold = 2;
       end
-      if nargin==5
+      if nargin>=5
         obj.decision_threshold = decision_threshold;
       else
         obj.decision_threshold = 1.2;
       end
+      if nargin==6
+        obj.kernel = kernel;
+      else
+        obj.kernel = 1.0;
+      end      
       obj.num_classes = numel(unique(Y));
       obj.samples_per_classe = sum(Y==unique(Y)',1);
       [obj.samples_per_classe,id] = sort(obj.samples_per_classe,'descend');

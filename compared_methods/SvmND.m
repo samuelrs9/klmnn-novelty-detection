@@ -11,39 +11,39 @@ classdef SvmND < handle
     num_samples = 0;              % number of samples in dataset
     dimension = 0;                % data dimension
     num_classes = 0;              % number of classes
-    untrained_classes = 0;        % number of untrained classes
-    num_decision_thresholds = 0;  % number of score thresholds
-    decision_thresholds = [];     % score thresholds list (the best needs to be found)
-    training_ratio = 0;           % training sample rate
-    split = {};                   % holds a split object that helps the cross-validation process
+    decision_threshold = 0;       % decision threshold
     samples_per_classe = [];      % samples per class
     kernel_type = [];             % kernel function type
-    num_kernels = 0;              % number of kernel values
     kernel = [];                  % kernel list for svm algorithm (the best must be found)    
   end
   
   methods
-    function obj = SvmND(X,Y,untrained_classes,training_ratio)
+    function obj = SvmND(X,Y,decision_threshold,kernel)
       % ----------------------------------------------------------------------------------
       % Constructor.
       %
       % Input args
       %   X: samples [num_samples x dimension].
       %   Y: sample labels [num_samples x 1].
-      %   untrained_classes: number of untrained classes, this parameter can
-      %     be used to simulate novelty data in the dataset.
-      %   training_ratio: training sample rate.
+      %   decision_threshold: decision threshold hyperparameter.
+      %   kernel: kernel hyperparameter for svm algorithm.
       % ----------------------------------------------------------------------------------]
       obj.X = X;
-      obj.Y = Y;
+      obj.Y = Y;      
+      if nargin>=3
+        obj.decision_threshold = decision_threshold;
+      else
+          obj.decision_threshold = 1.2;
+      end      
+      if nargin==4
+        obj.kernel = kernel;
+      else
+          obj.kernel = 1.0;
+      end            
       obj.num_classes = numel(unique(Y));
-      training_ratio = 0.7;
-      if nargin>=4
-        obj.untrained_classes = untrained_classes;
-        if nargin==5
-          training_ratio = training_ratio;
-        end
-      end
+      obj.samples_per_classe = sum(Y==unique(Y)',1);
+      [obj.samples_per_classe,id] = sort(obj.samples_per_classe,'descend');
+      obj.samples_per_classe = cat(1,id,obj.samples_per_classe);      
     end
 
     function experiment = runOneSVMExperiments(obj,num_experiments,plot_metric)

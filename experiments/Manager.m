@@ -143,6 +143,7 @@ classdef Manager < handle
               % Cria um objeto da classe KnfstND
               knfst = KnfstND(obj.X,obj.y);
               % Define intervalos de busca de parâmetros
+              % CONTINUAR DAQUI
               knfst.num_decision_thresholds = obj.parameters{4}.num_decision_thresholds;
               knfst.decision_thresholds = obj.parameters{4}.decision_thresholds;
               knfst.kernel_type = obj.parameters{4}.kernel_type;
@@ -239,7 +240,7 @@ classdef Manager < handle
       end
     end
     
-    function runExperimentsForKnnMethods(obj,methods,hyperparameters)
+    function runExperimentsForKnnMethods(obj,methods,hyperparameters,num_knn_args)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search for the 
       % knn methods.
@@ -247,18 +248,22 @@ classdef Manager < handle
       % Input args
       %   method: a list of strings corresponding to the novelty detection methods used.
       %     It can be 'knn', 'lmnn' or 'klmnn'.
+      %   hyperparameters: a cell array corresponding to the hyperparameters 
+      %     of the novelty detection methods used.            
+      %   num_knn_args: number of knn hyperparameters to be tested.
       % ----------------------------------------------------------------------------------            
-      for K = 2:5
-        for kappa = K:-1:K-3
-          if kappa >= 1
-            fprintf('\nK = %d \tkappa = %d\n',K,kappa);
-            % Its sets K and kappa hyperparameters for knn methods.
-            for i=1:numel(methods)
-              hyperparameters{i}.knn_arg = K;
-              hyperparameters{i}.kappa_threshold = kappa;
-            end
-            obj.runExperiments(methods,hyperparameters);
+      if nargin<4
+        num_knn_args = 5;
+      end
+      for K = 1:num_knn_args
+        for kappa = 1:K
+          fprintf('\nK = %d \tkappa = %d\n',K,kappa);
+          % Its sets K and kappa hyperparameters for knn methods.
+          for i=1:numel(methods)
+            hyperparameters{i}.knn_arg = K;
+            hyperparameters{i}.kappa_threshold = kappa;
           end
+          obj.runExperiments(methods,hyperparameters);
         end
       end
     end
@@ -1261,92 +1266,108 @@ classdef Manager < handle
       fprintf('done!\n');
     end
     
-    function reportExperimentsForKnnMethods(obj,model_dir)
+    function reportExperimentsForKnnMethods(obj,model_dir,num_knn_args)
       % ----------------------------------------------------------------------------------
       % This method is used to load and process results of novelty detection experiments 
       % for knn methods.
       %
       % Inputa args
       %   model_dir: model directory.
-      % ----------------------------------------------------------------------------------      
+      %   num_knn_args: number of knn hyperparameters tested.
+      % ----------------------------------------------------------------------------------
+      if nargin<3
+        num_knn_args = 5;
+      end
       fprintf('\nLoading experiment results... ');
       % KNN
-      KNN.TPR = nan*zeros(5,4); KNN.TNR = nan*zeros(5,4);
-      KNN.FPR = nan*zeros(5,4); KNN.FNR = nan*zeros(5,4);
-      KNN.AFR = nan*zeros(5,4); KNN.F1 = nan*zeros(5,4);
-      KNN.MCC = nan*zeros(5,4);
+      KNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.F1 = nan*zeros(num_knn_args,num_knn_args);
+      KNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       % LMNN
-      LMNN.TPR = nan*zeros(5,4); LMNN.TNR = nan*zeros(5,4);
-      LMNN.FPR = nan*zeros(5,4); LMNN.FNR = nan*zeros(5,4);
-      LMNN.AFR = nan*zeros(5,4); LMNN.F1 = nan*zeros(5,4);
-      LMNN.MCC = nan*zeros(5,4);
+      LMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.F1 = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       % KLMNN
-      KLMNN.TPR = nan*zeros(5,4); KLMNN.TNR = nan*zeros(5,4);
-      KLMNN.FPR = nan*zeros(5,4); KLMNN.FNR = nan*zeros(5,4);
-      KLMNN.AFR = nan*zeros(5,4); KLMNN.F1 = nan*zeros(5,4);
-      KLMNN.MCC = nan*zeros(5,4);
+      KLMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.F1 = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       
       % Testes
-      for K = 1:5
-        for kappa = K:-1:K-3
-          if kappa >= 1
-            j = K-kappa+1;
-            knn_dir = strcat(model_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
-            fprintf('\nK = %d \tkappa = %d\n',K,kappa);
-            % KNN
-            try
-              file = strcat(knn_dir,'/knn_experiments.mat');
-              experiment = load(file);
-              KNN.TPR(K,j) = experiment.tpr_score;
-              KNN.TNR(K,j) = experiment.tnr_score;
-              KNN.FPR(K,j) = experiment.fpr_score;
-              KNN.FNR(K,j) = experiment.fnr_score;
-              KNN.AFR(K,j) = experiment.afr_score;
-              KNN.F1(K,j) = experiment.f1_score;
-              KNN.MCC(K,j) = experiment.mcc_score;
-            catch
-              fprintf('\n--> error knn results!\n');
-            end
-            
-            % LMNN
-            try
-              file = strcat(knn_dir,'/lmnn_experiments.mat');
-              experiment = load(file);
-              LMNN.TPR(K,j) = experiment.tpr_score;
-              LMNN.TNR(K,j) = experiment.tnr_score;
-              LMNN.FPR(K,j) = experiment.fpr_score;
-              LMNN.FNR(K,j) = experiment.fnr_score;
-              LMNN.AFR(K,j) = experiment.afr_score;
-              LMNN.F1(K,j) = experiment.f1_score;
-              LMNN.MCC(K,j) = experiment.mcc_score;
-            catch
-              fprintf('\n--> error lmnn results!\n');
-            end
-            
-            % KLMNN
-            try
-              file = strcat(knn_dir,'/klmnn_experiments.mat');
-              experiment = load(file);
-              KLMNN.TPR(K,j) = experiment.tpr_score;
-              KLMNN.TNR(K,j) = experiment.tnr_score;
-              KLMNN.FPR(K,j) = experiment.fpr_score;
-              KLMNN.FNR(K,j) = experiment.fnr_score;
-              KLMNN.AFR(K,j) = experiment.afr_score;
-              KLMNN.F1(K,j) = experiment.f1_score;
-              KLMNN.MCC(K,j) = experiment.mcc_score;
-            catch
-              fprintf('\n--> error klmnn results!\n');
-            end
+      for K = 1:num_knn_args
+        for kappa = 1:K
+          knn_dir = strcat(model_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
+          fprintf('\nK = %d \tkappa = %d\n',K,kappa);
+          % KNN
+          try
+            file = strcat(knn_dir,'/knn_experiments.mat');
+            experiment = load(file);
+            KNN.TPR(K,kappa) = experiment.tpr_score;
+            KNN.TNR(K,kappa) = experiment.tnr_score;
+            KNN.FPR(K,kappa) = experiment.fpr_score;
+            KNN.FNR(K,kappa) = experiment.fnr_score;
+            KNN.AFR(K,kappa) = experiment.afr_score;
+            KNN.F1(K,kappa) = experiment.f1_score;
+            KNN.MCC(K,kappa) = experiment.mcc_score;
+          catch
+            fprintf('\n--> error knn results!\n');
+          end
+
+          % LMNN
+          try
+            file = strcat(knn_dir,'/lmnn_experiments.mat');
+            experiment = load(file);
+            LMNN.TPR(K,kappa) = experiment.tpr_score;
+            LMNN.TNR(K,kappa) = experiment.tnr_score;
+            LMNN.FPR(K,kappa) = experiment.fpr_score;
+            LMNN.FNR(K,kappa) = experiment.fnr_score;
+            LMNN.AFR(K,kappa) = experiment.afr_score;
+            LMNN.F1(K,kappa) = experiment.f1_score;
+            LMNN.MCC(K,kappa) = experiment.mcc_score;
+          catch
+            fprintf('\n--> error lmnn results!\n');
+          end
+
+          % KLMNN
+          try
+            file = strcat(knn_dir,'/klmnn_experiments.mat');
+            experiment = load(file);
+            KLMNN.TPR(K,kappa) = experiment.tpr_score;
+            KLMNN.TNR(K,kappa) = experiment.tnr_score;
+            KLMNN.FPR(K,kappa) = experiment.fpr_score;
+            KLMNN.FNR(K,kappa) = experiment.fnr_score;
+            KLMNN.AFR(K,kappa) = experiment.afr_score;
+            KLMNN.F1(K,kappa) = experiment.f1_score;
+            KLMNN.MCC(K,kappa) = experiment.mcc_score;
+          catch
+            fprintf('\n--> error klmnn results!\n');
           end
         end
       end
       
       % Cria as tabelas
-      K_names = split(sprintf('K = %d,',1:5),',');
-      K_names = K_names(1:end-1)';
-      kappa_names = {'kappa1','kappa2','kappa3','kappa4'};
+      %K_names = split(sprintf('K = %d,',1:5),',');
+      %K_names = K_names(1:end-1)';
+      %kappa_names = {'kappa1','kappa2','kappa3','kappa4'};
       
-      kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
+      %kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
+      kappa = struct();
+      for k=1:num_knn_args
+        K_names{k,1} = sprintf('K = %d',k);
+        kappa_names{k} = sprintf('kappa%d',k);
+        kappa.(kappa_names{k}) = sprintf('kappa = %d',k);
+      end        
       
       % KNN
       KNN.TPR = array2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
@@ -1710,88 +1731,96 @@ classdef Manager < handle
       % ----------------------------------------------------------------------------------                  
       fprintf('\nComputing test results... ');
       % KNN
-      KNN.TPR = nan*zeros(5,4); KNN.TNR = nan*zeros(5,4);
-      KNN.FPR = nan*zeros(5,4); KNN.FNR = nan*zeros(5,4);
-      KNN.ACC = nan*zeros(5,4); KNN.AFR = nan*zeros(5,4);
-      KNN.F1 = nan*zeros(5,4);  KNN.MCC = nan*zeros(5,4);
+      KNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.ACC = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.AFR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.F1 = nan*zeros(num_knn_args,num_knn_args);  
+      KNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       % LMNN
-      LMNN.TPR = nan*zeros(5,4); LMNN.TNR = nan*zeros(5,4);
-      LMNN.FPR = nan*zeros(5,4); LMNN.FNR = nan*zeros(5,4);
-      LMNN.ACC = nan*zeros(5,4); LMNN.AFR = nan*zeros(5,4);
-      LMNN.F1 = nan*zeros(5,4);  LMNN.MCC = nan*zeros(5,4);
+      LMNN.TPR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.ACC = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.AFR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.F1 = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       % KLMNN
-      KLMNN.TPR = nan*zeros(5,4); KLMNN.TNR = nan*zeros(5,4);
-      KLMNN.FPR = nan*zeros(5,4); KLMNN.FNR = nan*zeros(5,4);
-      KLMNN.ACC = nan*zeros(5,4); KLMNN.AFR = nan*zeros(5,4);
-      KLMNN.F1 = nan*zeros(5,4);  KLMNN.MCC = nan*zeros(5,4);
+      KLMNN.TPR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.FPR = nan*zeros(num_knn_args,num_knn_args);       
+      KLMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.ACC = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.AFR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.F1 = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       
       % Testes
-      for K = 1:5
-        for kappa = K:-1:K-3
-          if kappa >= 1
-            j = K-kappa+1;
-            knn_dir = strcat(model_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
-            fprintf('\nK = %d \tkappa = %d\n',K,kappa);
-            % KNN
-            knn_evaluation_file = strcat(knn_dir,'/knn_evaluations.mat');
-            try
-              knn_file = load(knn_evaluation_file);
-              results = knn_file.knn_evaluations.results;
-              KNN.TPR(K,j) = mean(results.TPR);
-              KNN.TNR(K,j) = mean(results.TNR);
-              KNN.FPR(K,j) = mean(results.FPR);
-              KNN.FNR(K,j) = mean(results.FNR);
-              KNN.AFR(K,j) = mean(results.AFR);
-              KNN.ACC(K,j) = mean(results.ACC);
-              KNN.F1(K,j) = mean(results.F1);
-              KNN.MCC(K,j) = mean(results.MCC);
-            catch
-              fprintf('\n--> error knn results!\n');
-            end
-            
-            % LMNN
-            lmnn_evaluation_file = strcat(knn_dir,'/lmnn_evaluations.mat');
-            try
-              lmnn_file = load(lmnn_evaluation_file);
-              results = lmnn_file.lmnn_evaluations.results;
-              LMNN.TPR(K,j) = mean(results.TPR);
-              LMNN.TNR(K,j) = mean(results.TNR);
-              LMNN.FPR(K,j) = mean(results.FPR);
-              LMNN.FNR(K,j) = mean(results.FNR);
-              LMNN.AFR(K,j) = mean(results.AFR);
-              LMNN.ACC(K,j) = mean(results.ACC);
-              LMNN.F1(K,j) = mean(results.F1);
-              LMNN.MCC(K,j) = mean(results.MCC);
-            catch
-              fprintf('\n--> error lmnn results!\n');
-            end
-            
-            % KLMNN
-            klmnn_evaluation_file = strcat(knn_dir,'/klmnn_evaluations.mat');
-            try
-              klmnn_file = load(klmnn_evaluation_file);
-              results = klmnn_file.klmnn_evaluations.results;
-              KLMNN.TPR(K,j) = mean(results.TPR);
-              KLMNN.TNR(K,j) = mean(results.TNR);
-              KLMNN.FPR(K,j) = mean(results.FPR);
-              KLMNN.FNR(K,j) = mean(results.FNR);
-              KLMNN.AFR(K,j) = mean(results.AFR);
-              KLMNN.ACC(K,j) = mean(results.ACC);
-              KLMNN.F1(K,j) = mean(results.F1);
-              KLMNN.MCC(K,j) = mean(results.MCC);
-            catch
-              fprintf('\n--> error klmnn results!\n');
-            end
+      for K = 1:num_knn_args
+        for kappa = 1:K
+          knn_dir = strcat(model_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
+          fprintf('\nK = %d \tkappa = %d\n',K,kappa);
+          % KNN
+          knn_evaluation_file = strcat(knn_dir,'/knn_evaluations.mat');
+          try
+            knn_file = load(knn_evaluation_file);
+            results = knn_file.knn_evaluations.results;
+            KNN.TPR(K,kappa) = mean(results.TPR);
+            KNN.TNR(K,kappa) = mean(results.TNR);
+            KNN.FPR(K,kappa) = mean(results.FPR);
+            KNN.FNR(K,kappa) = mean(results.FNR);
+            KNN.AFR(K,kappa) = mean(results.AFR);
+            KNN.ACC(K,kappa) = mean(results.ACC);
+            KNN.F1(K,kappa) = mean(results.F1);
+            KNN.MCC(K,kappa) = mean(results.MCC);
+          catch
+            fprintf('\n--> error knn results!\n');
+          end
+
+          % LMNN
+          lmnn_evaluation_file = strcat(knn_dir,'/lmnn_evaluations.mat');
+          try
+            lmnn_file = load(lmnn_evaluation_file);
+            results = lmnn_file.lmnn_evaluations.results;
+            LMNN.TPR(K,kappa) = mean(results.TPR);
+            LMNN.TNR(K,kappa) = mean(results.TNR);
+            LMNN.FPR(K,kappa) = mean(results.FPR);
+            LMNN.FNR(K,kappa) = mean(results.FNR);
+            LMNN.AFR(K,kappa) = mean(results.AFR);
+            LMNN.ACC(K,kappa) = mean(results.ACC);
+            LMNN.F1(K,kappa) = mean(results.F1);
+            LMNN.MCC(K,kappa) = mean(results.MCC);
+          catch
+            fprintf('\n--> error lmnn results!\n');
+          end
+
+          % KLMNN
+          klmnn_evaluation_file = strcat(knn_dir,'/klmnn_evaluations.mat');
+          try
+            klmnn_file = load(klmnn_evaluation_file);
+            results = klmnn_file.klmnn_evaluations.results;
+            KLMNN.TPR(K,kappa) = mean(results.TPR);
+            KLMNN.TNR(K,kappa) = mean(results.TNR);
+            KLMNN.FPR(K,kappa) = mean(results.FPR);
+            KLMNN.FNR(K,kappa) = mean(results.FNR);
+            KLMNN.AFR(K,kappa) = mean(results.AFR);
+            KLMNN.ACC(K,kappa) = mean(results.ACC);
+            KLMNN.F1(K,kappa) = mean(results.F1);
+            KLMNN.MCC(K,kappa) = mean(results.MCC);
+          catch
+            fprintf('\n--> error klmnn results!\n');
           end
         end
-      end
-      
+      end      
       % Cria as tabelas
-      K_names = split(sprintf('K = %d,',1:5),',');
-      K_names = K_names(1:end-1)';
-      kappa_names = {'kappa1','kappa2','kappa3','kappa4'};
-      
-      kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
+      for k=1:num_knn_args
+        K_names{k,1} = sprintf('K = %d',k);
+        kappa_names{k} = sprintf('kappa%d',k);
+        kappa.(kappa_names{k}) = sprintf('kappa = %d',k);
+      end      
       
       % KNN
       KNN.TPR = array2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
@@ -1827,85 +1856,95 @@ classdef Manager < handle
       fprintf('done!\n');
     end
     
-    function reportEvaluationForKnnMethods(obj,model_dir)
+    function reportEvaluationForKnnMethods(obj,model_dir,num_knn_args)
       % ----------------------------------------------------------------------------------
       % This method is used to load evaluations and compute accuracy metrics for 
       % knn algorithms.
       %
       % Inputa args
       %   model_dir: model directory.
+      %   num_knn_args: number of knn hyperparameters tested.
       % ----------------------------------------------------------------------------------            
       fprintf('\nComputing test results... ');
       % KNN
-      KNN.TPR = nan*zeros(5,4); KNN.TNR = nan*zeros(5,4);
-      KNN.FPR = nan*zeros(5,4); KNN.FNR = nan*zeros(5,4);
-      KNN.ACC = nan*zeros(5,4); KNN.AFR = nan*zeros(5,4);
-      KNN.F1 = nan*zeros(5,4);  KNN.MCC = nan*zeros(5,4);
+      KNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.ACC = nan*zeros(num_knn_args,num_knn_args); 
+      KNN.AFR = nan*zeros(num_knn_args,num_knn_args);
+      KNN.F1 = nan*zeros(num_knn_args,num_knn_args);  
+      KNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       % LMNN
-      LMNN.TPR = nan*zeros(5,4); LMNN.TNR = nan*zeros(5,4);
-      LMNN.FPR = nan*zeros(5,4); LMNN.FNR = nan*zeros(5,4);
-      LMNN.ACC = nan*zeros(5,4); LMNN.AFR = nan*zeros(5,4);
-      LMNN.F1 = nan*zeros(5,4);  LMNN.MCC = nan*zeros(5,4);
+      LMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.ACC = nan*zeros(num_knn_args,num_knn_args); 
+      LMNN.AFR = nan*zeros(num_knn_args,num_knn_args);
+      LMNN.F1 = nan*zeros(num_knn_args,num_knn_args);  
+      LMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       % KLMNN
-      KLMNN.TPR = nan*zeros(5,4); KLMNN.TNR = nan*zeros(5,4);
-      KLMNN.FPR = nan*zeros(5,4); KLMNN.FNR = nan*zeros(5,4);
-      KLMNN.ACC = nan*zeros(5,4); KLMNN.AFR = nan*zeros(5,4);
-      KLMNN.F1 = nan*zeros(5,4);  KLMNN.MCC = nan*zeros(5,4);
+      KLMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.ACC = nan*zeros(num_knn_args,num_knn_args); 
+      KLMNN.AFR = nan*zeros(num_knn_args,num_knn_args);
+      KLMNN.F1 = nan*zeros(num_knn_args,num_knn_args);  
+      KLMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
       
       % Testes
-      for K = 1:5
-        for kappa = K:-1:K-3
-          if kappa >= 1
-            j = K-kappa+1;
-            knn_dir = strcat(model_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
-            fprintf('\nK = %d \tkappa = %d\n',K,kappa);
-            % KNN
-            knn_evaluation_file = strcat(knn_dir,'/knn_evaluation.mat');
-            try
-              knn_evaluation = load(knn_evaluation_file);
-              KNN.TPR(K,j) = knn_evaluation.TPR;
-              KNN.TNR(K,j) = knn_evaluation.TNR;
-              KNN.FPR(K,j) = knn_evaluation.FPR;
-              KNN.FNR(K,j) = knn_evaluation.FNR;
-              KNN.AFR(K,j) = knn_evaluation.AFR;
-              KNN.ACC(K,j) = knn_evaluation.ACC;
-              KNN.F1(K,j) = knn_evaluation.F1;
-              KNN.MCC(K,j) = knn_evaluation.MCC;
-            catch
-              fprintf('\n--> error knn results!\n');
-            end
-            
-            % LMNN
-            lmnn_evaluation_file = strcat(knn_dir,'/lmnn_evaluation.mat');
-            try
-              lmnn_evaluation = load(lmnn_evaluation_file);
-              LMNN.TPR(K,j) = lmnn_evaluation.TPR;
-              LMNN.TNR(K,j) = lmnn_evaluation.TNR;
-              LMNN.FPR(K,j) = lmnn_evaluation.FPR;
-              LMNN.FNR(K,j) = lmnn_evaluation.FNR;
-              LMNN.AFR(K,j) = lmnn_evaluation.AFR;
-              LMNN.ACC(K,j) = lmnn_evaluation.ACC;
-              LMNN.F1(K,j) = lmnn_evaluation.F1;
-              LMNN.MCC(K,j) = lmnn_evaluation.MCC;
-            catch
-              fprintf('\n--> error lmnn results!\n');
-            end
-            
-            % KLMNN
-            klmnn_evaluation_file = strcat(knn_dir,'/klmnn_evaluation.mat');
-            try
-              klmnn_evaluation = load(klmnn_evaluation_file);
-              KLMNN.TPR(K,j) = klmnn_evaluation.TPR;
-              KLMNN.TNR(K,j) = klmnn_evaluation.TNR;
-              KLMNN.FPR(K,j) = klmnn_evaluation.FPR;
-              KLMNN.FNR(K,j) = klmnn_evaluation.FNR;
-              KLMNN.AFR(K,j) = klmnn_evaluation.AFR;
-              KLMNN.ACC(K,j) = klmnn_evaluation.ACC;
-              KLMNN.F1(K,j) = klmnn_evaluation.F1;
-              KLMNN.MCC(K,j) = klmnn_evaluation.MCC;
-            catch
-              fprintf('\n--> error klmnn results!\n');
-            end
+      for K = 1:num_knn_args
+        for kappa = 1:K
+          knn_dir = strcat(model_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
+          fprintf('\nK = %d \tkappa = %d\n',K,kappa);
+          % KNN
+          knn_evaluation_file = strcat(knn_dir,'/knn_evaluation.mat');
+          try
+            knn_evaluation = load(knn_evaluation_file);
+            KNN.TPR(K,kappa) = knn_evaluation.TPR;
+            KNN.TNR(K,kappa) = knn_evaluation.TNR;
+            KNN.FPR(K,kappa) = knn_evaluation.FPR;
+            KNN.FNR(K,kappa) = knn_evaluation.FNR;
+            KNN.AFR(K,kappa) = knn_evaluation.AFR;
+            KNN.ACC(K,kappa) = knn_evaluation.ACC;
+            KNN.F1(K,kappa) = knn_evaluation.F1;
+            KNN.MCC(K,kappa) = knn_evaluation.MCC;
+          catch
+            fprintf('\n--> error knn results!\n');
+          end
+
+          % LMNN
+          lmnn_evaluation_file = strcat(knn_dir,'/lmnn_evaluation.mat');
+          try
+            lmnn_evaluation = load(lmnn_evaluation_file);
+            LMNN.TPR(K,kappa) = lmnn_evaluation.TPR;
+            LMNN.TNR(K,kappa) = lmnn_evaluation.TNR;
+            LMNN.FPR(K,kappa) = lmnn_evaluation.FPR;
+            LMNN.FNR(K,kappa) = lmnn_evaluation.FNR;
+            LMNN.AFR(K,kappa) = lmnn_evaluation.AFR;
+            LMNN.ACC(K,kappa) = lmnn_evaluation.ACC;
+            LMNN.F1(K,kappa) = lmnn_evaluation.F1;
+            LMNN.MCC(K,kappa) = lmnn_evaluation.MCC;
+          catch
+            fprintf('\n--> error lmnn results!\n');
+          end
+
+          % KLMNN
+          klmnn_evaluation_file = strcat(knn_dir,'/klmnn_evaluation.mat');
+          try
+            klmnn_evaluation = load(klmnn_evaluation_file);
+            KLMNN.TPR(K,kappa) = klmnn_evaluation.TPR;
+            KLMNN.TNR(K,kappa) = klmnn_evaluation.TNR;
+            KLMNN.FPR(K,kappa) = klmnn_evaluation.FPR;
+            KLMNN.FNR(K,kappa) = klmnn_evaluation.FNR;
+            KLMNN.AFR(K,kappa) = klmnn_evaluation.AFR;
+            KLMNN.ACC(K,kappa) = klmnn_evaluation.ACC;
+            KLMNN.F1(K,kappa) = klmnn_evaluation.F1;
+            KLMNN.MCC(K,kappa) = klmnn_evaluation.MCC;
+          catch
+            fprintf('\n--> error klmnn results!\n');
           end
         end
       end
@@ -1916,7 +1955,7 @@ classdef Manager < handle
       kappa_names = {'kappa1','kappa2','kappa3','kappa4'};
       
       kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
-      
+
       % KNN
       KNN.TPR = array2table(round(KNN.TPR,2),'VariableNames',kappa_names,'RowNames',K_names);
       KNN.TNR = array2table(round(KNN.TNR,2),'VariableNames',kappa_names,'RowNames',K_names);
