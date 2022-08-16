@@ -29,7 +29,7 @@ classdef Datasets < handle
       fprintf('\nLoading iris dataset... ');
       data = load(obj.root_dir+"/iris/iris.mat");
       X = data.X';
-      Y = data.y;
+      Y = data.y';
       if min(Y) == 0
         Y = Y+1;
       end

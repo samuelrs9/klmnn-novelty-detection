@@ -17,7 +17,7 @@ num_classes = numel(unique(y));
 
 % Experiment configurations
 out_dir = 'out_glass';
-num_untrained_classes = floor(0.25*num_classes);
+num_untrained_classes = floor(0.25*num_classes)+1;
 training_ratio = 0.8;
 random_select_classes = true;
 plot_metric = false;
@@ -85,7 +85,7 @@ methods  = {knn_config,lmnn_config,klmnn_config,...
 manager = Manager(X,y,out_dir,num_experiments,...
   num_untrained_classes,training_ratio,random_select_classes,plot_metric);
 
-tutorial = 4;
+tutorial = 1;
 
 switch tutorial
   case 1

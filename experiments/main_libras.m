@@ -17,7 +17,7 @@ num_classes = numel(unique(y));
 
 % Experiment configurations
 out_dir = 'out_libras';
-num_untrained_classes = floor(0.25*num_classes);
+num_untrained_classes = floor(0.25*num_classes)+1;
 training_ratio = 0.8;
 random_select_classes = true;
 plot_metric = false;
