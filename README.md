@@ -5,7 +5,7 @@ This repository contains the Matlab implementation of the paper ["On novelty det
 **TODO**
 * Corrigir e rodar todos os scripts de simulações.
 * Verificar as funções de plots usadas para gerar os gráficos do artigo.
-* Descobrir como clona automaticamente os repositórios das bibliotecas usadas.
+* Descobrir como clonar automaticamente os repositórios das bibliotecas usadas.
 * Escrever o README.md
 
 **Dependencies**
