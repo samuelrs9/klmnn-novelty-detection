@@ -78,7 +78,7 @@ kpca_config.kernel_type = 'gauss';
 kpca_config.num_kernels = num_kernels;
 kpca_config.kernels = linspace(0.01,0.2,kpca_config.num_kernels)';
 
-% Organize all methods in an cell array
+% Organize all methods in a cell array
 methods  = {knn_config,lmnn_config,klmnn_config,...
   knfst_config,one_svm_config,multi_svm_config,kpca_config};
 
