@@ -85,7 +85,7 @@ methods  = {knn_config,lmnn_config,klmnn_config,...
 manager = Manager(X,y,out_dir,num_experiments,...
   num_untrained_classes,training_ratio,random_select_classes,plot_metric);
 
-tutorial = 1;
+tutorial = 4;
 
 switch tutorial
   case 1

@@ -88,7 +88,7 @@ manager = Manager(X,y,out_dir,num_experiments,...
 tutorial = 4;
 
 switch tutorial
-  case 1
+  case 2
     % ------------------------------------------------------------------------------------
     % It runs novelty detection experiments for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------

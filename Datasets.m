@@ -27,9 +27,9 @@ classdef Datasets < handle
       % Loads the Iris dataset
       % ---------------------------------------------------------
       fprintf('\nLoading iris dataset... ');
-      data = load(obj.root_dir+"/iris.dat");
-      X = data(:,1:4);
-      Y = data(:,5);
+      data = load(obj.root_dir+"/iris/iris.mat");
+      X = data.X';
+      Y = data.y;
       if min(Y) == 0
         Y = Y+1;
       end
