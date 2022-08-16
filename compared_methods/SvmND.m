@@ -46,12 +46,18 @@ classdef SvmND < handle
       obj.samples_per_classe = cat(1,id,obj.samples_per_classe);      
     end
 
-    function experiment = runOneSVMExperiments(obj,num_experiments,plot_metric)
+    function experiments = runOneSVMExperiments(obj,hyperparameters,num_experiments,...
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search for OneSVM.
       %
       % Input args
-      %   num_experiments: number of validation experiments.
+      %   hyperparameters: a struct containing the hyperparameters, such as 
+      %     'kernels' candidates.     
+      %   num_experiments: number of validation experiments.      
+      %   num_untrained_classes: number of untrained classes, this parameter can
+      %     be used to simulate novelty data in the dataset.
+      %   training_ratio: training sample rate.      
       %   random_select_classes: enable/disable random selection of untrained classes (a
       %     boolean value).
       %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
@@ -59,25 +65,32 @@ classdef SvmND < handle
       % Output args
       %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
+      classes_id = 1:obj.num_classes;      
+      obj.kernel_type = hyperparameters.kernel_type;
+      num_kernels = hyperparameters.num_kernels;
+      kernels = hyperparameters.kernels;
+      
       split_exp = cell(num_experiments,1);
       
-      MCC = zeros(num_experiments,obj.num_kernels);
-      AFR = zeros(num_experiments,obj.num_kernels);
-      F1 = zeros(num_experiments,obj.num_kernels);
-      TPR = zeros(num_experiments,obj.num_kernels);
-      TNR = zeros(num_experiments,obj.num_kernels);
-      FPR = zeros(num_experiments,obj.num_kernels);
-      FNR = zeros(num_experiments,obj.num_kernels);
+      MCC = zeros(num_experiments,num_kernels);
+      AFR = zeros(num_experiments,num_kernels);
+      F1 = zeros(num_experiments,num_kernels);
+      TPR = zeros(num_experiments,num_kernels);
+      TNR = zeros(num_experiments,num_kernels);
+      FPR = zeros(num_experiments,num_kernels);
+      FNR = zeros(num_experiments,num_kernels);
       
-      evaluations = cell(num_experiments,num_untrained_classes);
+      evaluations = cell(num_experiments,num_kernels);
       
+      t0_svm_one = tic;
       for i=1:num_experiments
         rng(i);
         % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(obj.num_classes,obj.untrained_classes);
+        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
+          obj.num_classes,num_untrained_classes);
         
         % Divide os índices em treino e teste
-        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,obj.num_classes,is_trained_class);
+        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,is_trained_class);
         [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
         % Todas as amostras não treinadas são definidas
@@ -85,10 +98,10 @@ classdef SvmND < handle
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         RK = [];
-        for j=1:obj.num_kernels
-          fprintf('\nOne SVM \tTest %d/%d \tKernel %d/%d\n',i,num_experiments,j,obj.num_kernels);
-          evaluations{i,j} = obj.evaluateOneSVM(xtrain,ytrain,xtest,ytest,obj.kernel(j));
-          evaluations{i,j}.kernel = obj.kernel(j);
+        for j=1:num_kernels
+          fprintf('\nOne SVM \tTest %d/%d \tKernel %d/%d\n',i,num_experiments,j,num_kernels);
+          evaluations{i,j} = obj.evaluateOneSVM(xtrain,ytrain,xtest,ytest,kernels(j));
+          evaluations{i,j}.kernel = kernels(j);
           MCC(i,j) = evaluations{i,j}.MCC;
           F1(i,j) = evaluations{i,j}.F1;
           AFR(i,j) = evaluations{i,j}.AFR;
@@ -100,12 +113,12 @@ classdef SvmND < handle
             RK = cat(1,RK,MCC(i,j));
             figure(1);
             clf('reset');
-            plot(obj.kernel(1:j),RK,'-','LineWidth',3);
-            xlim([obj.kernel(1),obj.kernel(end)]);
+            plot(kernels(1:j),RK,'-','LineWidth',3);
+            xlim([kernels(1),kernels(end)]);
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['One SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
+            title(['One SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(num_kernels),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -139,48 +152,66 @@ classdef SvmND < handle
       all_metrics.TNR = TNR;
       all_metrics.FPR = FPR;
       all_metrics.FNR = FNR;
-      experiment.all_metrics = all_metrics;
+      experiments.all_metrics = all_metrics;
       
       model.training_ratio = training_ratio;
       model.best_kernel_id = best_kernel_id;
-      model.kernel = obj.kernel(best_kernel_id);
-      model.untrained_classes = obj.untrained_classes;
+      model.num_untrained_classes = num_untrained_classes;
       
-      experiment.model = model;
-      experiment.split = cell2mat(split_exp);
-      experiment.evaluations = evaluations;
-      experiment.mean_mcc = mean_mcc;
-      experiment.mean_f1 = mean_f1;
-      experiment.mean_afr = mean_afr;
-      experiment.mean_tpr = mean_tpr;
-      experiment.mean_tnr = mean_tnr;
-      experiment.mean_fpr = mean_fpr;
-      experiment.mean_fnr = mean_fnr;
+      model.kernel = kernels(best_kernel_id);
       
-      experiment.mcc_score = mean_mcc(best_kernel_id);
-      experiment.f1_score = mean_f1(best_kernel_id);
-      experiment.afr_score = mean_afr(best_kernel_id);
-      experiment.tpr_score = mean_tpr(best_kernel_id);
-      experiment.tnr_score = mean_tnr(best_kernel_id);
-      experiment.fpr_score = mean_fpr(best_kernel_id);
-      experiment.fnr_score = mean_fnr(best_kernel_id);
+      experiments.hyperparameters = hyperparameters;      
+      experiments.num_experiments = num_experiments;      
+      
+      experiments.model = model;
+      experiments.split = cell2mat(split_exp);
+      experiments.evaluations = evaluations;
+      experiments.mean_mcc = mean_mcc;
+      experiments.mean_f1 = mean_f1;
+      experiments.mean_afr = mean_afr;
+      experiments.mean_tpr = mean_tpr;
+      experiments.mean_tnr = mean_tnr;
+      experiments.mean_fpr = mean_fpr;
+      experiments.mean_fnr = mean_fnr;
+      
+      experiments.mcc_score = mean_mcc(best_kernel_id);
+      experiments.f1_score = mean_f1(best_kernel_id);
+      experiments.afr_score = mean_afr(best_kernel_id);
+      experiments.tpr_score = mean_tpr(best_kernel_id);
+      experiments.tnr_score = mean_tnr(best_kernel_id);
+      experiments.fpr_score = mean_fpr(best_kernel_id);
+      experiments.fnr_score = mean_fnr(best_kernel_id);
+      
+      experiments.total_time = toc(t0_svm_one);
       
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
-        experiment.mcc_score,experiment.f1_score,experiment.afr_score);
+        experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
-      figure; plot(obj.kernel,mean_mcc);
-      xlabel('kernel'); ylabel('mcc'); title('MCC');
+      figure;
+      plot(kernels,mean_mcc);
+      xlabel('kernel');
+      ylabel('mcc'); 
+      title('MCC');
       
-      figure; plot(obj.kernel,mean_afr);
-      xlabel('kernel'); ylabel('afr'); title('AFR');
+      figure; 
+      plot(kernels,mean_f1);
+      xlabel('kernel'); 
+      ylabel('afr');
+      title('F1-SCORE');
     end
 
-    function experiment = runMultiSVMExperiments(obj,num_experiments,plot_metric)
+    function experiments = runMultiSVMExperiments(obj,hyperparameters,num_experiments,...
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search for MultiSVM.
       %
       % Input args
-      %   num_experiments: number of validation experiments.
+      %   hyperparameters: a struct containing the hyperparameters, such as 
+      %     'decision_thresholds' candidates and 'kernels' candidates.     
+      %   num_experiments: number of validation experiments.      
+      %   num_untrained_classes: number of untrained classes, this parameter can
+      %     be used to simulate novelty data in the dataset.
+      %   training_ratio: training sample rate.      
       %   random_select_classes: enable/disable random selection of untrained classes (a
       %     boolean value).
       %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
@@ -188,33 +219,41 @@ classdef SvmND < handle
       % Output args
       %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
+      classes_id = 1:obj.num_classes;      
+      obj.kernel_type = hyperparameters.kernel_type;
+      num_decision_thresholds = hyperparameters.num_decision_thresholds;
+      decision_thresholds = hyperparameters.decision_thresholds;
+      num_kernels = hyperparameters.num_kernels;
+      kernels = hyperparameters.kernels;
+      
       split_exp = cell(num_experiments,1);
       
-      MCC = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      AFR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      F1 = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      TPR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      TNR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      FPR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      FNR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      MCC = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      AFR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      F1 = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      TPR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      TNR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      FPR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      FNR = zeros(num_kernels,num_decision_thresholds,num_experiments);
       
-      evaluations = cell(obj.num_kernels,num_untrained_classes,num_experiments);
+      evaluations = cell(num_kernels,num_decision_thresholds,num_experiments);
       
+      t0_svm_multi= tic;
       for i=1:num_experiments
         rng(i);
         % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(obj.num_classes,obj.untrained_classes);
+        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
+          obj.num_classes,num_untrained_classes);
         
         % Divide os índices em treino e teste
-        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,obj.num_classes,is_trained_class);
+        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,is_trained_class);
         [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
-        % Todas as amostras não treinadas são definidas
-        % como outliers (label -1)
+        % All untrained samples are defined as outliers (label -1)
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         RK = [];
-        for j=1:obj.num_kernels
+        for j=1:num_kernels
           % Treina classificadores SVM's binários com a abordagem One vs All
           ctrain = unique(ytrain);
           model_svm = cell(numel(ctrain),1);
@@ -222,18 +261,18 @@ classdef SvmND < handle
             ytrain_binary = -ones(numel(ytrain),1);
             ytrain_binary(ytrain==ctrain(c)) = 1;
             if strcmp(obj.kernel_type,'poly')
-              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','polynomial', 'PolynomialOrder', obj.kernel(j));
+              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','polynomial', 'PolynomialOrder', kernels(j));
             else
-              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','rbf', 'KernelScale', 1/(2*obj.kernel(j)^2) );
+              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','rbf', 'KernelScale', 1/(2*kernels(j)^2) );
             end
             model_svm{c} = fitSVMPosterior(svm_model);
           end
           
           RT = [];
-          for k=1:num_untrained_classes
-            fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tDecision threshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,num_untrained_classes);
-            evaluations{j,k,i} = obj.evaluateMultiSVMAux(model_svm,ctrain,xtest,ytest,obj.kernel(j),hyperparameters.decision_thresholds(k));
-            evaluations{j,k,i}.kernel = obj.kernel(j);
+          for k=1:num_decision_thresholds
+            fprintf('\nMulti SVM \tTest: %d/%d \tKernel (%d/%d) \tDecision threshold (%d/%d)\n',i,num_experiments,j,num_kernels,k,num_decision_thresholds);
+            evaluations{j,k,i} = obj.evaluateMultiSVMAux(model_svm,ctrain,xtest,ytest,kernels(j),decision_thresholds(k));
+            evaluations{j,k,i}.kernel = kernels(j);
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
             F1(j,k,i) = evaluations{j,k,i}.F1;
             AFR(j,k,i) = evaluations{j,k,i}.AFR;
@@ -245,12 +284,12 @@ classdef SvmND < handle
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
-              plot(hyperparameters.decision_thresholds(1:k),RT,'-r','LineWidth',3);
-              xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+              plot(decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([decision_thresholds(1),decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_untrained_classes),' ]']);
+              title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_decision_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -259,12 +298,12 @@ classdef SvmND < handle
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
-            plot(obj.kernel(1:j),RK,'-','LineWidth',3);
-            xlim([obj.kernel(1),obj.kernel(end)]);
+            plot(kernels(1:j),RK,'-','LineWidth',3);
+            xlim([kernels(1),kernels(end)]);
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
+            title(['Multi SVM [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(num_kernels),' ]']);
             drawnow;
           end
         end
@@ -300,42 +339,56 @@ classdef SvmND < handle
       all_metrics.TNR = TNR;
       all_metrics.FPR = FPR;
       all_metrics.FNR = FNR;
-      experiment.all_metrics = all_metrics;
+      experiments.all_metrics = all_metrics;
       
       model.training_ratio = training_ratio;
       model.best_threshold_id = best_threshold_id;
       model.best_kernel_id = best_kernel_id;
-      model.decision_threshold = hyperparameters.decision_thresholds(best_threshold_id);
-      model.kernel = obj.kernel(best_kernel_id);
-      model.untrained_classes = obj.untrained_classes;
+      model.num_untrained_classes = num_untrained_classes;      
       
-      experiment.model = model;
-      experiment.split = cell2mat(split_exp);
-      experiment.evaluations = evaluations;
-      experiment.mean_mcc = mean_mcc;
-      experiment.mean_f1 = mean_f1;
-      experiment.mean_afr = mean_afr;
-      experiment.mean_tpr = mean_tpr;
-      experiment.mean_tnr = mean_tnr;
-      experiment.mean_fpr = mean_fpr;
-      experiment.mean_fnr = mean_fnr;
+      model.decision_threshold = decision_thresholds(best_threshold_id);
+      model.kernel = kernels(best_kernel_id);
       
-      experiment.mcc_score = mean_mcc(best_kernel_id,best_threshold_id);
-      experiment.f1_score = mean_f1(best_kernel_id,best_threshold_id);
-      experiment.afr_score = mean_afr(best_kernel_id,best_threshold_id);
-      experiment.tpr_score = mean_tpr(best_kernel_id,best_threshold_id);
-      experiment.tnr_score = mean_tnr(best_kernel_id,best_threshold_id);
-      experiment.fpr_score = mean_fpr(best_kernel_id,best_threshold_id);
-      experiment.fnr_score = mean_fnr(best_kernel_id,best_threshold_id);
+      experiments.hyperparameters = hyperparameters;      
+      experiments.num_experiments = num_experiments;      
+      
+      experiments.model = model;
+      experiments.split = cell2mat(split_exp);
+      experiments.evaluations = evaluations;
+      experiments.mean_mcc = mean_mcc;
+      experiments.mean_f1 = mean_f1;
+      experiments.mean_afr = mean_afr;
+      experiments.mean_tpr = mean_tpr;
+      experiments.mean_tnr = mean_tnr;
+      experiments.mean_fpr = mean_fpr;
+      experiments.mean_fnr = mean_fnr;
+      
+      experiments.mcc_score = mean_mcc(best_kernel_id,best_threshold_id);
+      experiments.f1_score = mean_f1(best_kernel_id,best_threshold_id);
+      experiments.afr_score = mean_afr(best_kernel_id,best_threshold_id);
+      experiments.tpr_score = mean_tpr(best_kernel_id,best_threshold_id);
+      experiments.tnr_score = mean_tnr(best_kernel_id,best_threshold_id);
+      experiments.fpr_score = mean_fpr(best_kernel_id,best_threshold_id);
+      experiments.fnr_score = mean_fnr(best_kernel_id,best_threshold_id);
+      
+      experiments.total_time = toc(t0_svm_multi);
       
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
-        experiment.mcc_score,experiment.f1_score,experiment.afr_score);
+        experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
-      figure; pcolor(hyperparameters.decision_thresholds,obj.kernel,mean_mcc); colorbar;
-      xlabel('decision_threshold'); ylabel('kernel');  title('MCC');
+      figure; 
+      pcolor(decision_thresholds,kernels,mean_mcc); 
+      colorbar;
+      xlabel('decision_threshold');
+      ylabel('kernel'); 
+      title('MCC');
       
-      figure; pcolor(hyperparameters.decision_thresholds,obj.kernel,mean_afr); colorbar;
-      ('decision_threshold'); ylabel('kernel'); title('AFR');
+      figure;
+      pcolor(decision_thresholds,kernels,mean_f1);
+      colorbar;
+      ('decision_threshold');
+      ylabel('kernel');
+      title('F1-SCORE');
     end
     
     function model = validationOneClass(obj,n_validations,plot_error)
@@ -343,33 +396,33 @@ classdef SvmND < handle
       % Validação do algoritmo one class svm
       % ----------------------------------------------------------------------------------      
       obj.split = cell(n_validations,1);
-      mcc = zeros(n_validations,obj.num_kernels);
+      mcc = zeros(n_validations,num_kernels);
       close all;
       for i=1:n_validations
         rng(i);
         % Cria um objeto split. Particiona a base em dois conjuntos
         % de classes treinadas e não treinadas. Separa uma
         % parte para treinamento e outra para teste
-        obj.split{i}    = SplitData(obj.X,obj.Y,training_ratio,obj.untrained_classes);
+        obj.split{i}    = SplitData(obj.X,obj.Y,training_ratio,num_untrained_classes);
         % Separa uma parte do treinamento para validação
         [id_train,id_val] = obj.split{i}.idTrainVal();
         [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
         RK = [];
-        for j=1:obj.num_kernels
-          fprintf('\nOne SVM \tVal: %d/%d \tKernel %d/%d',i,n_validations,j,obj.num_kernels);
-          result = obj.evaluateOneSVM(xtrain,ytrain,xval,yval,obj.kernel(j));
-          result.kernel = obj.kernel(j);
+        for j=1:num_kernels
+          fprintf('\nOne SVM \tVal: %d/%d \tKernel %d/%d',i,n_validations,j,num_kernels);
+          result = obj.evaluateOneSVM(xtrain,ytrain,xval,yval,kernels(j));
+          result.kernel = kernels(j);
           mcc(i,j) = result.MCC;
           if plot_error
             RK = cat(1,RK,mcc(i,j));
             figure(1);
             clf('reset');
-            plot(obj.kernel(1:j),RK,'-','LineWidth',3);
-            xlim([obj.kernel(1),obj.kernel(end)]);
+            plot(kernels(1:j),RK,'-','LineWidth',3);
+            xlim([kernels(1),kernels(end)]);
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['One SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
+            title(['One SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(num_kernels),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -380,8 +433,8 @@ classdef SvmND < handle
       [max_mean_mcc,id_max] = max(mean_mcc);
       
       model.training_ratio = training_ratio;
-      model.kernel = obj.kernel(id_max);
-      model.untrained_classes = obj.untrained_classes;
+      model.kernel = kernels(id_max);
+      model.num_untrained_classes = num_untrained_classes;
       model.mean_mcc = max_mean_mcc;
     end
 
@@ -399,18 +452,18 @@ classdef SvmND < handle
       %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
       obj.split = cell(n_validations,1);
-      mcc = zeros(obj.num_kernels,num_untrained_classes,n_validations);
+      mcc = zeros(num_kernels,num_decision_thresholds,n_validations);
       for i=1:n_validations
         rng(i);
         % Cria um objeto split. Particiona a base em dois conjuntos
         % de classes treinadas e não treinadas. Separa uma
         % parte para treinamento e outra para teste
-        obj.split{i}    = SplitData(obj.X,obj.Y,training_ratio,obj.untrained_classes);
+        obj.split{i}    = SplitData(obj.X,obj.Y,training_ratio,num_untrained_classes);
         % Separa uma parte do treinamento para validação
         [id_train,id_val] = obj.split{i}.idTrainVal();
         [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
         RK = [];
-        for j=1:obj.num_kernels
+        for j=1:num_kernels
           % Treina classificadores SVM's binários com a abordagem One vs All
           ctrain = unique(ytrain);
           model_svm = cell(numel(ctrain),1);
@@ -418,28 +471,28 @@ classdef SvmND < handle
             ytrain_binary = -ones(numel(ytrain),1);
             ytrain_binary(ytrain==ctrain(c)) = 1;
             if strcmp(obj.kernel_type,'poly')
-              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','polynomial', 'PolynomialOrder', obj.kernel(j));
+              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','polynomial', 'PolynomialOrder', kernels(j));
             else
-              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','rbf', 'KernelScale', 1/(2*obj.kernel(j)^2) );
+              svm_model = fitcsvm(xtrain,ytrain_binary,'KernelFunction','rbf', 'KernelScale', 1/(2*kernels(j)^2) );
             end
             model_svm{c} = fitSVMPosterior(svm_model);
           end
           RT = [];
-          for k=1:num_untrained_classes
-            fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tDecision threshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,num_untrained_classes);
-            result = obj.evaluateMultiSVMAux(model_svm,ctrain,xval,yval,obj.kernel(j),hyperparameters.decision_thresholds(k));
-            result.kernel = obj.kernel(j);
+          for k=1:num_decision_thresholds
+            fprintf('\nMulti SVM \tVal: %d/%d \tKernel %d/%d \tDecision threshold %d/%d\n',i,n_validations,j,num_kernels,k,num_decision_thresholds);
+            result = obj.evaluateMultiSVMAux(model_svm,ctrain,xval,yval,kernels(j),decision_thresholds(k));
+            result.kernel = kernels(j);
             mcc(j,k,i) = result.MCC;
             if plot_error
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               pause(0.01);
-              plot(hyperparameters.decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              plot(decision_thresholds(1:k),RT,'-r','LineWidth',3);
               xlim([0,1]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_untrained_classes),' ]']);
+              title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_decision_thresholds),' ]']);
               legend off;
               drawnow;
               pause(0.01);
@@ -449,12 +502,12 @@ classdef SvmND < handle
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
-            plot(obj.kernel(1:j),RK,'-','LineWidth',3);
-            xlim([obj.kernel(1),obj.kernel(end)]);
+            plot(kernels(1:j),RK,'-','LineWidth',3);
+            xlim([kernels(1),kernels(end)]);
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
+            title(['Multi SVM [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(num_kernels),' ]']);
             drawnow;
           end
         end
@@ -466,9 +519,9 @@ classdef SvmND < handle
       id_k = id_k(1); id_t = id_t(1);
       
       model.training_ratio = training_ratio;
-      model.kernel = obj.kernel(id_k);
-      model.decision_threshold = hyperparameters.decision_thresholds(id_t);
-      model.untrained_classes = obj.untrained_classes;
+      model.kernel = kernels(id_k);
+      model.decision_threshold = decision_thresholds(id_t);
+      model.num_untrained_classes = num_untrained_classes;
       model.mean_mcc = max_mean_mcc;
     end
     
@@ -666,10 +719,10 @@ classdef SvmND < handle
       outlier_predictions = -ones(size(predictions));
       outlier_predictions(predictions>0) = 1;
       
-      report_outliers = ClassificationReport(outlier_gt,outlier_predictions);
+      report_outliers = MetricsReport(outlier_gt,outlier_predictions);
       
       % General report
-      report = ClassificationReport(ytest,predictions);
+      report = MetricsReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
       result.predictions = predictions;
@@ -744,10 +797,10 @@ classdef SvmND < handle
       outlier_predictions = -ones(size(predictions));
       outlier_predictions(predictions>0) = 1;
       
-      report_outliers = ClassificationReport(outlier_gt,outlier_predictions);
+      report_outliers = MetricsReport(outlier_gt,outlier_predictions);
       
       % Report
-      report = ClassificationReport(ytest,predictions);
+      report = MetricsReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
       result.decision_threshold =  decision_threshold;
@@ -811,10 +864,10 @@ classdef SvmND < handle
       outlier_predictions = -ones(size(predictions));
       outlier_predictions(predictions>0) = 1;
       
-      report_outliers = ClassificationReport(outlier_gt,outlier_predictions);
+      report_outliers = MetricsReport(outlier_gt,outlier_predictions);
       
       % Report
-      report = ClassificationReport(ytest,predictions);
+      report = MetricsReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
       result.decision_threshold =  decision_threshold;

@@ -58,8 +58,8 @@ classdef KnnND < handle
       % This method runs validation experiments and hyperparameter search.
       %
       % Input args
-      %   hyperparameters: a cell array corresponding to the hyperparameters 
-      %     of the novelty detection methods used.      
+      %   hyperparameters: a struct containing the hyperparameters, such as 'knn_arg', 
+      %     'kappa_threshold' and 'decision_thresholds' candidates.
       %   num_experiments: number of validation experiments.      
       %   num_untrained_classes: number of untrained classes, this parameter can
       %     be used to simulate novelty data in the dataset.
@@ -89,6 +89,7 @@ classdef KnnND < handle
       
       evaluations = cell(num_experiments,num_decision_thresholds);    
       
+      t0_knn = tic;      
       for i=1:num_experiments
         rng(i);        
         if random_select_classes
@@ -202,6 +203,8 @@ classdef KnnND < handle
       experiments.tnr_score = mean_tnr(best_threshold_id);
       experiments.fpr_score = mean_fpr(best_threshold_id);
       experiments.fnr_score = mean_fnr(best_threshold_id);
+      
+      experiments.total_time = toc(t0_knn);
       
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
         experiments.mcc_score,experiments.f1_score,experiments.afr_score);

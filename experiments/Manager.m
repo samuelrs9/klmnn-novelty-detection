@@ -49,92 +49,101 @@ classdef Manager < handle
       obj.plot_metric = plot_metric;
     end
     
-    function runExperiments(obj,methods,hyperparameters)
+    function runExperiments(obj,methods)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search for the 
       % chosen algorithm.
       %
       % Input args
-      %   method: a cell array of strings corresponding to the novelty detection methods 
-      %     used. Elements can be 'knn','lmnn','klmnn','knfst','one_svm','multi_svm' 
-      %     or 'kpca'.
-      %   hyperparameters: a cell array corresponding to the hyperparameters 
-      %     of the novelty detection methods used.
+      %   methods: a cell array of structs with hyperparameters for novelty 
+      %     detection methods.
       % ----------------------------------------------------------------------------------
       for i=1:numel(methods)
-        switch methods{i}
+        switch methods{i}.name
           case 'knn'
             try
               % It creates the output directory
-              knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
-                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
+              knn_dir = strcat(obj.out_dir,'/K=',int2str(methods{i}.knn_arg),...
+                ' kappa=',int2str(methods{i}.kappa_threshold));
+              file = strcat(knn_dir,'/knn_experiments.mat');
+              if exist(file,'file')
+                fprintf('Experiment KNN (K = %d kappa = %d) already exists!\n',...
+                  methods{i}.knn_arg,methods{i}.kappa_threshold)
+                continue;
+              end               
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end              
               % It creates an object of class KnnND
               knn = KnnND(obj.X,obj.y);              
-              % It starts experiments
-              t0_knn = tic;              
+              % It starts experiments                      
               experiments = knn.runExperiments(...
-                hyperparameters{i},...
+                methods{i},...
                 obj.num_experiments,...                
                 obj.num_untrained_classes,...
                 obj.training_ratio,...
                 obj.random_select_classes,...
-                obj.plot_metric);
-              experiments.total_time = toc(t0_knn);
+                obj.plot_metric);              
               % Salva experimentos
-              save(strcat(knn_dir,'/knn_experiments.mat'),'-struct','experiments');
+              save(file,'-struct','experiments');
             catch
               fprintf('\n knn experiment error!!! \n');
             end
           case 'lmnn'
             try
               % It creates the output directory
-              knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
-                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
+              knn_dir = strcat(obj.out_dir,'/K=',int2str(methods{i}.knn_arg),...
+                ' kappa=',int2str(methods{i}.kappa_threshold));
+              file = strcat(knn_dir,'/lmnn_experiments.mat');
+              if exist(file,'file')
+                fprintf('Experiment LMNN (K = %d kappa = %d) already exists!\n',...
+                  methods{i}.knn_arg,methods{i}.kappa_threshold)
+                continue;
+              end                                          
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
               % It creates an object of class LmnnND
               lmnn = LmnnND(obj.X,obj.y);
-              % It starts experiments
-              t0_lmnn = tic;
+              % It starts experiments              
               experiments = lmnn.runExperiments(...
-                hyperparameters{i},...
+                methods{i},...
                 obj.num_experiments,...                
                 obj.num_untrained_classes,...
                 obj.training_ratio,...
                 obj.random_select_classes,...
-                obj.plot_metric);
-              experiments.total_time = toc(t0_lmnn);              
-              % Salva experimentos
-              save(strcat(knn_dir,'/lmnn_experiments.mat'),'-struct','experiments');
+                obj.plot_metric);                        
+              % Salva experimentos              
+              save(file ,'-struct','experiments');
             catch
               fprintf('\n lmnn experiment error!!! \n');
             end
           case 'klmnn'
             try
               % It creates the output directory
-              knn_dir = strcat(obj.out_dir,'/K=',int2str(hyperparameters{i}.knn_arg),...
-                ' kappa=',int2str(hyperparameters{i}.kappa_threshold));
+              knn_dir = strcat(obj.out_dir,'/K=',int2str(methods{i}.knn_arg),...
+                ' kappa=',int2str(methods{i}.kappa_threshold));
+              file = strcat(knn_dir,'/klmnn_experiments.mat');
+              if exist(file,'file')
+                fprintf('Experiment KLMNN (K = %d kappa = %d) already exists!\n',...
+                  methods{i}.knn_arg,methods{i}.kappa_threshold)
+                continue;
+              end               
               if ~exist(knn_dir,'dir')
                 mkdir(knn_dir);
               end                            
               % It creates an object of class KlmnnND
               klmnn = KlmnnND(obj.X,obj.y);
               % It starts experiments
-              t0_klmnn = tic;
               experiments = klmnn.runExperiments(...
-                hyperparameters{i},...
+                methods{i},...
                 obj.num_experiments,...                
                 obj.num_untrained_classes,...
                 obj.training_ratio,...
                 obj.random_select_classes,...
-                obj.plot_metric);
-              experiments.total_time = toc(t0_klmnn);
+                obj.plot_metric);              
               % Salva experimentos
-              save(strcat(knn_dir,'/klmnn_experiments.mat'),'-struct','experiments');
+              save(file,'-struct','experiments');
             catch
               fprintf('\n klmnn experiment error!!! \n');
             end
@@ -142,23 +151,14 @@ classdef Manager < handle
             try
               % Cria um objeto da classe KnfstND
               knfst = KnfstND(obj.X,obj.y);
-              % Define intervalos de busca de parâmetros
-              % CONTINUAR DAQUI
-              knfst.num_decision_thresholds = obj.parameters{4}.num_decision_thresholds;
-              knfst.decision_thresholds = obj.parameters{4}.decision_thresholds;
-              knfst.kernel_type = obj.parameters{4}.kernel_type;
-              knfst.num_kernels = obj.parameters{4}.num_kernels;
-              knfst.kernel = obj.parameters{4}.kernel;
               % Inicia experimentos
-              t0_knfst = tic;
-              experiments = knfst.runExperiments(obj.num_experiments,obj.plot_metric);
-              experiments.experiment_time = toc(t0_knfst);
-              experiments.obj.num_experiments = obj.num_experiments;
-              experiments.search_thresholds = knfst.decision_thresholds;
-              experiments.num_search_parameters = knfst.num_decision_thresholds;
-              experiments.kernel_type = knfst.kernel_type;
-              experiments.search_kernels = knfst.kernel;
-              experiments.num_search_parameters = knfst.num_decision_thresholds * knfst.num_kernels;
+              experiments = knfst.runExperiments(...
+                methods{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
               % Salva experimentos
               save(strcat(obj.out_dir,'/knfst_experiments.mat'),'-struct','experiments');
             catch
@@ -168,19 +168,14 @@ classdef Manager < handle
             try
               % Cria um objeto da classe SvmND
               one_svm = SvmND(obj.X,obj.y);
-              % Define intervalos de busca de parâmetros
-              one_svm.kernel_type = obj.parameters{5}.kernel_type;
-              one_svm.num_kernels = obj.parameters{5}.num_kernels;
-              one_svm.kernel = obj.parameters{5}.kernel;
               % Inicia experimentos
-              t0_one_svm = tic;
-              experiments = one_svm.runNoveltyDetectionOneSVMExperiments(...
-                obj.num_experiments,obj.plot_metric);
-              experiments.experiment_time = toc(t0_one_svm);
-              experiments.obj.num_experiments = obj.num_experiments;
-              experiments.kernel_type = one_svm.kernel_type;
-              experiments.search_kernels = one_svm.kernel;
-              experiments.num_search_parameters = one_svm.num_kernels;
+              experiments = one_svm.runOneSVMExperiments(...
+                methods{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
               % Salva experimentos
               save(strcat(obj.out_dir,'/one_svm_experiments.mat'),'-struct','experiments');
             catch
@@ -190,23 +185,14 @@ classdef Manager < handle
             try
               % Cria um objeto da classe SvmND
               multi_svm = SvmND(obj.X,obj.y);
-              % Define intervalos de busca de parâmetros
-              multi_svm.num_decision_thresholds = obj.parameters{6}.num_decision_thresholds;
-              multi_svm.decision_thresholds = obj.parameters{6}.decision_thresholds;
-              multi_svm.kernel_type = obj.parameters{6}.kernel_type;
-              multi_svm.num_kernels = obj.parameters{6}.num_kernels;
-              multi_svm.kernel = obj.parameters{6}.kernel;
               % Inicia experimentos
-              t0_multi_svm = tic;
-              experiments = multi_svm.runNoveltyDetectionMultiSVMExperiments(...
-                obj.num_experiments,obj.plot_metric);
-              experiments.experiment_time = toc(t0_multi_svm);
-              experiments.obj.num_experiments = obj.num_experiments;
-              experiments.search_thresholds = multi_svm.decision_thresholds;
-              experiments.kernel_type = multi_svm.kernel_type;
-              experiments.search_kernels = multi_svm.kernel;
-              experiments.num_search_parameters = ...
-                multi_svm.num_decision_thresholds * multi_svm.num_kernels;
+              experiments = multi_svm.runMultiSVMExperiments(...
+                methods{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
               % Salva experimentos
               save(strcat(obj.out_dir,'/multi_svm_experiments.mat'),'-struct','experiments');
             catch
@@ -216,21 +202,14 @@ classdef Manager < handle
             try
               % Cria um objeto da classe KpcaND
               kpca = KpcaND(obj.X,obj.y);
-              % Define intervalos de busca de parâmetros
-              kpca.num_decision_thresholds = obj.parameters{7}.num_decision_thresholds;
-              kpca.decision_thresholds = obj.parameters{7}.decision_thresholds;
-              kpca.kernel_type = obj.parameters{7}.kernel_type;
-              kpca.num_kernels = obj.parameters{7}.num_kernels;
-              kpca.kernel = obj.parameters{7}.kernel;
               % Inicia experimentos
-              t0_kpca = tic;
-              experiments = kpca.runExperiments(obj.num_experiments,obj.plot_metric);
-              experiments.validation_time = toc(t0_kpca);
-              experiments.obj.num_experiments = obj.num_experiments;
-              experiments.search_thresholds = kpca.decision_thresholds;
-              experiments.kernel_type = kpca.kernel_type;
-              experiments.search_kernels = kpca.kernel;
-              experiments.num_search_parameters = kpca.num_decision_thresholds * kpca.num_kernels;
+              experiments = kpca.runExperiments(...
+                methods{i},...
+                obj.num_experiments,...                
+                obj.num_untrained_classes,...
+                obj.training_ratio,...
+                obj.random_select_classes,...
+                obj.plot_metric);
               % Salva experimentos
               save(strcat(obj.out_dir,'/kpca_experiments.mat'),'-struct','experiments');
             catch
@@ -240,19 +219,17 @@ classdef Manager < handle
       end
     end
     
-    function runExperimentsForKnnMethods(obj,methods,hyperparameters,num_knn_args)
+    function runExperimentsForKnnMethods(obj,methods,num_knn_args)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search for the 
       % knn methods.
       %
       % Input args
-      %   method: a list of strings corresponding to the novelty detection methods used.
-      %     It can be 'knn', 'lmnn' or 'klmnn'.
-      %   hyperparameters: a cell array corresponding to the hyperparameters 
-      %     of the novelty detection methods used.            
+      %   methods: a cell array of structs with hyperparameters for knn-based novelty 
+      %     detection methods.
       %   num_knn_args: number of knn hyperparameters to be tested.
       % ----------------------------------------------------------------------------------            
-      if nargin<4
+      if nargin<3
         num_knn_args = 5;
       end
       for K = 1:num_knn_args
@@ -260,10 +237,10 @@ classdef Manager < handle
           fprintf('\nK = %d \tkappa = %d\n',K,kappa);
           % Its sets K and kappa hyperparameters for knn methods.
           for i=1:numel(methods)
-            hyperparameters{i}.knn_arg = K;
-            hyperparameters{i}.kappa_threshold = kappa;
+            methods{i}.knn_arg = K;
+            methods{i}.kappa_threshold = kappa;
           end
-          obj.runExperiments(methods,hyperparameters);
+          obj.runExperiments(methods);
         end
       end
     end
@@ -752,7 +729,7 @@ classdef Manager < handle
             t0_knn = tic;
             knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             knn_evaluation = knn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
-              hyperparameters{i}.threshold_arg);
+              methods{i}.threshold_arg);
             knn_evaluation.evaluation_time = toc(t0_knn);
             % Salva avaliação
             save(strcat(knn_dir,'/knn_evaluate_parameter.mat'),'-struct','knn_evaluation');
@@ -1035,7 +1012,7 @@ classdef Manager < handle
             t0_knn = tic;
             knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             % Avalia os parâmetros
-            knn_predictions = knn.predict(obj,xtrain,ytrain,xtest,hyperparameters{i}.threshold_arg);
+            knn_predictions = knn.predict(obj,xtrain,ytrain,xtest,methods{i}.threshold_arg);
             prediction_time = toc(t0_knn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
             % Plota a fronteira de decisão
@@ -1137,27 +1114,31 @@ classdef Manager < handle
       end
     end
 
-    function reportExperimentResults(obj,methods,model_dir)
+    function reportExperiments(obj,out_dir,methods)
       % ----------------------------------------------------------------------------------
       % This method is used to load and process results of novelty detection experiments 
       % for the chosen algorithm.
       %
       % Inputa args
-      %   model_dir: model directory.      
+      %   out_dir: experiment diretory.
+      %   methods: methods to be processed.
       % ----------------------------------------------------------------------------------      
-      fprintf('\nProcessing results... ');
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
-      TPR = zeros(1,7);
-      TNR = zeros(1,7);
-      FPR = zeros(1,7);
-      FNR = zeros(1,7);
-      AFR = zeros(1,7);
-      F1 = zeros(1,7);
-      MCC = zeros(1,7);
-      for k=1:numel(methods)
-        switch methods{k}
+      fprintf('\nProcessing results... ');      
+      num_methods = numel(methods);
+      TPR = zeros(1,num_methods);
+      TNR = zeros(1,num_methods);
+      FPR = zeros(1,num_methods);
+      FNR = zeros(1,num_methods);
+      AFR = zeros(1,num_methods);
+      F1 = zeros(1,num_methods);
+      MCC = zeros(1,num_methods);
+      for k=1:num_methods 
+        switch methods{k}.name
           case 'knn'
-            try
+            try              
+              report = load(strcat(out_dir,'/','best_knn_experiment.mat'));
+              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K),...
+                ' kappa=',int2str(report.best_kappa));
               experiment = load(strcat(knn_dir,'/knn_experiments.mat'));
               TPR(1) = experiment.tpr_score;
               TNR(1) = experiment.tnr_score;
@@ -1171,6 +1152,9 @@ classdef Manager < handle
             end
           case 'lmnn'
             try
+              report = load(strcat(out_dir,'/','best_lmnn_experiment.mat'));
+              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K),...
+                ' kappa=',int2str(report.best_kappa));
               experiment = load(strcat(knn_dir,'/lmnn_experiments.mat'));
               TPR(2) = experiment.tpr_score;
               TNR(2) = experiment.tnr_score;
@@ -1184,6 +1168,9 @@ classdef Manager < handle
             end
           case 'klmnn'
             try
+              report = load(strcat(out_dir,'/','best_klmnn_experiment.mat'));
+              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K),...
+                ' kappa=',int2str(report.best_kappa));
               experiment = load(strcat(knn_dir,'/klmnn_experiments.mat'));
               TPR(3) = experiment.tpr_score;
               TNR(3) = experiment.tnr_score;
@@ -1197,7 +1184,7 @@ classdef Manager < handle
             end
           case 'knfst'
             try
-              experiment = load(strcat(model_dir,'/knfst_experiments.mat'));
+              experiment = load(strcat(out_dir,'/knfst_experiments.mat'));
               TPR(4) = experiment.tpr_score;
               TNR(4) = experiment.tnr_score;
               FPR(4) = experiment.fpr_score;
@@ -1210,7 +1197,7 @@ classdef Manager < handle
             end
           case 'one_svm'
             try
-              experiment = load(strcat(model_dir,'/one_svm_experiments.mat'));
+              experiment = load(strcat(out_dir,'/one_svm_experiments.mat'));
               TPR(5) = experiment.tpr_score;
               TNR(5) = experiment.tnr_score;
               FPR(5) = experiment.fpr_score;
@@ -1223,7 +1210,7 @@ classdef Manager < handle
             end
           case 'multi_svm'
             try
-              experiment = load(strcat(model_dir,'/multi_svm_experiments.mat'));
+              experiment = load(strcat(out_dir,'/multi_svm_experiments.mat'));
               TPR(6) = experiment.tpr_score;
               TNR(6) = experiment.tnr_score;
               FPR(6) = experiment.fpr_score;
@@ -1236,7 +1223,7 @@ classdef Manager < handle
             end
           case 'kpca'
             try
-              experiment = load(strcat(model_dir,'/kpca_experiments.mat'));
+              experiment = load(strcat(out_dir,'/kpca_experiments.mat'));
               TPR(7) = experiment.tpr_score;
               TNR(7) = experiment.tnr_score;
               FPR(7) = experiment.fpr_score;
@@ -1259,145 +1246,196 @@ classdef Manager < handle
       REPORT.Properties.VariableNames = method_names;
       REPORT.Properties.RowNames = metric_names;
       
-      save(strcat(model_dir,'/report_results.mat'),'TPR','TNR',...
+      save(strcat(out_dir,'/report_results.mat'),'TPR','TNR',...
         'FPR','FNR','AFR','F1','MCC','REPORT');
-      writetable(REPORT,strcat(model_dir,'/report_results.csv'),...
+      writetable(REPORT,strcat(out_dir,'/report_results.csv'),...
         'WriteRowNames',true,'Delimiter',';');
       fprintf('done!\n');
     end
     
-    function reportExperimentsForKnnMethods(obj,model_dir,num_knn_args)
+    function reports = reportExperimentsForKnnMethods(obj,out_dir,num_knn_args)
       % ----------------------------------------------------------------------------------
       % This method is used to load and process results of novelty detection experiments 
       % for knn methods.
       %
-      % Inputa args
-      %   model_dir: model directory.
+      % Input args
+      %   out_dir: experiment directory.
       %   num_knn_args: number of knn hyperparameters tested.
+      % Output args
+      %   reports: reports for knn, lmnn and klmnn-based novelty detection methods.
       % ----------------------------------------------------------------------------------
-      if nargin<3
-        num_knn_args = 5;
-      end
-      fprintf('\nLoading experiment results... ');
-      % KNN
-      KNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
-      KNN.TNR = nan*zeros(num_knn_args,num_knn_args);
-      KNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
-      KNN.FNR = nan*zeros(num_knn_args,num_knn_args);
-      KNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
-      KNN.F1 = nan*zeros(num_knn_args,num_knn_args);
-      KNN.MCC = nan*zeros(num_knn_args,num_knn_args);
-      % LMNN
-      LMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
-      LMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
-      LMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
-      LMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
-      LMNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
-      LMNN.F1 = nan*zeros(num_knn_args,num_knn_args);
-      LMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
-      % KLMNN
-      KLMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
-      KLMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
-      KLMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
-      KLMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
-      KLMNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
-      KLMNN.F1 = nan*zeros(num_knn_args,num_knn_args);
-      KLMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
-      
-      % Testes
-      for K = 1:num_knn_args
-        for kappa = 1:K
-          knn_dir = strcat(model_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
-          fprintf('\nK = %d \tkappa = %d\n',K,kappa);
-          % KNN
-          try
-            file = strcat(knn_dir,'/knn_experiments.mat');
-            experiment = load(file);
-            KNN.TPR(K,kappa) = experiment.tpr_score;
-            KNN.TNR(K,kappa) = experiment.tnr_score;
-            KNN.FPR(K,kappa) = experiment.fpr_score;
-            KNN.FNR(K,kappa) = experiment.fnr_score;
-            KNN.AFR(K,kappa) = experiment.afr_score;
-            KNN.F1(K,kappa) = experiment.f1_score;
-            KNN.MCC(K,kappa) = experiment.mcc_score;
-          catch
-            fprintf('\n--> error knn results!\n');
-          end
+      report_file = strcat([out_dir,'/','report_knn_methods.mat']);
+      if ~exist(report_file,'file')
+        if nargin<3
+          num_knn_args = 5;
+        end
+        fprintf('\nLoading experiment results... ');
+        % KNN
+        KNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+        KNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+        KNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+        KNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+        KNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
+        KNN.F1 = nan*zeros(num_knn_args,num_knn_args);
+        KNN.MCC = nan*zeros(num_knn_args,num_knn_args);
+        % LMNN
+        LMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+        LMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+        LMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+        LMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+        LMNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
+        LMNN.F1 = nan*zeros(num_knn_args,num_knn_args);
+        LMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
+        % KLMNN
+        KLMNN.TPR = nan*zeros(num_knn_args,num_knn_args); 
+        KLMNN.TNR = nan*zeros(num_knn_args,num_knn_args);
+        KLMNN.FPR = nan*zeros(num_knn_args,num_knn_args); 
+        KLMNN.FNR = nan*zeros(num_knn_args,num_knn_args);
+        KLMNN.AFR = nan*zeros(num_knn_args,num_knn_args); 
+        KLMNN.F1 = nan*zeros(num_knn_args,num_knn_args);
+        KLMNN.MCC = nan*zeros(num_knn_args,num_knn_args);
 
-          % LMNN
-          try
-            file = strcat(knn_dir,'/lmnn_experiments.mat');
-            experiment = load(file);
-            LMNN.TPR(K,kappa) = experiment.tpr_score;
-            LMNN.TNR(K,kappa) = experiment.tnr_score;
-            LMNN.FPR(K,kappa) = experiment.fpr_score;
-            LMNN.FNR(K,kappa) = experiment.fnr_score;
-            LMNN.AFR(K,kappa) = experiment.afr_score;
-            LMNN.F1(K,kappa) = experiment.f1_score;
-            LMNN.MCC(K,kappa) = experiment.mcc_score;
-          catch
-            fprintf('\n--> error lmnn results!\n');
-          end
-
-          % KLMNN
-          try
-            file = strcat(knn_dir,'/klmnn_experiments.mat');
-            experiment = load(file);
-            KLMNN.TPR(K,kappa) = experiment.tpr_score;
-            KLMNN.TNR(K,kappa) = experiment.tnr_score;
-            KLMNN.FPR(K,kappa) = experiment.fpr_score;
-            KLMNN.FNR(K,kappa) = experiment.fnr_score;
-            KLMNN.AFR(K,kappa) = experiment.afr_score;
-            KLMNN.F1(K,kappa) = experiment.f1_score;
-            KLMNN.MCC(K,kappa) = experiment.mcc_score;
-          catch
-            fprintf('\n--> error klmnn results!\n');
+        % Testes
+        for K = 1:num_knn_args
+          for kappa = 1:K
+            knn_dir = strcat(out_dir,'/K=',int2str(K),' kappa=',int2str(kappa));
+            fprintf('\nK = %d \tkappa = %d\n',K,kappa);
+            % KNN
+            try
+              file = strcat(knn_dir,'/knn_experiments.mat');
+              experiment = load(file);
+              KNN.TPR(K,kappa) = experiment.tpr_score;
+              KNN.TNR(K,kappa) = experiment.tnr_score;
+              KNN.FPR(K,kappa) = experiment.fpr_score;
+              KNN.FNR(K,kappa) = experiment.fnr_score;
+              KNN.AFR(K,kappa) = experiment.afr_score;
+              KNN.F1(K,kappa) = experiment.f1_score;
+              KNN.MCC(K,kappa) = experiment.mcc_score;
+            catch
+              fprintf('\n--> error knn results!\n');
+            end
+            % LMNN
+            try
+              file = strcat(knn_dir,'/lmnn_experiments.mat');
+              experiment = load(file);
+              LMNN.TPR(K,kappa) = experiment.tpr_score;
+              LMNN.TNR(K,kappa) = experiment.tnr_score;
+              LMNN.FPR(K,kappa) = experiment.fpr_score;
+              LMNN.FNR(K,kappa) = experiment.fnr_score;
+              LMNN.AFR(K,kappa) = experiment.afr_score;
+              LMNN.F1(K,kappa) = experiment.f1_score;
+              LMNN.MCC(K,kappa) = experiment.mcc_score;
+            catch
+              fprintf('\n--> error lmnn results!\n');
+            end
+            % KLMNN
+            try
+              file = strcat(knn_dir,'/klmnn_experiments.mat');
+              experiment = load(file);
+              KLMNN.TPR(K,kappa) = experiment.tpr_score;
+              KLMNN.TNR(K,kappa) = experiment.tnr_score;
+              KLMNN.FPR(K,kappa) = experiment.fpr_score;
+              KLMNN.FNR(K,kappa) = experiment.fnr_score;
+              KLMNN.AFR(K,kappa) = experiment.afr_score;
+              KLMNN.F1(K,kappa) = experiment.f1_score;
+              KLMNN.MCC(K,kappa) = experiment.mcc_score;
+            catch
+              fprintf('\n--> error klmnn results!\n');
+            end
           end
         end
+        % Cria as tabelas
+        kappa = struct();
+        for k=1:num_knn_args
+          K_names{k,1} = sprintf('K = %d',k);
+          kappa_names{k} = sprintf('kappa%d',k);
+          kappa.(kappa_names{k}) = sprintf('kappa = %d',k);
+        end        
+        % KNN
+        KNN.TPR = array2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KNN.TNR = array2table(round(KNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KNN.FPR = array2table(round(KNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KNN.FNR = array2table(round(KNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KNN.AFR = array2table(round(KNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KNN.F1 = array2table(round(KNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KNN.MCC = array2table(round(KNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+        % LMNN
+        LMNN.TPR = array2table(round(LMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        LMNN.TNR = array2table(round(LMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        LMNN.FPR = array2table(round(LMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        LMNN.FNR = array2table(round(LMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        LMNN.AFR = array2table(round(LMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        LMNN.F1 = array2table(round(LMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+        LMNN.MCC = array2table(round(LMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+        % KLMNN
+        KLMNN.TPR = array2table(round(KLMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KLMNN.TNR = array2table(round(KLMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KLMNN.FPR = array2table(round(KLMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KLMNN.FNR = array2table(round(KLMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KLMNN.AFR = array2table(round(KLMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KLMNN.F1 = array2table(round(KLMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
+        KLMNN.MCC = array2table(round(KLMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+
+        save(strcat(out_dir,'/report_knn_methods.mat'),'kappa','KNN','LMNN','KLMNN');
+        fprintf('done!\n');     
       end
-      
-      % Cria as tabelas
-      %K_names = split(sprintf('K = %d,',1:5),',');
-      %K_names = K_names(1:end-1)';
-      %kappa_names = {'kappa1','kappa2','kappa3','kappa4'};
-      
-      %kappa = struct('kappa1','K','kappa2','K-1','kappa3','K-2','kappa4','K-3');
-      kappa = struct();
-      for k=1:num_knn_args
-        K_names{k,1} = sprintf('K = %d',k);
-        kappa_names{k} = sprintf('kappa%d',k);
-        kappa.(kappa_names{k}) = sprintf('kappa = %d',k);
-      end        
-      
+      report = load(report_file);
       % KNN
-      KNN.TPR = array2table(round(KNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.TNR = array2table(round(KNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FPR = array2table(round(KNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.FNR = array2table(round(KNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.AFR = array2table(round(KNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.F1 = array2table(round(KNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KNN.MCC = array2table(round(KNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KNN_MCC = table2array(report.KNN.MCC);
+      best_mcc = max(max(KNN_MCC));
+      [K,kappa] = find(KNN_MCC==best_mcc);
+      
+      knn_report.name = 'knn';
+      knn_report.best_mcc = best_mcc;
+      knn_report.best_K = K;
+      knn_report.best_kappa = kappa;
       
       % LMNN
-      LMNN.TPR = array2table(round(LMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.TNR = array2table(round(LMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FPR = array2table(round(LMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.FNR = array2table(round(LMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.AFR = array2table(round(LMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.F1 = array2table(round(LMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      LMNN.MCC = array2table(round(LMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      LMNN_MCC = table2array(report.LMNN.MCC);
+      best_mcc = max(max(LMNN_MCC));
+      [K,kappa] = find(LMNN_MCC==best_mcc);
+      
+      lmnn_report.name = 'lmnn';
+      lmnn_report.best_mcc = best_mcc;
+      lmnn_report.best_K = K;
+      lmnn_report.best_kappa = kappa;      
       
       % KLMNN
-      KLMNN.TPR = array2table(round(KLMNN.TPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.TNR = array2table(round(KLMNN.TNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FPR = array2table(round(KLMNN.FPR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.FNR = array2table(round(KLMNN.FNR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.AFR = array2table(round(KLMNN.AFR,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.F1 = array2table(round(KLMNN.F1,4),'VariableNames',kappa_names,'RowNames',K_names);
-      KLMNN.MCC = array2table(round(KLMNN.MCC,4),'VariableNames',kappa_names,'RowNames',K_names);
+      KLMNN_MCC = table2array(report.KLMNN.MCC);
+      best_mcc = max(max(KLMNN_MCC));
+      [K,kappa] = find(KLMNN_MCC==best_mcc);
       
-      save(strcat(model_dir,'/report_knn_methods.mat'),'kappa','KNN','LMNN','KLMNN');
-      fprintf('done!\n');
+      klmnn_report.name = 'klmnn';
+      klmnn_report.best_mcc = best_mcc;
+      klmnn_report.best_K = K;
+      klmnn_report.best_kappa = kappa;            
+      
+      fprintf('------------------------ KNN ------------------------\n');      
+      fprintf('best K: %d\n',knn_report.best_K);
+      fprintf('best kappa: %d\n',knn_report.best_kappa);
+      fprintf('best MCC: %4f\n',knn_report.best_mcc);
+      fprintf('Full MCC table:\n');
+      disp(report.KNN.MCC);
+      
+      fprintf('------------------------ LMNN ------------------------\n');      
+      fprintf('best K: %d\n',lmnn_report.best_K);
+      fprintf('best kappa: %d\n',lmnn_report.best_kappa);
+      fprintf('best MCC: %4f\n',lmnn_report.best_mcc);
+      fprintf('Full MCC table:\n');
+      disp(report.LMNN.MCC);
+      
+      fprintf('------------------------ KLMNN ------------------------\n');      
+      fprintf('best K: %d\n',klmnn_report.best_K);
+      fprintf('best kappa: %d\n',klmnn_report.best_kappa);
+      fprintf('best MCC: %4f\n',klmnn_report.best_mcc);
+      fprintf('Full MCC table:\n');
+      disp(report.KLMNN.MCC);            
+      
+      save(strcat([out_dir,'/','best_knn_experiment.mat']),'-struct','knn_report');
+      save(strcat([out_dir,'/','best_lmnn_experiment.mat']),'-struct','lmnn_report');
+      save(strcat([out_dir,'/','best_klmnn_experiment.mat']),'-struct','klmnn_report');
+      
+      reports = {knn_report,lmnn_report,klmnn_report};
     end
     
     function reportEvaluation(obj,methods,model_dir)

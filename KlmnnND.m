@@ -61,14 +61,14 @@ classdef KlmnnND < handle
       obj.samples_per_classe = cat(1,id,obj.samples_per_classe);
     end
     
-    function experiment = runExperiments(obj,hyperparameters,num_experiments,...
+    function experiments = runExperiments(obj,hyperparameters,num_experiments,...
       num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search.
       %
       % Input args
-      %   hyperparameters: a cell array corresponding to the hyperparameters 
-      %     of the novelty detection methods used.      
+      %   hyperparameters: a struct containing the hyperparameters, such as 'knn_arg', 
+      %     'kappa_threshold', 'decision_thresholds' candidates and 'kernels' candidates.
       %   num_experiments: number of validation experiments.      
       %   num_untrained_classes: number of untrained classes, this parameter can
       %     be used to simulate novelty data in the dataset.
@@ -79,7 +79,7 @@ classdef KlmnnND < handle
       %
       % Output args
       %   experiments: experiments report.
-      % ----------------------------------------------------------------------------------      
+      % ----------------------------------------------------------------------------------            
       classes_id = 1:obj.num_classes;      
       obj.knn_arg = hyperparameters.knn_arg;
       obj.kappa_threshold = hyperparameters.kappa_threshold;        
@@ -102,6 +102,7 @@ classdef KlmnnND < handle
       
       evaluations = cell(num_kernels,num_decision_thresholds,num_experiments);
       
+      t0_klmnn = tic;
       for i=1:num_experiments
         rng(i);
         if random_select_classes
@@ -241,7 +242,7 @@ classdef KlmnnND < handle
       all_metrics.TNR = TNR;
       all_metrics.FPR = FPR;
       all_metrics.FNR = FNR;
-      experiment.all_metrics = all_metrics;
+      experiments.all_metrics = all_metrics;
       
       model.training_ratio = training_ratio;
       model.best_threshold_id = best_threshold_id;
@@ -256,29 +257,31 @@ classdef KlmnnND < handle
       experiments.hyperparameters = hyperparameters;      
       experiments.num_experiments = num_experiments;      
       
-      experiment.model = model;
-      experiment.split = cell2mat(split_exp);
-      experiment.evaluations = evaluations;
+      experiments.model = model;
+      experiments.split = cell2mat(split_exp);
+      experiments.evaluations = evaluations;
       
-      experiment.mean_mcc = mean_mcc;
-      experiment.mean_f1 = mean_f1;
-      experiment.mean_afr = mean_afr;
-      experiment.mean_tpr = mean_tpr;
-      experiment.mean_tnr = mean_tnr;
-      experiment.mean_fpr = mean_fpr;
-      experiment.mean_fnr = mean_fnr;
+      experiments.mean_mcc = mean_mcc;
+      experiments.mean_f1 = mean_f1;
+      experiments.mean_afr = mean_afr;
+      experiments.mean_tpr = mean_tpr;
+      experiments.mean_tnr = mean_tnr;
+      experiments.mean_fpr = mean_fpr;
+      experiments.mean_fnr = mean_fnr;
       
-      experiment.mcc_score = mean_mcc(best_kernel_id,best_threshold_id);
-      experiment.f1_score = mean_f1(best_kernel_id,best_threshold_id);
-      experiment.afr_score = mean_afr(best_kernel_id,best_threshold_id);
-      experiment.tpr_score = mean_tpr(best_kernel_id,best_threshold_id);
-      experiment.tnr_score = mean_tnr(best_kernel_id,best_threshold_id);
-      experiment.fpr_score = mean_fpr(best_kernel_id,best_threshold_id);
-      experiment.fnr_score = mean_fnr(best_kernel_id,best_threshold_id);
-      experiment.all_metrics = all_metrics;
+      experiments.mcc_score = mean_mcc(best_kernel_id,best_threshold_id);
+      experiments.f1_score = mean_f1(best_kernel_id,best_threshold_id);
+      experiments.afr_score = mean_afr(best_kernel_id,best_threshold_id);
+      experiments.tpr_score = mean_tpr(best_kernel_id,best_threshold_id);
+      experiments.tnr_score = mean_tnr(best_kernel_id,best_threshold_id);
+      experiments.fpr_score = mean_fpr(best_kernel_id,best_threshold_id);
+      experiments.fnr_score = mean_fnr(best_kernel_id,best_threshold_id);
+      experiments.all_metrics = all_metrics;
+      
+      experiments.total_time = toc(t0_klmnn);
       
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
-        experiment.mcc_score,experiment.f1_score,experiment.afr_score);
+        experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
       figure; 
       pcolor(decision_thresholds,kernels,mean_mcc); 

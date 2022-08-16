@@ -54,14 +54,14 @@ classdef LmnnND < handle
       obj.max_iter = 500;
     end
     
-    function experiment = runExperiments(obj,hyperparameters,num_experiments,...
+    function experiments = runExperiments(obj,hyperparameters,num_experiments,...
       num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search.
       %
       % Input args
-      %   hyperparameters: a cell array corresponding to the hyperparameters 
-      %     of the novelty detection methods used.      
+      %   hyperparameters: a struct containing the hyperparameters, such as 'knn_arg', 
+      %     'kappa_threshold' and 'decision_thresholds' candidates.
       %   num_experiments: number of validation experiments.      
       %   num_untrained_classes: number of untrained classes, this parameter can
       %     be used to simulate novelty data in the dataset.
@@ -81,16 +81,17 @@ classdef LmnnND < handle
       
       split_exp = cell(num_experiments,1);
       
-      MCC = zeros(num_experiments,num_untrained_classes);
-      AFR = zeros(num_experiments,num_untrained_classes);
-      F1 = zeros(num_experiments,num_untrained_classes);
-      TPR = zeros(num_experiments,num_untrained_classes);
-      TNR = zeros(num_experiments,num_untrained_classes);
-      FPR = zeros(num_experiments,num_untrained_classes);
-      FNR = zeros(num_experiments,num_untrained_classes);
+      MCC = zeros(num_experiments,num_decision_thresholds);
+      AFR = zeros(num_experiments,num_decision_thresholds);
+      F1 = zeros(num_experiments,num_decision_thresholds);
+      TPR = zeros(num_experiments,num_decision_thresholds);
+      TNR = zeros(num_experiments,num_decision_thresholds);
+      FPR = zeros(num_experiments,num_decision_thresholds);
+      FNR = zeros(num_experiments,num_decision_thresholds);
       
-      evaluations = cell(num_experiments,num_untrained_classes);      
-                        
+      evaluations = cell(num_experiments,num_decision_thresholds);      
+          
+      t0_lmnn = tic;
       for i=1:num_experiments
         rng(i);
         if random_select_classes
@@ -190,11 +191,11 @@ classdef LmnnND < handle
       all_metrics.TNR = TNR;
       all_metrics.FPR = FPR;
       all_metrics.FNR = FNR;
-      experiment.all_metrics = all_metrics;
+      experiments.all_metrics = all_metrics;
       
       model.training_ratio = training_ratio;
       model.best_threshold_id = best_threshold_id;      
-      model.num_untrained_classes = num_untrained_classes;
+      model.num_decision_thresholds = num_decision_thresholds;
       
       model.knn_arg = obj.knn_arg;
       model.kappa_threshold = obj.kappa_threshold;
@@ -203,28 +204,30 @@ classdef LmnnND < handle
       experiments.hyperparameters = hyperparameters;      
       experiments.num_experiments = num_experiments;      
       
-      experiment.model = model;
-      experiment.split = cell2mat(split_exp);
-      experiment.evaluations = evaluations;
+      experiments.model = model;
+      experiments.split = cell2mat(split_exp);
+      experiments.evaluations = evaluations;
       
-      experiment.mean_mcc = mean_mcc;
-      experiment.mean_f1 = mean_f1;
-      experiment.mean_afr = mean_afr;
-      experiment.mean_tpr = mean_tpr;
-      experiment.mean_tnr = mean_tnr;
-      experiment.mean_fpr = mean_fpr;
-      experiment.mean_fnr = mean_fnr;
+      experiments.mean_mcc = mean_mcc;
+      experiments.mean_f1 = mean_f1;
+      experiments.mean_afr = mean_afr;
+      experiments.mean_tpr = mean_tpr;
+      experiments.mean_tnr = mean_tnr;
+      experiments.mean_fpr = mean_fpr;
+      experiments.mean_fnr = mean_fnr;
       
-      experiment.mcc_score = mean_mcc(best_threshold_id);
-      experiment.f1_score = mean_f1(best_threshold_id);
-      experiment.afr_score = mean_afr(best_threshold_id);
-      experiment.tpr_score = mean_tpr(best_threshold_id);
-      experiment.tnr_score = mean_tnr(best_threshold_id);
-      experiment.fpr_score = mean_fpr(best_threshold_id);
-      experiment.fnr_score = mean_fnr(best_threshold_id);
+      experiments.mcc_score = mean_mcc(best_threshold_id);
+      experiments.f1_score = mean_f1(best_threshold_id);
+      experiments.afr_score = mean_afr(best_threshold_id);
+      experiments.tpr_score = mean_tpr(best_threshold_id);
+      experiments.tnr_score = mean_tnr(best_threshold_id);
+      experiments.fpr_score = mean_fpr(best_threshold_id);
+      experiments.fnr_score = mean_fnr(best_threshold_id);
+      
+      experiments.total_time = toc(t0_lmnn);    
       
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
-        experiment.mcc_score,experiment.f1_score,experiment.afr_score);
+        experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
       figure; 
       plot(decision_thresholds,mean_mcc,'LineWidth',2);
@@ -253,7 +256,7 @@ classdef LmnnND < handle
       %   model:
       % ----------------------------------------------------------------------------------
       obj.split = cell(num_validations,1);
-      mcc = zeros(num_validations,num_untrained_classes);
+      mcc = zeros(num_validations,num_decision_thresholds);
       for i=1:num_validations
         rng(i);
         % Cria um objeto split. Particiona a base em dois conjuntos
@@ -280,7 +283,7 @@ classdef LmnnND < handle
         xvalg = obj.transform(xval,T);
         
         % KNN
-        knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes,num_untrained_classes);
+        knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold);
         RT = [];
         for j=1:num_untrained_classes
           fprintf('\nLMNN (K=%d kappa=%d) \tVal %d/%d \tDecision threshold %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_validations,j,num_untrained_classes);
@@ -297,7 +300,7 @@ classdef LmnnND < handle
             ylim([0,1]);
             xlabel('Threshold');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['LMNN [ test ',num2str(i),'/',num2str(num_validations),' | decision_threshold ',num2str(j),'/',num2str(num_untrained_classes),' ]']);
+            title(['LMNN [ test ',num2str(i),'/',num2str(num_validations),' | decision_threshold ',num2str(j),'/',num2str(num_decision_thresholds),' ]']);
             drawnow;
             pause(0.01);
           end
@@ -310,7 +313,7 @@ classdef LmnnND < handle
       
       model.training_ratio = training_ratio;
       model.decision_threshold = decision_thresholds(ID);
-      model.num_untrained_classes = num_untrained_classes;
+      model.num_decision_thresholds = num_decision_thresholds;
       model.knn_arg = obj.knn_arg;
       model.kappa_threshold = obj.kappa_threshold;
       model.mean_mcc = max_mean_mcc;
@@ -431,7 +434,7 @@ classdef LmnnND < handle
       % Visualization.map(xtrain,xtrainp,ytrain)
       
       % KNN
-      knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes,num_untrained_classes);
+      knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold);
       predictions = knn.predict(xtraing,ytrain,xtestg,threshold);
     end
     

@@ -46,47 +46,61 @@ classdef KnfstND < handle
       obj.samples_per_classe = cat(1,id,obj.samples_per_classe);      
     end
 
-    function experiment = runExperiments(obj,num_experiments,random_select_classes,plot_metric)
+    function experiments = runExperiments(obj,hyperparameters,num_experiments,...
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
       % This method runs validation experiments and hyperparameter search.
       %
       % Input args
-      %   num_experiments: number of validation experiments.
+      %   hyperparameters: a struct containing the hyperparameters, such as 
+      %     'decision_thresholds' candidates and 'kernels' candidates.     
+      %   num_experiments: number of validation experiments.      
+      %   num_untrained_classes: number of untrained classes, this parameter can
+      %     be used to simulate novelty data in the dataset.
+      %   training_ratio: training sample rate.      
       %   random_select_classes: enable/disable random selection of untrained classes (a
       %     boolean value).
       %   plot_metric: enable/disable the accuracy metrics plot (a boolean value).
       %
       % Output args
       %   experiments: experiments report.
-      % ----------------------------------------------------------------------------------
+      % ----------------------------------------------------------------------------------      
+      classes_id = 1:obj.num_classes;      
+      obj.kernel_type = hyperparameters.kernel_type;
+      num_decision_thresholds = hyperparameters.num_decision_thresholds;
+      decision_thresholds = hyperparameters.decision_thresholds;
+      num_kernels = hyperparameters.num_kernels;
+      kernels = hyperparameters.kernels;
+      
       split_exp = cell(num_experiments,1);
       
-      MCC = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      AFR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      F1 = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      TPR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      TNR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      FPR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
-      FNR = zeros(obj.num_kernels,num_untrained_classes,num_experiments);
+      MCC = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      AFR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      F1 = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      TPR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      TNR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      FPR = zeros(num_kernels,num_decision_thresholds,num_experiments);
+      FNR = zeros(num_kernels,num_decision_thresholds,num_experiments);
       
-      evaluations = cell(obj.num_kernels,num_untrained_classes,num_experiments);
+      evaluations = cell(num_kernels,num_decision_thresholds,num_experiments);
       
+      t0_knfst = tic;
       for i=1:num_experiments
         rng(i);
-        % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(obj.num_classes,obj.untrained_classes);
+        % Randomly selects trained and untrained classes
+        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
+          obj.num_classes,num_untrained_classes);
         
-        % Divide os índices em treino e teste
-        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,obj.num_classes,is_trained_class);
+        % In each experiment selects only one untrained class
+        [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,is_trained_class);
         [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
         
-        % Todas as amostras não treinadas são definidas
-        % como outliers (label -1)
+        % All untrained samples are defined as outliers (label -1)
         ytest(logical(sum(ytest==untrained,2))) = -1;
         
         RK = [];
-        for j=1:obj.num_kernels
-          kernel_arg = obj.kernel(j);
+        for j=1:num_kernels
+          kernel_arg = kernels(j);
           
           % Matriz de Kernel Treinamento x Treinamento
           KTr = obj.kernelMatrix(xtrain,xtrain,kernel_arg);
@@ -95,9 +109,9 @@ classdef KnfstND < handle
           KTe = obj.kernelMatrix(xtrain,xtest,kernel_arg);
           
           RT = [];
-          for k=1:num_untrained_classes
-            fprintf('\nKNFST \tTest: %d/%d \tKernel (%d/%d) \tDecision threshold (%d/%d)\n',i,num_experiments,j,obj.num_kernels,k,num_untrained_classes);
-            decision_threshold = hyperparameters.decision_thresholds(k);
+          for k=1:num_decision_thresholds
+            fprintf('\nKNFST \tTest: %d/%d \tKernel (%d/%d) \tDecision threshold (%d/%d)\n',i,num_experiments,j,num_kernels,k,num_decision_thresholds);
+            decision_threshold = decision_thresholds(k);
             evaluations{j,k,i} = obj.evaluateAux(KTr,ytrain,KTe,ytest,kernel_arg,decision_threshold);
             evaluations{j,k,i}.kernel = kernel_arg;
             MCC(j,k,i) = evaluations{j,k,i}.MCC;
@@ -111,12 +125,12 @@ classdef KnfstND < handle
               RT = cat(1,RT,MCC(j,k,i));
               figure(1);
               clf('reset');
-              plot(hyperparameters.decision_thresholds(1:k),RT,'-r','LineWidth',3);
-              xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+              plot(decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([decision_thresholds(1),decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KNFST [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_untrained_classes),' ]']);
+              title(['KNFST [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_decision_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -125,12 +139,12 @@ classdef KnfstND < handle
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
-            plot(obj.kernel(1:j),RK,'-','LineWidth',3);
-            xlim([obj.kernel(1),obj.kernel(end)]);
+            plot(kernels(1:j),RK,'-','LineWidth',3);
+            xlim([kernels(1),kernels(end)]);
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['KNFST [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
+            title(['KNFST [ test ',num2str(i),'/',num2str(num_experiments),' | kernel ',num2str(j),'/',num2str(num_kernels),' ]']);
             drawnow;
           end
         end
@@ -166,43 +180,56 @@ classdef KnfstND < handle
       all_metrics.TNR = TNR;
       all_metrics.FPR = FPR;
       all_metrics.FNR = FNR;
-      experiment.all_metrics = all_metrics;
+      experiments.all_metrics = all_metrics;
       
       model.training_ratio = training_ratio;
       model.best_threshold_id = best_threshold_id;
       model.best_kernel_id = best_kernel_id;
-      model.decision_threshold = hyperparameters.decision_thresholds(best_threshold_id);
-      model.kernel = obj.kernel(best_kernel_id);
-      model.untrained_classes = obj.untrained_classes;
+      model.num_untrained_classes = num_untrained_classes;
       
-      experiment.model = model;
-      experiment.split = cell2mat(split_exp);
-      experiment.evaluations = evaluations;
-      experiment.mean_mcc = mean_mcc;
-      experiment.mean_f1 = mean_f1;
-      experiment.mean_afr = mean_afr;
-      experiment.mean_tpr = mean_tpr;
-      experiment.mean_tnr = mean_tnr;
-      experiment.mean_fpr = mean_fpr;
-      experiment.mean_fnr = mean_fnr;
+      model.decision_threshold = decision_thresholds(best_threshold_id);
+      model.kernel = kernels(best_kernel_id);
       
-      experiment.mcc_score = mean_mcc(best_kernel_id,best_threshold_id);
-      experiment.f1_score = mean_f1(best_kernel_id,best_threshold_id);
-      experiment.afr_score = mean_afr(best_kernel_id,best_threshold_id);
-      experiment.tpr_score = mean_tpr(best_kernel_id,best_threshold_id);
-      experiment.tnr_score = mean_tnr(best_kernel_id,best_threshold_id);
-      experiment.fpr_score = mean_fpr(best_kernel_id,best_threshold_id);
-      experiment.fnr_score = mean_fnr(best_kernel_id,best_threshold_id);
+      experiments.hyperparameters = hyperparameters;      
+      experiments.num_experiments = num_experiments;      
+
+      experiments.model = model;
+      experiments.split = cell2mat(split_exp);
+      experiments.evaluations = evaluations;
+      experiments.mean_mcc = mean_mcc;
+      experiments.mean_f1 = mean_f1;
+      experiments.mean_afr = mean_afr;
+      experiments.mean_tpr = mean_tpr;
+      experiments.mean_tnr = mean_tnr;
+      experiments.mean_fpr = mean_fpr;
+      experiments.mean_fnr = mean_fnr;
       
+      experiments.mcc_score = mean_mcc(best_kernel_id,best_threshold_id);
+      experiments.f1_score = mean_f1(best_kernel_id,best_threshold_id);
+      experiments.afr_score = mean_afr(best_kernel_id,best_threshold_id);
+      experiments.tpr_score = mean_tpr(best_kernel_id,best_threshold_id);
+      experiments.tnr_score = mean_tnr(best_kernel_id,best_threshold_id);
+      experiments.fpr_score = mean_fpr(best_kernel_id,best_threshold_id);
+      experiments.fnr_score = mean_fnr(best_kernel_id,best_threshold_id);
+      
+      experiments.total_time = toc(t0_knfst);
       
       fprintf('\nRESULTS\n MCC Score: %.4f\n F1 Score: %.4f\n AFR Score: %.4f\n',...
-        experiment.mcc_score,experiment.f1_score,experiment.afr_score);
+        experiments.mcc_score,experiments.f1_score,experiments.afr_score);
       
-      figure;  pcolor(hyperparameters.decision_thresholds,obj.kernel,mean_mcc); colorbar;
-      xlabel('decision_threshold'); ylabel('kernel'); title('MCC');
+      figure;  
+      pcolor(decision_thresholds,kernels,mean_mcc); 
+      colorbar;
+      xlabel('decision_threshold'); 
+      ylabel('kernel'); 
+      title('MCC');
       
-      figure; pcolor(hyperparameters.decision_thresholds,obj.kernel,mean_afr); colorbar;
-      xlabel('decision_threshold'); ylabel('kernel'); title('AFR');
+      figure; 
+      pcolor(decision_thresholds,kernels,mean_f1); 
+      colorbar;
+      xlabel('decision_threshold'); 
+      ylabel('kernel'); 
+      title('F1-SCORE');
     end
     
     function model = validation(obj,n_validations,plot_error)
@@ -210,7 +237,7 @@ classdef KnfstND < handle
       % Validação do algoritmo knfst
       % ----------------------------------------------------------------------------------      
       obj.split = cell(n_validations,1);
-      mcc = zeros(obj.num_kernels,num_untrained_classes,n_validations);
+      mcc = zeros(num_kernels,num_decision_thresholds,n_validations);
       for i=1:n_validations
         rng(i);
         % Cria um objeto split. Particiona a base em dois conjuntos
@@ -221,18 +248,18 @@ classdef KnfstND < handle
         [id_train,id_val] = obj.split{i}.idTrainVal();
         [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
         RK = [];
-        for j=1:obj.num_kernels
-          kernel_arg = obj.kernel(j);
+        for j=1:num_kernels
+          kernel_arg = kernels(j);
           % Matriz de Kernel Treinamento x Treinamento
           KTr = obj.kernelMatrix(xtrain,xtrain,kernel_arg);
           % Matriz de Kernel Treinamento x Validação
           KVa = obj.kernelMatrix(xtrain,xval,kernel_arg);
           RT = [];
-          for k=1:num_untrained_classes
+          for k=1:num_decision_thresholds
             %if rem(k,20) == 0
-            fprintf('\nKNFST \tVal: %d/%d \tKernel %d/%d \tDecision threshold %d/%d\n',i,n_validations,j,obj.num_kernels,k,num_untrained_classes);
+            fprintf('\nKNFST \tVal: %d/%d \tKernel %d/%d \tDecision threshold %d/%d\n',i,n_validations,j,num_kernels,k,num_decision_thresholds);
             %end
-            decision_threshold = hyperparameters.decision_thresholds(k);
+            decision_threshold = decision_thresholds(k);
             result = obj.evaluateAux(KTr,ytrain,KVa,yval,kernel_arg,decision_threshold);
             result.kernel = kernel_arg;
             mcc(j,k,i) = result.MCC;
@@ -240,12 +267,12 @@ classdef KnfstND < handle
               RT = cat(1,RT,mcc(j,k,i));
               figure(1);
               clf('reset');
-              plot(hyperparameters.decision_thresholds(1:k),RT,'-r','LineWidth',3);
-              xlim([hyperparameters.decision_thresholds(1),hyperparameters.decision_thresholds(end)]);
+              plot(decision_thresholds(1:k),RT,'-r','LineWidth',3);
+              xlim([decision_thresholds(1),decision_thresholds(end)]);
               ylim([0,1]);
               xlabel('Threshold');
               ylabel('Matthews correlation coefficient (MCC)');
-              title(['KNFST [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_untrained_classes),' ]']);
+              title(['KNFST [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_decision_thresholds),' ]']);
               drawnow;
               pause(0.01);
             end
@@ -254,12 +281,12 @@ classdef KnfstND < handle
             RK = cat(1,RK,max(RT));
             figure(2);
             clf('reset');
-            plot(obj.kernel(1:j),RK,'-','LineWidth',3);
-            xlim([obj.kernel(1),obj.kernel(end)]);
+            plot(kernels(1:j),RK,'-','LineWidth',3);
+            xlim([kernels(1),kernels(end)]);
             ylim([0,1]);
             xlabel('Kernel');
             ylabel('Matthews correlation coefficient (MCC)');
-            title(['KNFST [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(obj.num_kernels),' ]']);
+            title(['KNFST [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(num_kernels),' ]']);
             drawnow;
           end
         end
@@ -271,9 +298,9 @@ classdef KnfstND < handle
       id_k = id_k(1); id_t = id_t(1);
       
       model.training_ratio = training_ratio;
-      model.kernel = obj.kernel(id_k);
-      model.decision_threshold = hyperparameters.decision_thresholds(id_t);
-      model.untrained_classes = obj.untrained_classes;
+      model.kernel = kernels(id_k);
+      model.decision_threshold = decision_thresholds(id_t);
+      model.num_untrained_classes = num_untrained_classes;
       model.mean_mcc = max_mean_mcc;
     end
     
@@ -386,10 +413,10 @@ classdef KnfstND < handle
       outlier_predictions = -ones(size(predictions));
       outlier_predictions(predictions>0) = 1;
       
-      report_outliers = ClassificationReport(outlier_gt,outlier_predictions);
+      report_outliers = MetricsReport(outlier_gt,outlier_predictions);
       
       % General report
-      report = ClassificationReport(ytest,predictions);
+      report = MetricsReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
       result.decision_threshold =  decision_threshold;
@@ -468,10 +495,10 @@ classdef KnfstND < handle
       outlier_predictions = -ones(size(predictions));
       outlier_predictions(predictions>0) = 1;
       
-      report_outliers = ClassificationReport(outlier_gt,outlier_predictions);
+      report_outliers = MetricsReport(outlier_gt,outlier_predictions);
       
       % General report
-      report = ClassificationReport(ytest,predictions);
+      report = MetricsReport(ytest,predictions);
       
       result.kernel =  kernel_arg;
       result.decision_threshold =  decision_threshold;
