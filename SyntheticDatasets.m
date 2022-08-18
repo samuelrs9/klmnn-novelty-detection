@@ -216,7 +216,6 @@ classdef SyntheticDatasets < handle
       end       
     end
     
-    % Base com círculos concêntricos
     function out = concentricCircles(out_dir,view,export)
       % ----------------------------------------------------------------------------------
       % Synthetic dataset with three classes of concentric circles.
