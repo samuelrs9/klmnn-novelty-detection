@@ -64,8 +64,7 @@ classdef SvmND < handle
       %
       % Output args
       %   experiments: experiments report.
-      % ----------------------------------------------------------------------------------
-      classes_id = 1:obj.num_classes;      
+      % ----------------------------------------------------------------------------------        
       obj.kernel_type = hyperparameters.kernel_type;
       num_kernels = hyperparameters.num_kernels;
       kernels = hyperparameters.kernels;
@@ -85,10 +84,26 @@ classdef SvmND < handle
       t0_svm_one = tic;
       for i=1:num_experiments
         rng(i);
-        % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
-          obj.num_classes,num_untrained_classes);
-        
+        if random_select_classes
+          % Randomly selects trained and untrained classes
+          [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
+            obj.num_classes,num_untrained_classes);
+        else
+          % Use the class -1 as novelty.
+          % First reset the label -1 to "max(classes)+1",
+          % this is done for compatibility with the code present in the Split class
+          classes = unique(obj.Y);
+          classes(classes==-1) = max(classes)+1;
+          classes = sort(classes);
+          obj.Y(obj.Y==-1) = classes(end);
+          
+          is_trained_class = true(1,obj.num_classes);
+          is_trained_class(end) = false;
+          
+          trained =  classes(1:end-1);
+          untrained =  classes(end);
+        end
+
         % Divide os índices em treino e teste
         [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,is_trained_class);
         [xtrain,xtest,ytrain,ytest] = SimpleSplit.dataTrainTest(idx_train,idx_test,obj.X,obj.Y);
@@ -219,7 +234,6 @@ classdef SvmND < handle
       % Output args
       %   experiments: experiments report.
       % ----------------------------------------------------------------------------------
-      classes_id = 1:obj.num_classes;      
       obj.kernel_type = hyperparameters.kernel_type;
       num_decision_thresholds = hyperparameters.num_decision_thresholds;
       decision_thresholds = hyperparameters.decision_thresholds;
@@ -241,9 +255,25 @@ classdef SvmND < handle
       t0_svm_multi= tic;
       for i=1:num_experiments
         rng(i);
-        % Seleciona classes treinadas e não treinadas
-        [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
-          obj.num_classes,num_untrained_classes);
+        if random_select_classes
+          % Randomly selects trained and untrained classes
+          [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
+            obj.num_classes,num_untrained_classes);
+        else
+          % Use the class -1 as novelty.
+          % First reset the label -1 to "max(classes)+1",
+          % this is done for compatibility with the code present in the Split class
+          classes = unique(obj.Y);
+          classes(classes==-1) = max(classes)+1;
+          classes = sort(classes);
+          obj.Y(obj.Y==-1) = classes(end);
+          
+          is_trained_class = true(1,obj.num_classes);
+          is_trained_class(end) = false;
+          
+          trained =  classes(1:end-1);
+          untrained =  classes(end);
+        end
         
         % Divide os índices em treino e teste
         [idx_train,idx_test] = SimpleSplit.trainTestIdx(obj.X,obj.Y,training_ratio,is_trained_class);

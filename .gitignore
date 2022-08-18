@@ -9,6 +9,10 @@ experiments/libras/
 experiments/out_libras/
 experiments/glass/
 experiments/out_glass/
+experiments/out_sim_1/*
+experiments/out_sim_2/*
+experiments/out_sim_3/*
+experiments/out_sim_4/*
 experiments/simulation_1/*
 experiments/simulation_2/*
 experiments/simulation_3/*

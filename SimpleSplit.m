@@ -23,11 +23,11 @@ classdef SimpleSplit < handle
       % ----------------------------------------------------------------------------------      
       num_classes = numel(unique(Y));
       numInst = size(X,1);
-      n_per_class = zeros(1,num_classes);
+      num_per_class = zeros(1,num_classes);
       idx = randperm(numInst);
       
       for i=1:numInst
-        n_per_class(Y(i)) = n_per_class(Y(i))+1;
+        num_per_class(Y(i)) = num_per_class(Y(i))+1;
       end
       train_per_class = zeros(1,num_classes);
       numTrain = 0;
@@ -35,10 +35,10 @@ classdef SimpleSplit < handle
       for k=1:num_classes
         if ~istrained(k)
           train_per_class(k) = 0;
-          test_samples_untrained(k) = (n_per_class(k)-floor(n_per_class(k)*training_ratio));
+          test_samples_untrained(k) = (num_per_class(k)-floor(num_per_class(k)*training_ratio));
           continue;
         end
-        aux = floor(n_per_class(k)*training_ratio);
+        aux = floor(num_per_class(k)*training_ratio);
         train_per_class(k) = aux;
         numTrain = numTrain+aux;
       end

@@ -1,4 +1,4 @@
-classdef Simulations < handle
+classdef SyntheticDatasets < handle
   % --------------------------------------------------------------------------------------
   % This class is used to generate synthetic datasets to study the 
   % novelty detection problem.
@@ -6,19 +6,26 @@ classdef Simulations < handle
   % Version 2.0, July 2022.
   % By Samuel Silva (samuelrs@usp.br).
   % --------------------------------------------------------------------------------------  
-  methods(Static)    
-    function out = horizontalLines(out_dir,view)
+  
+  methods(Static)  
+    
+    function out = horizontalLines(out_dir,view,export)
       % ----------------------------------------------------------------------------------
       % Synthetic dataset with three classes of horizontal lines.
       % 
       % Input args
       %   output_dir: output directory to save synthetic dataset.
       %   view: a boolean that enables or disables dataset plotting.
+      %   export: a boolean that enables or disables dataset saving.
       % ----------------------------------------------------------------------------------      
-      X = [];
-      y = [];
+      if nargin<2
+        view = false;
+      end
+      if nargin<3
+        export = true;
+      end            
       
-      % It creates test points in a uniform grid
+      % Create test points in a uniform grid
       dim = 300;
       [xx,yy] = meshgrid(linspace(-1.0,1.0,dim),linspace(-1,1,dim));
       xtest = [xx(:),yy(:)];
@@ -27,30 +34,33 @@ classdef Simulations < handle
       
       shift = 0.05;
       
+      X = [];
+      y = [];      
+      
       % Classe 1
       c1 = floor(dim/2 + 1) - floor(shift*dim);
-      n_points_1 = 25;
-      x1 = linspace(-1,1,n_points_1)';
-      X = cat(1,X,[x1,yy(c1,1)*ones(n_points_1,1)]);
-      y = cat(1,y,ones(n_points_1,1));
+      num_points_1 = 25;
+      x1 = linspace(-1,1,num_points_1)';
+      X = cat(1,X,[x1,yy(c1,1)*ones(num_points_1,1)]);
+      y = cat(1,y,ones(num_points_1,1));
       
       % Classe 2
       c2 = floor(dim/2 + 1);
-      n_points_2 = 50;
-      x2 = linspace(-1,1,n_points_2)';
-      X = cat(1,X,[x2,yy(c2,1)*ones(n_points_2,1)]);
-      y = cat(1,y,2*ones(n_points_2,1));
+      num_points_2 = 50;
+      x2 = linspace(-1,1,num_points_2)';
+      X = cat(1,X,[x2,yy(c2,1)*ones(num_points_2,1)]);
+      y = cat(1,y,2*ones(num_points_2,1));
       
       % Classe 3
       c3 = floor(dim/2 + 1) + floor(shift*dim);
-      n_points_3 = 25;
-      x3 = linspace(-1,1,n_points_3)';
-      X = cat(1,X,[x3,yy(c3,1)*ones(n_points_3,1)]);
-      y = cat(1,y,3*ones(n_points_3,1));
+      num_points_3 = 25;
+      x3 = linspace(-1,1,num_points_3)';
+      X = cat(1,X,[x3,yy(c3,1)*ones(num_points_3,1)]);
+      y = cat(1,y,3*ones(num_points_3,1));
       
-      % It creates random outliers
-      n_points_4 = 200;
-      x4 = [2*rand(n_points_4,1)-1,0.5*rand(n_points_4,1)-0.25];
+      % Create random outliers
+      num_points_4 = 200;
+      x4 = [2*rand(num_points_4,1)-1,0.5*rand(num_points_4,1)-0.25];
       
       outlier_1 = abs(x4(:,2)-yy(c1,1)) > 0.5*h;
       outlier_2 = abs(x4(:,2)-yy(c2,1)) > 0.5*h;
@@ -61,7 +71,7 @@ classdef Simulations < handle
       X = cat(1,X,x4(outlier,:));
       y = cat(1,y,-1*ones(sum(outlier),1));
       
-      % It sets labels for grid points
+      % Set labels for grid points
       class_1 = abs(xtest(:,2)-yy(c1,1)) < 0.5*h;
       class_2 = abs(xtest(:,2)-yy(c2,1)) < 0.5*h;
       class_3 = abs(xtest(:,2)-yy(c3,1)) < 0.5*h;
@@ -78,65 +88,76 @@ classdef Simulations < handle
       out.xtrain = xtrain;
       out.ytrain = ytrain;
       out.xtest = xtest;
-      out.ytest = ytest;
+      out.ytest = ytest;     
       
-      save(strcat(out_dir,'/dataset.mat'),'X','y','xtrain','ytrain','xtest','ytest');
-      
-      if nargin==1
-        view = false;
-      end       
-      
+      % View dataset
       if view
         figure;        
         color = [0.2,0.2,0.2];
         xlimits = [-1.0,1.0];
         ylimits = [-0.5,0.5];
-        Plots.plotDecisionBoundary(xtest,ytest,color,xlimits,ylimits);
-        Plots.plotClassesAux(X,y);
-      end
+        Util.plotDecisionBoundary(xtest,ytest,color,xlimits,ylimits);
+        Util.plotClassesAux(X,y);
+      end     
+      
+      % Save dataset
+      if export
+        if ~exist(out_dir,'dir')
+          mkdir(out_dir);
+        end
+        save(strcat(out_dir,'/dataset.mat'),'X','y','xtrain','ytrain','xtest','ytest');
+      end         
     end
     
-    function out = parabolas(out_dir,view)
+    function out = parabolas(out_dir,view,export)
       % ----------------------------------------------------------------------------------
       % Synthetic dataset with three classes of parabolas.
       % 
       % Input args
       %   output_dir: output directory to save synthetic dataset.
       %   view: a boolean that enables or disables dataset plotting.
+      %   export: a boolean that enables or disables dataset saving.
       % ----------------------------------------------------------------------------------      
-      X = [];
-      y = [];
+      if nargin<2
+        view = false;
+      end
+      if nargin<3
+        export = true;
+      end
       
-      % It creates test points in a uniform grid
+      % Create test points in a uniform grid
       dim = 200;
       [xx,yy] = meshgrid(linspace(-1,1,floor(2.5*dim)),linspace(-1,1,dim));
       grid = [xx(:),yy(:)];
       h = abs(yy(1)-yy(2));
+
+      X = [];
+      y = [];
       
       % Classe 1
       c1 = floor(dim/2 + 1) - 20;
-      n_points_1 = 25;
-      x1 = linspace(-1,1,n_points_1)';
+      num_points_1 = 25;
+      x1 = linspace(-1,1,num_points_1)';
       X = cat(1,X,[x1,x1.^2 + yy(c1,1)]);
-      y = cat(1,y,ones(n_points_1,1));
+      y = cat(1,y,ones(num_points_1,1));
       
       % Classe 2
       c2 = floor(dim/2 + 1);
-      n_points_2 = 50;
-      x2 = linspace(-1,1,n_points_2)';
+      num_points_2 = 50;
+      x2 = linspace(-1,1,num_points_2)';
       X = cat(1,X,[x2,x2.^2 + yy(c2,1)]);
-      y = cat(1,y,2*ones(n_points_2,1));
+      y = cat(1,y,2*ones(num_points_2,1));
       
       % Classe 3
       c3 = floor(dim/2 + 1) + 20;
-      n_points_3 = 25;
-      x3 = linspace(-1,1,n_points_3)';
+      num_points_3 = 25;
+      x3 = linspace(-1,1,num_points_3)';
       X = cat(1,X,[x3,x3.^2 + yy(c3,1)]);
-      y = cat(1,y,3*ones(n_points_3,1));
+      y = cat(1,y,3*ones(num_points_3,1));
       
-      % It creates random outliers
-      n_points_4 = 200;
-      x4 = [2*rand(n_points_4,1)-1,0.6*rand(n_points_4,1)-0.3];
+      % Create random outliers
+      num_points_4 = 200;
+      x4 = [2*rand(num_points_4,1)-1,0.6*rand(num_points_4,1)-0.3];
       
       outlier_1 = abs(x4(:,2) - yy(c1,1)) > 0.5*h;
       outlier_2 = abs(x4(:,2) - yy(c2,1)) > 0.5*h;
@@ -153,14 +174,14 @@ classdef Simulations < handle
       ytrain = y(y~=-1);
       xtrain = X(y~=-1,:);
    
-      % It creates test points
+      % Create test points
       x = grid(:,1);
       xp = 1./(1+exp(-1.1*x))-0.5;
       xp = xp./max(xp);
       xtest = [xp,xp.^2 + grid(:,2)];
       ytest = -ones(size(grid,1),1);
       
-      % It sets labels for test points
+      % Set labels for test points
       class_1 = abs(xtest(:,2) - (xtest(:,1).^2 + yy(c1,1))) < 0.5*h;
       class_2 = abs(xtest(:,2) - (xtest(:,1).^2 + yy(c2,1))) < 0.5*h;
       class_3 = abs(xtest(:,2) - (xtest(:,1).^2 + yy(c3,1))) < 0.5*h;
@@ -176,40 +197,50 @@ classdef Simulations < handle
       out.xtest = xtest;
       out.ytest = ytest;
       
-      save(strcat(out_dir,'/dataset.mat'),'X','y','xtrain','ytrain','xtest','ytest');
-      
-      if nargin==1
-        view = false;
-      end       
-      
+      % View dataset
       if view
         figure;                      
         color = [0.2,0.2,0.2];
         xlimits = [-1.0,1.0];
         ylimits = [-0.3,1.2];
-        Plots.plotDecisionBoundary(xtest,ytest,color,xlimits,ylimits);
-        Plots.plotClassesAux(X,y);
-      end      
+        Util.plotDecisionBoundary(xtest,ytest,color,xlimits,ylimits);
+        Util.plotClassesAux(X,y);
+      end 
+      
+      % Save dataset
+      if export
+        if ~exist(out_dir,'dir')
+          mkdir(out_dir);
+        end
+        save(strcat(out_dir,'/dataset.mat'),'X','y','xtrain','ytrain','xtest','ytest');
+      end       
     end
     
     % Base com círculos concêntricos
-    function out = concentricCircles(out_dir,view)
+    function out = concentricCircles(out_dir,view,export)
       % ----------------------------------------------------------------------------------
       % Synthetic dataset with three classes of concentric circles.
       % 
       % Input args
-      %   output_dir: output directory to save synthetic dataset.
       %   view: a boolean that enables or disables dataset plotting.
+      %   export: a boolean that enables or disables dataset saving.
       % ----------------------------------------------------------------------------------         
-      X = []; 
-      y = [];
-      
+      if nargin<2
+        view = false;
+      end
+      if nargin<3
+        export = true;
+      end        
+            
       dim = 160;
       c1 = floor(dim/2 + 1) - 10;
       c2 = floor(dim/2 + 1);
       c3 = floor(dim/2 + 1) + 10;
       
-      % It creates test points
+      X = []; 
+      y = [];
+      
+      % Create test points
       r = linspace(0,0.9,dim);
       theta = cell(dim,1);
       xtest = [];
@@ -236,36 +267,36 @@ classdef Simulations < handle
       h = abs(r(1)-r(2));
       
       % Classe 1
-      n_points_1 = 25;
+      num_points_1 = 25;
       r1 = r(c1);
       t0 = rand;
-      theta1 = linspace(t0,t0 + 2*pi,n_points_1+1)';
+      theta1 = linspace(t0,t0 + 2*pi,num_points_1+1)';
       theta1 = theta1(1:end-1);
       X = cat(1,X,[r1*cos(theta1),r1*sin(theta1)]);
-      y = cat(1,y,ones(n_points_1,1));
+      y = cat(1,y,ones(num_points_1,1));
       
       % Classe 2
-      n_points_2 = 50;
+      num_points_2 = 50;
       r2 = r(c2);
       t0 = rand;
-      theta2 = linspace(t0,t0 + 2*pi,n_points_2+1)';
+      theta2 = linspace(t0,t0 + 2*pi,num_points_2+1)';
       theta2 = theta2(1:end-1);
       X = cat(1,X,[r2*cos(theta2),r2*sin(theta2)]);
-      y = cat(1,y,2*ones(n_points_2,1));
+      y = cat(1,y,2*ones(num_points_2,1));
       
       % Classe 3
-      n_points_3 = 25;
+      num_points_3 = 25;
       r3 = r(c3);
       t0 = rand;
-      theta3 = linspace(t0,t0 + 2*pi,n_points_3+1)';
+      theta3 = linspace(t0,t0 + 2*pi,num_points_3+1)';
       theta3 = theta3(1:end-1);
       X = cat(1,X,[r3*cos(theta3),r3*sin(theta3)]);
-      y = cat(1,y,3*ones(n_points_3,1));
+      y = cat(1,y,3*ones(num_points_3,1));
       
-      % It creates random outliers
-      n_points_4 = 200;
-      r4 = 0.5*sqrt(rand(n_points_4,1))+0.2;
-      theta4 = 2*pi*rand(n_points_4,1)-pi;
+      % Create random outliers
+      num_points_4 = 200;
+      r4 = 0.5*sqrt(rand(num_points_4,1))+0.2;
+      theta4 = 2*pi*rand(num_points_4,1)-pi;
       
       outlier_1 = abs(r4 - r1) > 0.5*h;
       outlier_2 = abs(r4 - r2) > 0.5*h;
@@ -288,35 +319,46 @@ classdef Simulations < handle
       out.ytrain = ytrain;
       out.xtest = xtest;
       out.ytest = ytest;
-      
-      save(strcat(out_dir,'/base.mat'),'X','y','xtrain','ytrain','xtest','ytest');
             
-      if nargin==1
-        view = false;
-      end       
-      
       if view
         figure;                      
         color = [0.2,0.2,0.2];
         xlimits = [-0.8,0.8];
         ylimits = [-0.8,0.8];
-        Plots.plotDecisionBoundary(xtest,ytest,color,xlimits,ylimits);
-        Plots.plotClassesAux(X,y);
+        Util.plotDecisionBoundary(xtest,ytest,color,xlimits,ylimits);
+        Util.plotClassesAux(X,y);
       end       
+      % Save dataset
+      if export
+        if ~exist(out_dir,'dir')
+          mkdir(out_dir);
+        end
+        save(strcat(out_dir,'/dataset.mat'),'X','y','xtrain','ytrain','xtest','ytest');
+      end        
     end
     
-    function out = uniformDistributions(n_points,num_dim,view)
+    function out = uniformDistributions(output_dir,num_points,num_dim,view,export)
       % ----------------------------------------------------------------------------------
       % Synthetic dataset with four classes of uniform distributions.
       % 
       % Input args
       %   output_dir: output directory to save synthetic dataset.
+      %   num_points: number of samples in dataset.
       %   num_dim: data spatial dimensions.
       %   view: a boolean that enables or disables dataset plotting.
+      %   export: a boolean that enables or disables dataset saving.
       % ----------------------------------------------------------------------------------         
-      n_classes = 4;
-      n_test = 10000;
-      n_exp = 5;
+      % ----------------------------------------------------------------------------------         
+      if nargin<4
+        view = false;
+      end
+      if nargin<5
+        export = true;
+      end    
+      
+      num_classes = 4;
+      num_test = 10000;
+      num_exp = 5;
       
       rng('default');
       
@@ -324,36 +366,36 @@ classdef Simulations < handle
       scale1 = 0.9;
       C1 = zeros(1,num_dim);
       C1(1,[1,2]) = [1.0,0.5];
-      X1_train = scale1*rand(floor(n_points/n_classes),num_dim)-0.5*scale1 + C1;
-      X1_test = scale1*rand(n_test,num_dim,n_exp)-0.5*scale1 + C1;
+      X1_train = scale1*rand(floor(num_points/num_classes),num_dim)-0.5*scale1 + C1;
+      X1_test = scale1*rand(num_test,num_dim,num_exp)-0.5*scale1 + C1;
       
       % Classe 2
       scale2 = 0.9;
       C2 = zeros(1,num_dim);
       C2(1,[1,2]) = [-0.5,1.0];
-      X2_train = scale2*rand(floor(n_points/n_classes),num_dim)-0.5*scale2 + C2;
-      X2_test = scale2*rand(n_test,num_dim,n_exp)-0.5*scale2 + C2;
+      X2_train = scale2*rand(floor(num_points/num_classes),num_dim)-0.5*scale2 + C2;
+      X2_test = scale2*rand(num_test,num_dim,num_exp)-0.5*scale2 + C2;
       
       % Classe 3
       scale3 = 0.9;
       C3 = zeros(1,num_dim);
       C3(1,[1,2]) = [-1.0,-0.5];
-      X3_train = scale3*rand(floor(n_points/n_classes),num_dim)-0.5*scale3 + C3;
-      X3_test = scale3*rand(n_test,num_dim,n_exp)-0.5*scale3 + C3;
+      X3_train = scale3*rand(floor(num_points/num_classes),num_dim)-0.5*scale3 + C3;
+      X3_test = scale3*rand(num_test,num_dim,num_exp)-0.5*scale3 + C3;
       
       % Classe 4
       scale4 = 0.9;
       C4 = zeros(1,num_dim);
       C4(1,[1,2]) = [0.5,-1.0];
-      X4_train = scale4*rand(floor(n_points/n_classes),num_dim)-0.5*scale4 + C4;
-      X4_test = scale4*rand(n_test,num_dim,n_exp)-0.5*scale4 + C4;
+      X4_train = scale4*rand(floor(num_points/num_classes),num_dim)-0.5*scale4 + C4;
+      X4_test = scale4*rand(num_test,num_dim,num_exp)-0.5*scale4 + C4;
       
-      % It creates random outliers
+      % Create random outliers
       scale5 = 0.9;
       C5 = zeros(1,num_dim);
       C5(1,[1,2]) = [0.0,0.0];
-      X_out_val = scale5*rand(floor(n_points/n_classes),num_dim)-0.5*scale5 + C5;
-      X_out_test = scale5*rand(n_test,num_dim,n_exp)-0.5*scale5 + C5;
+      X_out_val = scale5*rand(floor(num_points/num_classes),num_dim)-0.5*scale5 + C5;
+      X_out_test = scale5*rand(num_test,num_dim,num_exp)-0.5*scale5 + C5;
       
       xtrain = cat(1,X1_train,X2_train,X3_train,X4_train);
       ytrain = cat(1,ones(size(X1_train,1),1),2*ones(size(X2_train,1),1),...
@@ -374,15 +416,20 @@ classdef Simulations < handle
       out.xtest = xtest;
       out.ytest = ytest;
       
-      if nargin==1
-        view = false;
-      end        
-      
-      if view
+      % View dataset
+      if view && num_dim==2
         figure;
-        Plots.plotClassesAux(X,y,[-2.3,1.6]);
+        Util.plotClassesAux(X,y,[-2.3,1.6]);
         legend('location','northwest');
-      end                    
+      end  
+      
+      % Save dataset
+      if export
+        if ~exist(out_dir,'dir')
+          mkdir(out_dir);
+        end
+        save(strcat(out_dir,'/dataset.mat'),'X','y','xtrain','ytrain','xtest','ytest');
+      end       
     end
   end
 end

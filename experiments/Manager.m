@@ -1137,8 +1137,8 @@ classdef Manager < handle
           case 'knn'
             try              
               report = load(strcat(out_dir,'/','best_knn_experiment.mat'));
-              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K),...
-                ' kappa=',int2str(report.best_kappa));
+              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K(1)),...
+                ' kappa=',int2str(report.best_kappa(1)));
               experiment = load(strcat(knn_dir,'/knn_experiments.mat'));
               TPR(1) = experiment.tpr_score;
               TNR(1) = experiment.tnr_score;
@@ -1153,8 +1153,8 @@ classdef Manager < handle
           case 'lmnn'
             try
               report = load(strcat(out_dir,'/','best_lmnn_experiment.mat'));
-              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K),...
-                ' kappa=',int2str(report.best_kappa));
+              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K(1)),...
+                ' kappa=',int2str(report.best_kappa(1)));
               experiment = load(strcat(knn_dir,'/lmnn_experiments.mat'));
               TPR(2) = experiment.tpr_score;
               TNR(2) = experiment.tnr_score;
@@ -1169,8 +1169,8 @@ classdef Manager < handle
           case 'klmnn'
             try
               report = load(strcat(out_dir,'/','best_klmnn_experiment.mat'));
-              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K),...
-                ' kappa=',int2str(report.best_kappa));
+              knn_dir = strcat(out_dir,'/K=',int2str(report.best_K(1)),...
+                ' kappa=',int2str(report.best_kappa(1)));
               experiment = load(strcat(knn_dir,'/klmnn_experiments.mat'));
               TPR(3) = experiment.tpr_score;
               TNR(3) = experiment.tnr_score;
@@ -1411,23 +1411,29 @@ classdef Manager < handle
       klmnn_report.best_kappa = kappa;            
       
       fprintf('------------------------ KNN ------------------------\n');      
-      fprintf('best K: %d\n',knn_report.best_K);
-      fprintf('best kappa: %d\n',knn_report.best_kappa);
-      fprintf('best MCC: %4f\n',knn_report.best_mcc);
+      fprintf('best K:');
+      fprintf(' %d',knn_report.best_K);      
+      fprintf('\nbest kappa:');
+      fprintf(' %d',knn_report.best_kappa);
+      fprintf('\nbest MCC: %4f\n',knn_report.best_mcc);
       fprintf('Full MCC table:\n');
       disp(report.KNN.MCC);
       
       fprintf('------------------------ LMNN ------------------------\n');      
-      fprintf('best K: %d\n',lmnn_report.best_K);
-      fprintf('best kappa: %d\n',lmnn_report.best_kappa);
-      fprintf('best MCC: %4f\n',lmnn_report.best_mcc);
+      fprintf('best K:');
+      fprintf(' %d',lmnn_report.best_K);      
+      fprintf('\nbest kappa:');
+      fprintf(' %d',lmnn_report.best_kappa);
+      fprintf('\nbest MCC: %4f\n',lmnn_report.best_mcc);
       fprintf('Full MCC table:\n');
       disp(report.LMNN.MCC);
       
       fprintf('------------------------ KLMNN ------------------------\n');      
-      fprintf('best K: %d\n',klmnn_report.best_K);
-      fprintf('best kappa: %d\n',klmnn_report.best_kappa);
-      fprintf('best MCC: %4f\n',klmnn_report.best_mcc);
+      fprintf('best K:');
+      fprintf(' %d',klmnn_report.best_K);      
+      fprintf('\nbest kappa:');
+      fprintf(' %d',klmnn_report.best_kappa);
+      fprintf('\nbest MCC: %4f\n',klmnn_report.best_mcc);
       fprintf('Full MCC table:\n');
       disp(report.KLMNN.MCC);            
       

@@ -110,14 +110,19 @@ classdef KlmnnND < handle
           [trained,untrained,is_trained_class] = SimpleSplit.selectClasses(...
             obj.num_classes,num_untrained_classes);
         else
-          % In each experiment selects only one untrained class
-          classe_unt = rem(i-1,obj.num_classes)+1;
+          % Use the class -1 as novelty.
+          % First reset the label -1 to "max(classes)+1",
+          % this is done for compatibility with the code present in the Split class
+          classes = unique(obj.Y);
+          classes(classes==-1) = max(classes)+1;
+          classes = sort(classes);
+          obj.Y(obj.Y==-1) = classes(end);
           
           is_trained_class = true(1,obj.num_classes);
-          is_trained_class(classe_unt) = false;
+          is_trained_class(end) = false;
           
-          trained =  classes_id(classes_id ~= classe_unt);
-          untrained =  classes_id(classes_id == classe_unt);
+          trained =  classes(1:end-1);
+          untrained =  classes(end);
         end
         
         % Split indices into training and testing indices

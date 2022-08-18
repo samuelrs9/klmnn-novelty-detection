@@ -90,23 +90,23 @@ tutorial = 4;
 switch tutorial
   case 2
     % ------------------------------------------------------------------------------------
-    % It runs novelty detection experiments for KNN, LMNN and KLMNN based approaches.
+    % This runs novelty detection experiments for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------
     manager.runExperimentsForKnnMethods(methods([1,2,3]),num_knn_args);
   case 2
     % ------------------------------------------------------------------------------------
-    % It processes novelty detection results for KNN, LMNN and KLMNN based approaches.
+    % This processes novelty detection results for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------
     knn_reports = manager.reportExperimentsForKnnMethods(out_dir,num_knn_args);
   case 3
     % ------------------------------------------------------------------------------------
-    % It runs novelty detection experiments for KNFST, ONE SVM, MULTI SVM and KPCA 
+    % This runs novelty detection experiments for KNFST, ONE SVM, MULTI SVM and KPCA 
     % based approaches.
     % ------------------------------------------------------------------------------------
     manager.runExperiments(methods([4,5,6,7]));    
   case 4
     % ------------------------------------------------------------------------------------
-    % It processes novelty detection results for all methods.
+    % This processes novelty detection results for all methods.
     % ------------------------------------------------------------------------------------                
     manager.reportExperiments(out_dir,methods([1,2,3,4,5,6,7]));
 end
