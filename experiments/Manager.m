@@ -260,17 +260,17 @@ classdef Manager < handle
           case 'knn'
             try
               fprintf('\n-> KNN Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               knn_model = load(strcat(knn_dir,'/knn_model.mat'));
               knn = knn_model.knn;
               knn_model = knn_model.knn_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_knn = tic;
               [knn_evaluations.results,knn_evaluations.evaluations] = ...
                 knn.evaluateModel(knn_model,obj.num_experiments);
               knn_evaluations.model = knn_model;
               knn_evaluations.evaluation_time = toc(t0_knn);
-              % Salva avaliação
+              % Save predictions
               save(strcat(knn_dir,'/knn_evaluations.mat'),'knn_evaluations');
             catch
               fprintf('\n error!!! \n');
@@ -278,17 +278,17 @@ classdef Manager < handle
           case 'lmnn'
             try
               fprintf('\n-> LMNN Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
               lmnn = lmnn_model.lmnn;
               lmnn_model = lmnn_model.lmnn_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_lmnn = tic;
               [lmnn_evaluations.results,lmnn_evaluations.evaluations] = ...
                 lmnn.evaluateModel(lmnn_model,obj.num_experiments);
               lmnn_evaluations.model = lmnn_model;
               lmnn_evaluations.evaluation_time = toc(t0_lmnn);
-              % Salva avaliação
+              % Save predictions
               save(strcat(knn_dir,'/lmnn_evaluations.mat'),'lmnn_evaluations');
             catch
               fprintf('\n error!!! \n');
@@ -296,17 +296,17 @@ classdef Manager < handle
           case 'klmnn'
             try
               fprintf('\n-> KLMNN Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
               klmnn = klmnn_model.klmnn;
               klmnn_model = klmnn_model.klmnn_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_klmnn = tic;
               [klmnn_evaluations.results,klmnn_evaluations.evaluations] = ...
                 klmnn.evaluateModel(klmnn_model,obj.num_experiments);
               klmnn_evaluations.model = klmnn_model;
               klmnn_evaluations.evaluation_time = toc(t0_klmnn);
-              % Salva avaliação
+              % Save predictions
               save(strcat(knn_dir,'/klmnn_evaluations.mat'),'klmnn_evaluations');
             catch
               fprintf('\n error!!! \n');
@@ -314,17 +314,17 @@ classdef Manager < handle
           case 'knfst'
             try
               fprintf('\n-> KNFST Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
               knfst = knfst_model.knfst;
               knfst_model = knfst_model.knfst_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_knfst = tic;
               [knfst_evaluations.results,knfst_evaluations.evaluations] = ...
                 knfst.evaluateModel(knfst_model,obj.num_experiments);
               knfst_evaluations.model = knfst_model;
               knfst_evaluations.evaluation_time = toc(t0_knfst);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/knfst_evaluations.mat'),'knfst_evaluations');
             catch
               fprintf('\n error!!! \n');
@@ -332,17 +332,17 @@ classdef Manager < handle
           case 'one_svm'
             try
               fprintf('\n-> One SVM Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
               one_svm = one_svm_model.one_svm;
               one_svm_model = one_svm_model.one_svm_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_one_svm = tic;
               [one_svm_evaluations.results,one_svm_evaluations.evaluations] = ...
                 one_svm.evaluateOneClassModel(one_svm_model,obj.num_experiments);
               one_svm_evaluations.model = one_svm_model;
               one_svm_evaluations.evaluation_time = toc(t0_one_svm);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/one_svm_evaluations.mat'),'one_svm_evaluations');
             catch
               fprintf('\n error!!! \n');
@@ -350,17 +350,17 @@ classdef Manager < handle
           case 'multi_svm'
             try
               fprintf('\n-> Multi SVM Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
               multi_svm = multi_svm_model.multi_svm;
               multi_svm_model = multi_svm_model.multi_svm_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_multi_svm = tic;
               [multi_svm_evaluations.results,multi_svm_evaluations.evaluations] = ...
                 multi_svm.evaluateMultiClassModel(multi_svm_model,obj.num_experiments);
               multi_svm_evaluations.model = multi_svm_model;
               multi_svm_evaluations.evaluation_time = toc(t0_multi_svm);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/multi_svm_evaluations.mat'),'multi_svm_evaluations');
             catch
               fprintf('\n error!!! \n');
@@ -368,17 +368,17 @@ classdef Manager < handle
           case 'kpca'
             try
               fprintf('\n-> KPCA Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
               kpca = kpca_model.kpca;
               kpca_model = kpca_model.kpca_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_kpca = tic;
               [kpca_evaluations.results,kpca_evaluations.evaluations] = ...
                 kpca.evaluateModel(kpca_model,obj.num_experiments);
               kpca_evaluations.model = kpca_model;
               kpca_evaluations.evaluation_time = toc(t0_kpca);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/kpca_evaluations.mat'),'kpca_evaluations');
             catch
               fprintf('\n error!!! \n');
@@ -387,7 +387,7 @@ classdef Manager < handle
       end
     end
     
-    function runEvaluationTests(obj,methods,xtrain,ytrain,xtest,ytest,model_dir)
+    function runEvaluationTests(obj,xtest,ytest,methods,model_dir)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the predictions with multi-class novelty 
       % detection on test sets for the chosen algorithm.
@@ -396,28 +396,28 @@ classdef Manager < handle
       %   method: a list of strings corresponding to the novelty detection methods used
       %     It can be 'knn','lmnn','klmnn','knfst','one_svm','multi_svm' or 'kpca'.
       % ----------------------------------------------------------------------------------
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
-      if ~exist(knn_dir,'dir')
-        mkdir(knn_dir);
-      end
-      % Testa os modelos
+      xtrain = obj.X(obj.y~=-1,:);
+      ytrain = obj.y(obj.y~=-1);      
       for i=1:numel(methods)
-        switch methods{i}
+        switch methods{i}.name
           case 'knn'
             try
               fprintf('\n-> KNN Novelty Detection \n');
-              % Carrega os parâmetros
-              knn_model = load(strcat(knn_dir,'/knn_model.mat'));
-              knn_model = knn_model.knn_model;
-              % Inicia avaliação
+              % Choose the best knn experiment
+              experiment = load(strcat(model_dir,'/','best_knn_experiment.mat'));
+              knn_dir = strcat(model_dir,'/K=',int2str(experiment.best_K(1)),...
+                ' kappa=',int2str(experiment.best_kappa(1)));
+              % Load the model
+              best_experiment = load(strcat(knn_dir,'/knn_experiments.mat'));            
+              model = best_experiment.model;
+              % Run evaluation
               t0_knn = tic;
-              knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,...
-                knn_model.obj.kappa_threshold,obj.num_classes);
+              knn = KnnND(xtrain,ytrain,model.knn_arg,model.kappa_threshold);
               [knn_evaluations.results,knn_evaluations.evaluations] = ...
-                knn.evaluateTests(obj,xtrain,ytrain,xtest,ytest,knn_model);
-              knn_evaluations.model = knn_model;
+                knn.evaluateTests(xtrain,ytrain,xtest,ytest,model);
+              knn_evaluations.model = model;
               knn_evaluations.evaluation_time = toc(t0_knn);
-              % Salva avaliação
+              % Save predictions
               save(strcat(knn_dir,'/knn_evaluation_tests.mat'),'-struct','knn_evaluations');
             catch
               fprintf('\n--> knn evaluation error!!! \n');
@@ -425,18 +425,18 @@ classdef Manager < handle
           case 'lmnn'
             try
               fprintf('\n-> LMNN Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
               lmnn_model = lmnn_model.lmnn_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_lmnn = tic;
-              lmnn = LmnnND(obj,xtrain,ytrain,lmnn_model.obj.knn_arg,...
+              lmnn = LmnnND(xtrain,ytrain,lmnn_model.obj.knn_arg,...
                 lmnn_model.obj.kappa_threshold,obj.num_classes);
               [lmnn_evaluations.results,lmnn_evaluations.evaluations] = ...
                 lmnn.evaluateTests(obj,xtrain,ytrain,xtest,ytest,lmnn_model);
               lmnn_evaluations.model = lmnn_model;
               lmnn_evaluations.evaluation_time = toc(t0_lmnn);
-              % Salva avaliação
+              % Save predictions
               save(strcat(knn_dir,'/lmnn_evaluation_tests.mat'),...
                 '-struct','lmnn_evaluations');
             catch
@@ -445,18 +445,18 @@ classdef Manager < handle
           case 'klmnn'
             try
               fprintf('\n-> KLMNN Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
               klmnn_model = klmnn_model.klmnn_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_klmnn = tic;
-              klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
+              klmnn = KlmnnND(xtrain,ytrain,klmnn_model.obj.knn_arg,...
                 klmnn_model.obj.kappa_threshold,obj.num_classes);
               [klmnn_evaluations.results,klmnn_evaluations.evaluations] = ...
                 klmnn.evaluateTests(obj,xtrain,ytrain,xtest,ytest,klmnn_model);
               klmnn_evaluations.model = klmnn_model;
               klmnn_evaluations.evaluation_time = toc(t0_klmnn);
-              % Salva avaliação
+              % Save predictions
               save(strcat(knn_dir,'/klmnn_evaluation_tests.mat'),...
                 '-struct','klmnn_evaluations');
             catch
@@ -465,17 +465,17 @@ classdef Manager < handle
           case 'knfst'
             try
               fprintf('\n-> KNFST Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
               knfst_model = knfst_model.knfst_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_knfst = tic;
-              knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
+              knfst = KnfstND(xtrain,ytrain,obj.num_classes);
               [knfst_evaluations.results,knfst_evaluations.evaluations] = ...
                 knfst.evaluateTests(obj,xtrain,ytrain,xtest,ytest,knfst_model);
               knfst_evaluations.model = knfst_model;
               knfst_evaluations.evaluation_time = toc(t0_knfst);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/knfst_evaluation_tests.mat'),...
                 '-struct','knfst_evaluations');
             catch
@@ -484,17 +484,17 @@ classdef Manager < handle
           case 'one_svm'
             try
               fprintf('\n-> One SVM Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
               one_svm_model = one_svm_model.one_svm_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_one_svm = tic;
-              one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+              one_svm = SvmND(xtrain,ytrain,obj.num_classes);
               [one_svm_evaluations.results,one_svm_evaluations.evaluations] = ...
                 one_svm.evaluateOneClassTests(obj,xtrain,ytrain,xtest,ytest,one_svm_model);
               one_svm_evaluations.model = one_svm_model;
               one_svm_evaluations.evaluation_time = toc(t0_one_svm);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/one_svm_evaluation_tests.mat'),...
                 '-struct','one_svm_evaluations');
             catch
@@ -503,17 +503,17 @@ classdef Manager < handle
           case 'multi_svm'
             try
               fprintf('\n-> Multi SVM Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
               multi_svm_model = multi_svm_model.multi_svm_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_multi_svm = tic;
-              multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+              multi_svm = SvmND(xtrain,ytrain,obj.num_classes);
               [multi_svm_evaluations.results,multi_svm_evaluations.evaluations] = ...
                 multi_svm.evaluateMultiClassTests(obj,xtrain,ytrain,xtest,ytest,multi_svm_model);
               multi_svm_evaluations.model = multi_svm_model;
               multi_svm_evaluations.evaluation_time = toc(t0_multi_svm);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/multi_svm_evaluation_tests.mat'),...
                 '-struct','multi_svm_evaluations');
             catch
@@ -522,17 +522,17 @@ classdef Manager < handle
           case 'kpca'
             try
               fprintf('\n-> KPCA Novelty Detection \n');
-              % Carrega o modelo
+              % Load the model
               kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
               kpca_model = kpca_model.kpca_model;
-              % Inicia avaliação
+              % Run evaluation
               t0_kpca = tic;
-              kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
+              kpca = KpcaND(xtrain,ytrain,obj.num_classes);
               [kpca_evaluations.results,kpca_evaluations.evaluations] = ...
                 kpca.evaluateTests(obj,xtrain,xtest,ytest,kpca_model);
               kpca_evaluations.model = kpca_model;
               kpca_evaluations.evaluation_time = toc(t0_kpca);
-              % Salva avaliação
+              % Save predictions
               save(strcat(model_dir,'/kpca_evaluation_tests.mat'),...
                 '-struct','kpca_evaluations');
             catch
@@ -582,101 +582,101 @@ classdef Manager < handle
         switch methods{i}
           case 'knn'
             fprintf('\n-> KNN Novelty Detection\n\n');
-            % Carrega o modelo
+            % Load the model
             knn_model = load(strcat(knn_dir,'/knn_model.mat'));
             knn_model = knn_model.knn_model;
-            % Avalia o modelo
+            % Run predictions
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,knn_model.obj.kappa_threshold,obj.num_classes);
+            knn = KnnND(xtrain,ytrain,knn_model.obj.knn_arg,knn_model.obj.kappa_threshold,obj.num_classes);
             knn_evaluation = knn.evaluate(obj,xtrain,ytrain,xtest,ytest,knn_model.decision_thresholds);
             knn_evaluation.evaluation_time = toc(t0_knn);
-            % Salva avaliação
+            % Save predictions
             save(strcat(knn_dir,'/knn_evaluation.mat'),'-struct','knn_evaluation');
           case 'lmnn'
             fprintf('\n-> LMNN Novelty Detection\n');
-            % Carrega o modelo
+            % Load the model
             lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
             lmnn_model = lmnn_model.lmnn_model;
-            % Avalia o modelo
+            % Run predictions
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,lmnn_model.obj.knn_arg,...
+            lmnn = LmnnND(xtrain,ytrain,lmnn_model.obj.knn_arg,...
               lmnn_model.obj.kappa_threshold,obj.num_classes);
             lmnn_evaluation = lmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,lmnn_model.decision_thresholds);
             lmnn_evaluation.evaluation_time = toc(t0_lmnn);
-            % Salva avaliação
+            % Save predictions
             save(strcat(knn_dir,'/lmnn_evaluation.mat'),'-struct','lmnn_evaluation');
           case 'klmnn'
             fprintf('\n-> KLMNN Novelty Detection\n');
-            % Carrega o modelo
+            % Load the model
             klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
             klmnn_model = klmnn_model.klmnn_model;
-            % Avalia o modelo
+            % Run predictions
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
+            klmnn = KlmnnND(xtrain,ytrain,klmnn_model.obj.knn_arg,...
               klmnn_model.obj.kappa_threshold,obj.num_classes);
             klmnn.kernel_type = klmnn_model.kernel_type;
             klmnn_evaluation = klmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               klmnn_model.kernel,klmnn_model.decision_thresholds);
             klmnn_evaluation.evaluation_time = toc(t0_klmnn);
-            % Salva avaliação
+            % Save predictions
             save(strcat(knn_dir,'/klmnn_evaluation.mat'),'-struct','klmnn_evaluation');
           case 'knfst'
             fprintf('\n-> KNFST Novelty Detection\n');
-            % Carrega o modelo
+            % Load the model
             knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
             knfst_model = knfst_model.knfst_model;
-            % Avalia o modelo
+            % Run predictions
             t0_knfst = tic;
-            knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
+            knfst = KnfstND(xtrain,ytrain,obj.num_classes);
             knfst.kernel_type = knfst_model.kernel_type;
             knfst_evaluation = knfst.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               knfst_model.kernel,knfst_model.decision_thresholds);
             knfst_evaluation.evaluation_time = toc(t0_knfst);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/knfst_evaluation.mat'),'-struct','knfst_evaluation');
           case 'one_svm'
             fprintf('\n-> One SVM Novelty Detection\n');
-            % Carrega o modelo
+            % Load the model
             one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
             one_svm_model = one_svm_model.one_svm_model;
-            % Avalia o modelo
+            % Run predictions
             t0_svm = tic;
-            one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+            one_svm = SvmND(xtrain,ytrain,obj.num_classes);
             one_svm.kernel_type = one_svm_model.kernel_type;
-            one_svm_evaluation = one_svm.evaluateOneClassSVM(obj,xtrain,ytrain,...
+            one_svm_evaluation = one_svm.evaluateOneClassSVM(xtrain,ytrain,...
               xtest,ytest,one_svm_model.kernel);
             one_svm_evaluation.evaluation_time = toc(t0_svm);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/one_svm_evaluation.mat'),...
               '-struct','one_svm_evaluation');
           case 'multi_svm'
             fprintf('\n-> Multi SVM Novelty Detection\n');
-            % Carrega o modelo
+            % Load the model
             multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
             multi_svm_model = multi_svm_model.multi_svm_model;
-            % Avalia o modelo
+            % Run predictions
             t0_svm = tic;
-            multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+            multi_svm = SvmND(xtrain,ytrain,obj.num_classes);
             multi_svm.kernel_type = multi_svm_model.kernel_type;
-            multi_svm_evaluation = multi_svm.evaluateMultiClassSVM(obj,xtrain,ytrain,...
+            multi_svm_evaluation = multi_svm.evaluateMultiClassSVM(xtrain,ytrain,...
               xtest,ytest,multi_svm_model.kernel,multi_svm_model.decision_thresholds);
             multi_svm_evaluation.evaluation_time = toc(t0_svm);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/multi_svm_evaluation.mat'),...
               '-struct','multi_svm_evaluation');
           case 'kpca'
             fprintf('\n-> KPCA Novelty Detection\n');
-            % Carrega o modelo
+            % Load the model
             kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
             kpca_model = kpca_model.kpca_model;
-            % Avalia o modelo
+            % Run predictions
             t0_kpca = tic;
-            kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
+            kpca = KpcaND(xtrain,ytrain,obj.num_classes);
             kpca.kernel_type = kpca_model.kernel_type;
             kpca_evaluation = kpca.evaluate(obj,xtrain,xtest,ytest,...
               kpca_model.kernel,kpca_model.decision_thresholds);
             kpca_evaluation.evaluation_time = toc(t0_kpca);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/kpca_evaluation.mat'),'-struct','kpca_evaluation');
         end
       end
@@ -727,241 +727,245 @@ classdef Manager < handle
             fprintf('\n-> KNN Novelty Detection\n\n');
             % Avalia os parâmetros
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
+            knn = KnnND(xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             knn_evaluation = knn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               methods{i}.threshold_arg);
             knn_evaluation.evaluation_time = toc(t0_knn);
-            % Salva avaliação
+            % Save predictions
             save(strcat(knn_dir,'/knn_evaluate_parameter.mat'),'-struct','knn_evaluation');
           case 'lmnn'
             fprintf('\n-> LMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
+            lmnn = LmnnND(xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             lmnn_evaluation = lmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{2}.threshold_arg);
             lmnn_evaluation.evaluation_time = toc(t0_lmnn);
-            % Salva avaliação
+            % Save predictions
             save(strcat(knn_dir,'/lmnn_evaluate_parameter.mat'),...
               '-struct','lmnn_evaluation');
           case 'klmnn'
             fprintf('\n-> KLMNN Novelty Detection\n');
             % Avalia os parâmetros
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
+            klmnn = KlmnnND(xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             klmnn.kernel_type = obj.parameters{3}.kernel_type;
             klmnn_evaluation = klmnn.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{3}.kernel_arg,obj.parameters{3}.threshold_arg);
             klmnn_evaluation.evaluation_time = toc(t0_klmnn);
-            % Salva avaliação
+            % Save predictions
             save(strcat(knn_dir,'/klmnn_evaluate_parameter.mat'),...
               '-struct','klmnn_evaluation');
           case 'knfst'
             fprintf('\n-> KNFST Novelty Detection\n');
             % Avalia os parâmetros
             t0_knfst = tic;
-            knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
+            knfst = KnfstND(xtrain,ytrain,obj.num_classes);
             knfst.kernel_type = obj.parameters{4}.kernel_type;
             knfst_evaluation = knfst.evaluate(obj,xtrain,ytrain,xtest,ytest,...
               obj.parameters{4}.kernel_arg,obj.parameters{4}.threshold_arg);
             knfst_evaluation.evaluation_time = toc(t0_knfst);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/knfst_evaluate_parameter.mat'),...
               '-struct','knfst_evaluation');
           case 'one_svm'
             fprintf('\n-> One SVM Novelty Detection\n');
             % Avalia os parâmetros
             t0_svm = tic;
-            one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+            one_svm = SvmND(xtrain,ytrain,obj.num_classes);
             one_svm.kernel_type = obj.parameters{5}.kernel_type;
-            one_svm_evaluation = one_svm.evaluateOneClassSVM(obj,xtrain,ytrain,...
+            one_svm_evaluation = one_svm.evaluateOneClassSVM(xtrain,ytrain,...
               xtest,ytest,obj.parameters{5}.kernel_arg);
             one_svm_evaluation.evaluation_time = toc(t0_svm);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/one_svm_evaluate_parameter.mat'),...
               '-struct','one_svm_evaluation');
           case 'multi_svm'
             fprintf('\n-> Multi SVM Novelty Detection\n');
             % Avalia os parâmetros
             t0_svm = tic;
-            multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+            multi_svm = SvmND(xtrain,ytrain,obj.num_classes);
             multi_svm.kernel_type = obj.parameters{6}.kernel_type;
-            multi_svm_evaluation = multi_svm.evaluateMultiClassSVM(obj,xtrain,ytrain,...
+            multi_svm_evaluation = multi_svm.evaluateMultiClassSVM(xtrain,ytrain,...
               xtest,ytest,obj.parameters{6}.kernel_arg,obj.parameters{6}.threshold_arg);
             multi_svm_evaluation.evaluation_time = toc(t0_svm);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/multi_svm_evaluate_parameter.mat'),...
               '-struct','multi_svm_evaluation');
           case 'kpca'
             fprintf('\n-> KPCA Novelty Detection\n');
             % Avalia os parâmetros
             t0_kpca = tic;
-            kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
+            kpca = KpcaND(xtrain,ytrain,obj.num_classes);
             kpca.kernel_type = obj.parameters{7}.kernel_type;
             kpca_evaluation = kpca.evaluate(obj,xtrain,xtest,ytest,...
               obj.parameters{7}.kernel_arg,obj.parameters{7}.threshold_arg);
             kpca_evaluation.evaluation_time = toc(t0_kpca);
-            % Salva avaliação
+            % Save predictions
             save(strcat(model_dir,'/kpca_evaluate_parameter.mat'),...
               '-struct','kpca_evaluation');
         end
       end
     end
     
-    function runPredictions(obj,methods,xtest,model_dir)
+    function runPredictions(obj,xtest,methods,model_dir)
       % ----------------------------------------------------------------------------------
       % This method is used to run the prediction with multi-class novelty detection 
-      % in a test set for the chosen algorithm.
+      % in a test set for the chosen methods.
       %
       % Input args
       %   xtest: test data [num_test x dimensions].
+      %   methods:
       %   model_dir: model directory.
       % ----------------------------------------------------------------------------------          
       xtrain = obj.X(obj.y~=-1,:);
       ytrain = obj.y(obj.y~=-1);
-      knn_dir = strcat(model_dir,'/K=',int2str(obj.knn_arg),' kappa=',int2str(obj.kappa_threshold));
-      if ~exist(knn_dir,'dir')
-        mkdir(knn_dir);
-      end
       for i=1:numel(methods)
-        switch methods{i}
+        switch methods{i}.name
           case 'knn'
             fprintf('\n-> KNN Novelty Detection \n');
-            % Carrega o modelo
-            knn_model = load(strcat(knn_dir,'/knn_model.mat'));
-            knn_model = knn_model.knn_model;
-            % Avalia o modelo
+            % Choose the best knn experiment
+            experiment = load(strcat(model_dir,'/','best_knn_experiment.mat'));
+            knn_dir = strcat(model_dir,'/K=',int2str(experiment.best_K(1)),...
+              ' kappa=',int2str(experiment.best_kappa(1)));
+            % Load the model
+            best_experiment = load(strcat(knn_dir,'/knn_experiments.mat'));            
+            model = best_experiment.model;
+            % Run predictions
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,knn_model.obj.knn_arg,knn_model.obj.kappa_threshold,obj.num_classes);
-            predictions = knn.predict(obj,xtrain,ytrain,xtest,knn_model.decision_thresholds);
+            knn = KnnND(xtrain,ytrain,model.knn_arg,model.kappa_threshold);
+            predictions = knn.predict(xtrain,ytrain,xtest,model.decision_threshold);
             prediction_time = toc(t0_knn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Salva a predição
+            % Save predictions
             save(strcat(knn_dir,'/knn_predictions.mat'),...
               'prediction_time','predictions','xtest');
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             figure;
             Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'lmnn'
             fprintf('\n-> LMNN Novelty Detection\n');
-            % Carrega o modelo
-            lmnn_model = load(strcat(knn_dir,'/lmnn_model.mat'));
-            lmnn_model = lmnn_model.lmnn_model;
-            % Avalia o modelo
+            % Choose the best lmnn experiment
+            experiment = load(strcat(model_dir,'/','best_lmnn_experiment.mat'));
+            knn_dir = strcat(model_dir,'/K=',int2str(experiment.best_K(1)),...
+              ' kappa=',int2str(experiment.best_kappa(1)));
+            % Load the model
+            best_experiment = load(strcat(knn_dir,'/lmnn_experiments.mat'));            
+            model = best_experiment.model;            
+            % Run predictions
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,lmnn_model.obj.knn_arg,...
-              lmnn_model.obj.kappa_threshold,obj.num_classes);
-            predictions = lmnn.predict(obj,xtrain,ytrain,xtest,lmnn_model.decision_thresholds);
+            lmnn = LmnnND(xtrain,ytrain,model.knn_arg,model.kappa_threshold);
+            predictions = lmnn.predict(xtrain,ytrain,xtest,model.decision_threshold);
             prediction_time = toc(t0_lmnn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Salva o teste
+            % Save predictions 
             save(strcat(knn_dir,'/lmnn_predictions.mat'),...
               'prediction_time','predictions','xtest');
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             figure;
             Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'klmnn'
             fprintf('\n-> KLMNN Novelty Detection\n');
-            % Carrega o modelo
-            klmnn_model = load(strcat(knn_dir,'/klmnn_model.mat'));
-            klmnn_model = klmnn_model.klmnn_model;
-            % Avalia o modelo
+            % Choose the best lmnn experiment
+            experiment = load(strcat(model_dir,'/','best_klmnn_experiment.mat'));
+            knn_dir = strcat(model_dir,'/K=',int2str(experiment.best_K(1)),...
+              ' kappa=',int2str(experiment.best_kappa(1)));
+            % Load the model
+            best_experiment = load(strcat(knn_dir,'/klmnn_experiments.mat'));            
+            model = best_experiment.model;      
+            % Run predictions
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,klmnn_model.obj.knn_arg,...
-              klmnn_model.obj.kappa_threshold,obj.num_classes);
-            klmnn.kernel_type = klmnn_model.kernel_type;
-            %klmnn_predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
-            % klmnn_model.kernel,klmnn_model.decision_thresholds);
-            predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
-              klmnn_model.kernel,klmnn_model.decision_thresholds);
+            klmnn = KlmnnND(xtrain,ytrain,model.knn_arg,model.kappa_threshold);
+            klmnn.kernel_type = model.kernel_type;
+            klmnn.reduction_ratio = model.reduction_ratio;
+            predictions = klmnn.predict(xtrain,ytrain,xtest,model.kernel,model.decision_threshold);
             prediction_time = toc(t0_klmnn);
             fprintf('-> done! [%.4f s]\n',prediction_time);
-            % Salva o teste
+            % Save predictions
             save(strcat(knn_dir,'/klmnn_predictions.mat'),...
               'prediction_time','predictions','xtest');
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             figure;
             Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'knfst'
             fprintf('\n-> KNFST Novelty Detection\n');
-            % Carrega o modelo
-            knfst_model = load(strcat(model_dir,'/knfst_model.mat'));
-            knfst_model = knfst_model.knfst_model;
-            % Avalia o modelo
+            % Load the model
+            experiments = load(strcat(model_dir,'/knfst_experiments.mat'));
+            model = experiments.model;
+            % Run predictions
             t0_knfst = tic;
-            knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
-            knfst.kernel_type = knfst_model.kernel_type;
-            predictions = knfst.predict(obj,xtrain,ytrain,xtest,...
-              knfst_model.kernel,knfst_model.decision_thresholds);
+            knfst = KnfstND(xtrain,ytrain);
+            knfst.kernel_type = model.kernel_type;
+            predictions = knfst.predict(xtrain,ytrain,xtest,...
+              model.kernel,model.decision_threshold);
             prediction_time = toc(t0_knfst);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Salva o teste
+            % Save predictions
             save(strcat(model_dir,'/knfst_predictions.mat'),...
               'prediction_time','predictions','xtest');
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             figure;
             Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'one_svm'
             fprintf('\n-> One SVM Novelty Detection\n');
-            % Carrega o modelo
-            one_svm_model = load(strcat(model_dir,'/one_svm_model.mat'));
-            one_svm_model = one_svm_model.one_svm_model;
-            % Avalia o modelo
+            % Load the model
+            experiments = load(strcat(model_dir,'/one_svm_experiments.mat'));
+            model = experiments.model;
+            % Run predictions
             t0_svm = tic;
-            one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            one_svm.kernel_type = one_svm_model.kernel_type;
-            predictions = one_svm.predictOneClassSVM(obj,xtrain,ytrain,xtest,...
-              one_svm_model.kernel);
+            one_svm = SvmND(xtrain,ytrain,obj.num_classes);
+            one_svm.kernel_type = model.kernel_type;
+            predictions = one_svm.predictOneSVM(xtrain,ytrain,xtest,model.kernel);
             prediction_time = toc(t0_svm);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Salva o teste
+            % Save predictions
             save(strcat(model_dir,'/one_svm_predictions.mat'),'prediction_time',...
               'predictions','xtest');
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             figure;
             Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'multi_svm'
             fprintf('\n-> Multi SVM Novelty Detection\n');
-            % Carrega o modelo
-            multi_svm_model = load(strcat(model_dir,'/multi_svm_model.mat'));
-            multi_svm_model = multi_svm_model.multi_svm_model;
-            % Avalia o modelo
+            % Load the model
+            experiments = load(strcat(model_dir,'/multi_svm_experiments.mat'));
+            model = experiments.model;
+            % Run predictions
             t0_svm = tic;
-            multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
-            multi_svm.kernel_type = multi_svm_model.kernel_type;
-            predictions = multi_svm.predictMultiClassSVM(obj,xtrain,ytrain,xtest,...
-              multi_svm_model.kernel,multi_svm_model.decision_thresholds);
+            multi_svm = SvmND(xtrain,ytrain,obj.num_classes);
+            multi_svm.kernel_type = model.kernel_type;
+            predictions = multi_svm.predictMultiSVM(xtrain,ytrain,xtest,...
+              model.kernel,model.decision_threshold);
             prediction_time = toc(t0_svm);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Salva o teste
+            % Save predictions
             save(strcat(model_dir,'/multi_svm_predictions.mat'),'prediction_time',...
               'predictions','xtest');
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             figure;
             Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
           case 'kpca'
             fprintf('\n-> KPCA Novelty Detection\n');
-            % Carrega o modelo
-            kpca_model = load(strcat(model_dir,'/kpca_model.mat'));
-            kpca_model = kpca_model.kpca_model;
-            % Avalia o modelo
+            % Load the model
+            experiments = load(strcat(model_dir,'/kpca_experiments.mat'));
+            model = experiments.model;
+            % Run predictions
             t0_kpca = tic;
-            kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
-            kpca.kernel_type = kpca_model.kernel_type;
-            predictions = kpca.predictNovelty(obj,xtrain,xtest,...
-              kpca_model.kernel,kpca_model.decision_thresholds);
+            kpca = KpcaND(xtrain,ytrain,obj.num_classes);
+            kpca.kernel_type = model.kernel_type;
+            predictions = kpca.predict(xtrain,xtest,...
+              model.kernel,model.decision_threshold);
             prediction_time = toc(t0_kpca);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Salva o teste
+            % Save predictions
             save(strcat(model_dir,'/kpca_predictions.mat'),...
               'prediction_time','predictions','xtest');
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             figure;
             Util.plotDecisionBoundary(xtest,predictions);
             Util.plotClassesAux(obj.X,obj.y);
@@ -1010,82 +1014,82 @@ classdef Manager < handle
           case 'knn'
             fprintf('\n-> KNN Novelty Detection \n');
             t0_knn = tic;
-            knn = KnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
+            knn = KnnND(xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             % Avalia os parâmetros
-            knn_predictions = knn.predict(obj,xtrain,ytrain,xtest,methods{i}.threshold_arg);
+            knn_predictions = knn.predict(xtrain,ytrain,xtest,methods{i}.threshold_arg);
             prediction_time = toc(t0_knn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             Util.plotClassesWithBoundary('knn',knn_dir,obj.X,obj.y,xtest,knn_predictions);
           case 'lmnn'
             fprintf('\n-> LMNN Novelty Detection\n');
             t0_lmnn = tic;
-            lmnn = LmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
+            lmnn = LmnnND(xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             % Avalia os parâmetros
-            lmnn_predictions = lmnn.predict(obj,xtrain,ytrain,xtest,obj.parameters{2}.threshold_arg);
+            lmnn_predictions = lmnn.predict(xtrain,ytrain,xtest,obj.parameters{2}.threshold_arg);
             prediction_time = toc(t0_lmnn);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             Util.plotClassesWithBoundary('lmnn',knn_dir,obj.X,obj.y,xtest,lmnn_predictions);
           case 'klmnn'
             fprintf('\n-> KLMNN Novelty Detection\n');
             t0_klmnn = tic;
-            klmnn = KlmnnND(obj,xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
+            klmnn = KlmnnND(xtrain,ytrain,obj.knn_arg,obj.kappa_threshold,obj.num_classes);
             klmnn.kernel_type = obj.parameters{3}.kernel_type;
             % Avalia os parâmetros
-            klmnn_predictions = klmnn.predict(obj,xtrain,ytrain,xtest,...
+            klmnn_predictions = klmnn.predict(xtrain,ytrain,xtest,...
               obj.parameters{3}.kernel_arg,obj.parameters{3}.threshold_arg);
             prediction_time = toc(t0_klmnn);
             fprintf('-> done! [%.4f s]\n',prediction_time);
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             Util.plotClassesWithBoundary('klmnn',knn_dir,obj.X,obj.y,xtest,klmnn_predictions);
           case 'knfst'
             fprintf('\n-> KNFST Novelty Detection\n');
             t0_knfst = tic;
-            knfst = KnfstND(obj,xtrain,ytrain,obj.num_classes);
+            knfst = KnfstND(xtrain,ytrain,obj.num_classes);
             knfst.kernel_type = obj.parameters{4}.kernel_type;
             % Avalia os parâmetros
-            knfst_predictions = knfst.predict(obj,xtrain,ytrain,xtest,...
+            knfst_predictions = knfst.predict(xtrain,ytrain,xtest,...
               obj.parameters{4}.kernel_arg,obj.parameters{4}.threshold_arg);
             prediction_time = toc(t0_knfst);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             Util.plotClassesWithBoundary('knfst',model_dir,obj.X,obj.y,xtest,knfst_predictions);
           case 'one_svm'
             fprintf('\n-> One SVM Novelty Detection\n');
             t0_svm = tic;
-            one_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+            one_svm = SvmND(xtrain,ytrain,obj.num_classes);
             multi_svm.kernel_type = obj.parameters{5}.kernel_type;
             % Testa o parâmetro
-            one_svm_predictions = one_svm.predictOneClassSVM(obj,xtrain,ytrain,xtest,...
+            one_svm_predictions = one_svm.predictOneSVM(xtrain,ytrain,xtest,...
               obj.parameters{5}.kernel_arg);
             prediction_time = toc(t0_svm);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             Util.plotClassesWithBoundary('one svm',model_dir,obj.X,obj.y,xtest,one_svm_predictions);
           case 'multi_svm'
             fprintf('\n-> Multi SVM Novelty Detection\n');
             t0_svm = tic;
-            multi_svm = SvmND(obj,xtrain,ytrain,obj.num_classes);
+            multi_svm = SvmND(xtrain,ytrain,obj.num_classes);
             multi_svm.kernel_type = obj.parameters{6}.kernel_type;
             % Avalia os parâmetros
-            multi_svm_predictions = multi_svm.predictMultiClassSVM(obj,xtrain,ytrain,xtest,...
+            multi_svm_predictions = multi_svm.predictMultiSVM(xtrain,ytrain,xtest,...
               obj.parameters{6}.kernel_arg,obj.parameters{6}.threshold_arg);
             prediction_time = toc(t0_svm);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             Util.plotClassesWithBoundary('multi svm',model_dir,obj.X,obj.y,xtest,multi_svm_predictions);
           case 'kpca'
             fprintf('\n-> KPCA Novelty Detection\n');
             t0_kpca = tic;
-            kpca = KpcaND(obj,xtrain,ytrain,obj.num_classes);
+            kpca = KpcaND(xtrain,ytrain,obj.num_classes);
             kpca.kernel_type = obj.parameters{7}.kernel_type;
             % Avalia os parâmetros
             kpca_predictions = kpca.predictNovelty(obj,xtrain,xtest,...
               obj.parameters{7}.kernel_arg,obj.parameters{7}.threshold_arg);
             prediction_time = toc(t0_kpca);
             fprintf('\n--> Ok [%.4f s]\n',prediction_time);
-            % Plota a fronteira de decisão
+            % Plot the decision boundaries
             Util.plotClassesWithBoundary('kpca',model_dir,obj.X,obj.y,xtest,kpca_predictions);
         end
       end

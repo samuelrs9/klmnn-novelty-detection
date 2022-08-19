@@ -79,8 +79,7 @@ classdef KlmnnND < handle
       %
       % Output args
       %   experiments: experiments report.
-      % ----------------------------------------------------------------------------------            
-      classes_id = 1:obj.num_classes;      
+      % ----------------------------------------------------------------------------------                
       obj.knn_arg = hyperparameters.knn_arg;
       obj.kappa_threshold = hyperparameters.kappa_threshold;        
       obj.kernel_type = hyperparameters.kernel_type;
@@ -227,7 +226,7 @@ classdef KlmnnND < handle
       end
       close all;
       % Métrica MCC
-      mean_mcc = mean(MCC,3);
+      mean_mcc = mean(MCC,3,'omitnan');
       max_mean_mcc = max(max(mean_mcc));
       [best_kernel_id,best_threshold_id] = find(mean_mcc == max_mean_mcc);
       best_kernel_id = best_kernel_id(1);
@@ -258,6 +257,8 @@ classdef KlmnnND < handle
       model.kappa_threshold = obj.kappa_threshold;
       model.decision_threshold = decision_thresholds(best_threshold_id);
       model.kernel = kernels(best_kernel_id);
+      model.kernel_type = obj.kernel_type;
+      model.reduction_ratio = obj.reduction_ratio;
       
       experiments.hyperparameters = hyperparameters;      
       experiments.num_experiments = num_experiments;      
@@ -302,114 +303,7 @@ classdef KlmnnND < handle
       ylabel('kernel'); 
       title('F1-SCORE');
     end
-        
-    function model = validation(obj,n_validations,plot_error)
-      %-----------------------------------------------------------------------------------
-      % Validação do algoritmo klmnn out detection
-      %-----------------------------------------------------------------------------------
-      obj.split = cell(n_validations,1);
-      mcc = zeros(num_kernels,num_decision_thresholds,n_validations);
-      for i=1:n_validations
-        rng(i);
-        % Cria um objeto split. Particiona a base em dois conjuntos
-        % de classes treinadas e não treinadas. Separa uma
-        % parte para treinamento e outra para teste
-        obj.split{i} = SplitData(obj.X,obj.Y,training_ratio,num_untrained_classes);
-        % Separa uma parte do treinamento para validação
-        [id_train,id_val] = obj.split{i}.idTrainVal();
-        [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
-        RK = [];
-        for j=1:num_kernels
-          kernel_arg = kernels(j);
-          
-          % Pré-processamento para o KPCA
-          % treino
-          mean_train = mean(xtrain);
-          xtrain = xtrain - mean_train;
-          max_train = max(xtrain(:));
-          xtrain = xtrain/max_train;
-          % teste
-          xval = xval - mean_train;
-          xval = xval/max_train;
-          
-          % KPCA
-          fprintf('Compute KPCA... ');
-          kpca = obj.kpcaModel(kernel_arg);
-          xtrainp = kpca.train(xtrain); % Visualization.map(xtrain,xtrainp,ytrain)
-          xvalp = kpca.test(xval);
-          fprintf('feito!\n');
-          
-          % Pré-processamento para o LMNN
-          % treino
-          mean_trainp = mean(xtrainp);
-          xtrainp = xtrainp - mean_trainp;
-          max_trainp = max(xtrainp(:));
-          xtrainp = xtrainp/max_trainp;
-          % teste
-          xvalp = xvalp - mean_trainp;
-          xvalp = xvalp/max_trainp;
-          
-          % LMNN                  
-          lmnn = LmnnND(xtrainp,ytrain,obj.knn_arg,obj.kappa_threshold);
-          T = lmnn.computeTransform(xtrainp,ytrain);
-          xtrainpg = lmnn.transform(xtrainp,T);
-          xvalpg = lmnn.transform(xvalp,T);
-          
-          % KNN
-          knn = KnnND(xtrainpg,ytrain,obj.knn_arg,obj.kappa_threshold);
-          
-          RT = [];
-          for k=1:num_decision_thresholds
-            fprintf('\nKLMNN (K=%d kappa=%d) \tVal: %d/%d \tKernel (%d/%d) \tDecision threshold (%d/%d)\n',...
-              obj.knn_arg,obj.kappa_threshold,i,n_validations,...
-              j,num_kernels,k,num_decision_thresholds);
-            result = knn.evaluate(xtrainpg,ytrain,xvalpg,yval,decision_thresholds(k));
-            result.kernel = kernel_arg;
-            mcc(j,k,i) = result.MCC;
-            if plot_error
-              RT = cat(1,RT,mcc(j,k,i));
-              figure(1);
-              clf('reset');
-              plot(decision_thresholds(1:k),RT,'-r','LineWidth',2);
-              xlim([decision_thresholds(1),decision_thresholds(end)]);
-              ylim([0,1]);
-              xlabel('Threshold');
-              ylabel('Matthews correlation coefficient (MCC)');
-              title(['KLMNN [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(num_kernels),' | decision_threshold ',num2str(k),'/',num2str(num_decision_thresholds),' ]']);
-              drawnow;
-              pause(0.01);
-            end
-          end
-          if plot_error
-            RK = cat(1,RK,max(RT));
-            figure(2);
-            clf('reset');
-            plot(kernels(1:j),RK,'-','LineWidth',2);
-            xlim([kernels(1),kernels(end)]);
-            ylim([0,1]);
-            xlabel('Kernel');
-            ylabel('Matthews correlation coefficient (MCC)');
-            title(['KLMNN [ validação ',num2str(i),'/',num2str(n_validations),' | kernel ',num2str(j),'/',num2str(num_kernels),' ]']);
-            drawnow;
-          end
-        end
-        model.split{i} = obj.split{i};
-      end
-      close all;
-      mean_mcc = mean(mcc,3);
-      max_mean_mcc = max(max(mean_mcc));
-      [id_k,id_t] = find(mean_mcc == max_mean_mcc);
-      id_k = id_k(1); id_t = id_t(1);
-      
-      model.training_ratio = training_ratio;
-      model.kernel = kernels(id_k);
-      model.decision_threshold = decision_thresholds(id_t);
-      model.num_untrained_classes = num_untrained_classes;
-      model.knn_arg = obj.knn_arg;
-      model.kappa_threshold = obj.kappa_threshold;
-      model.mean_mcc = max_mean_mcc;
-    end
-    
+     
     function [results,evaluations] = evaluateModel(obj,model,num_tests)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the KLMNN prediction with multi-class novelty 

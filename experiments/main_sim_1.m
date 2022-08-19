@@ -11,12 +11,10 @@ addpath('../compared_methods');
 % Create synthetic dataset
 out_dir = 'out_sim_1';
 data = SyntheticDatasets.horizontalLines(out_dir,false);
-%data = load(strcat(out_dir,'/dataset.mat'));
 xtrain = data.X;
 ytrain = data.y;
 xtest = data.xtest;
 ytest = data.ytest;
-num_classes = numel(unique(ytrain));
 
 % Experiment configurations
 training_ratio = 0.7;
@@ -26,9 +24,9 @@ plot_metric = false;
 
 % More experiment configurations
 num_experiments = 5;
-num_knn_args = 3;
-num_decision_thresholds = 5;
-num_kernels = 4;
+num_knn_args = 5;
+num_decision_thresholds = 20;
+num_kernels = 5;
 
 % Hyperparameters
 % KNN
@@ -87,17 +85,17 @@ methods  = {knn_config,lmnn_config,klmnn_config,...
 manager = Manager(xtrain,ytrain,out_dir,num_experiments,...
   num_untrained_classes,training_ratio,random_select_classes,plot_metric);
 
-tutorial = 4;
+tutorial = 5;
 
 switch tutorial
   case 1
     % ------------------------------------------------------------------------------------
-    % Run novelty detection experiments for KNN, LMNN and KLMNN based approaches.
+    % This runs novelty detection experiments for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------
     manager.runExperimentsForKnnMethods(methods([1,2,3]),num_knn_args);
   case 2
     % ------------------------------------------------------------------------------------
-    % Process novelty detection results for KNN, LMNN and KLMNN based approaches.
+    % This processes novelty detection results for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------
     knn_reports = manager.reportExperimentsForKnnMethods(out_dir,num_knn_args);    
   case 3
@@ -113,49 +111,7 @@ switch tutorial
     manager.reportExperiments(out_dir,methods([1,2,3,4,5,6,7]));        
   case 5
     % ------------------------------------------------------------------------------------                
-    % This runs predictions on grid points and draw decision boundaries.
+    % This runs predictions on grid test points and draw decision boundaries.
     % ------------------------------------------------------------------------------------                
-    manager.runPredictions(X,y,xtest,methods([1,2,3,4,5,6,7]),out_dir,num_classes,K,kappa);
-    
-  case 6
-    % TESTA COM PARÂMETROS MANUAIS
-    % Para KNN, LMNN e KLMNN
-    K = 1;
-    kappa = 1;
-   
-    % KNN
-    knn_config.threshold_arg = 1;
-    
-    % LMNN
-    lmnn_config.threshold_arg = 1;
-    
-    % KLMNN
-    klmnn_config.threshold_arg = 1.0;
-    klmnn_config.kernel_type = 'poly'; % ou 'gauss';
-    klmnn_config.kernel_arg = 2.0;
-
-    % KNFST
-    knfst_config.threshold_arg = 0.05;
-    knfst_config.kernel_type = 'poly';% ou 'gauss'
-    knfst_config.kernel_arg = 2;
-
-    % ONE SVM
-    one_svm_config.kernel_type = 'gauss';
-    one_svm_config.kernel_arg = 0.5;
-
-    % MULTI SVM
-    multi_svm_config.threshold_arg = 0.5;
-    multi_svm_config.kernel_type = 'gauss';    
-    multi_svm_config.kernel_arg = 0.5;
-
-    % KPCA NOV   
-    kpca_config.threshold_arg = 0.2;
-    kpca_config.kernel_type = 'gauss';
-    kpca_config.kernel_arg = 0.5;
-
-    parameters = {knn_config,lmnn_config,klmnn_config,knfst_config,one_svm_config,multi_svm_config,kpca_config};
-    
-    % Avalia os métodos em um conjunto de teste qualquer e salva as métricas de acurácia
-    Methods.runPredictionsParameter(xtrain,ytrain,xtest,methods([1]),parameters,out_dir,num_classes,K,kappa);
+    manager.runPredictions(xtest,methods([1,2,3,4,5,6,7]),out_dir);
 end
-                        

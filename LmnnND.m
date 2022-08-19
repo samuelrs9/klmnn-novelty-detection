@@ -177,7 +177,7 @@ classdef LmnnND < handle
       end
       close all;
       % Métrica MCC
-      mean_mcc = mean(MCC,1);
+      mean_mcc = mean(MCC,1,'omitnan');
       [~,best_threshold_id] = max(mean_mcc);
       
       % Demais métricas
@@ -247,82 +247,7 @@ classdef LmnnND < handle
       ylabel('f1-score'); 
       title('F1-SCORE');
     end
-    
-    function model = validation(obj,num_validations,plot_error)
-      %-----------------------------------------------------------------------------------
-      % Runs a cross-validation algorithm.
-      %
-      % Input args
-      %   num_validations:
-      %   plot_error: if true plots de accuracy metric.
-      %
-      % Output args
-      %   model:
-      % ----------------------------------------------------------------------------------
-      obj.split = cell(num_validations,1);
-      mcc = zeros(num_validations,num_decision_thresholds);
-      for i=1:num_validations
-        rng(i);
-        % Cria um objeto split. Particiona a base em dois conjuntos
-        % de classes treinadas e não treinadas. Separa uma
-        % parte para treinamento e outra para teste
-        obj.split{i} = SplitData(obj.X,obj.Y,training_ratio,num_untrained_classes);
-        % Separa uma parte do treinamento para validação
-        [id_train,id_val] = obj.split{i}.idTrainVal();
-        [xtrain,ytrain,xval,yval] = obj.split{i}.dataTrainVal(id_train,id_val);
-        
-        % Pré-processamento para o LMNN
-        % treino
-        mean_train = mean(xtrain);
-        xtrain = xtrain - mean_train;
-        max_train = max(xtrain(:));
-        xtrain = xtrain/max_train;
-        % validação
-        xval = xval - mean_train;
-        xval = xval/max_train;
-        
-        % LMNN
-        T = obj.computeTransform(xtrain,ytrain);
-        xtraing = obj.transform(xtrain,T);
-        xvalg = obj.transform(xval,T);
-        
-        % KNN
-        knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold);
-        RT = [];
-        for j=1:num_untrained_classes
-          fprintf('\nLMNN (K=%d kappa=%d) \tVal %d/%d \tDecision threshold %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_validations,j,num_untrained_classes);
-          
-          result = knn.evaluate(xtraing,ytrain,xvalg,yval,decision_thresholds(j),a);
-          
-          mcc(i,j) = result.MCC;
-          if plot_error
-            RT = cat(1,RT,mcc(i,j));
-            figure(1);
-            clf('reset');
-            plot(decision_thresholds(1:j),RT,'-','LineWidth',3);
-            xlim([decision_thresholds(1),decision_thresholds(end)]);
-            ylim([0,1]);
-            xlabel('Threshold');
-            ylabel('Matthews correlation coefficient (MCC)');
-            title(['LMNN [ test ',num2str(i),'/',num2str(num_validations),' | decision_threshold ',num2str(j),'/',num2str(num_decision_thresholds),' ]']);
-            drawnow;
-            pause(0.01);
-          end
-        end
-        model.split{i} = obj.split{i};
-      end
-      close all;
-      mean_mcc = mean(mcc,1);
-      [max_mean_mcc,ID] = max(mean_mcc);
-      
-      model.training_ratio = training_ratio;
-      model.decision_threshold = decision_thresholds(ID);
-      model.num_decision_thresholds = num_decision_thresholds;
-      model.knn_arg = obj.knn_arg;
-      model.kappa_threshold = obj.kappa_threshold;
-      model.mean_mcc = max_mean_mcc;
-    end
-    
+
     function [results,evaluations] = evaluateModel(obj,model,num_tests)
       % ----------------------------------------------------------------------------------
       % This method is used to evaluate the LMNN prediction with multi-class novelty 
@@ -403,7 +328,7 @@ classdef LmnnND < handle
       
       % KNN
       knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold);
-      result = knn.evaluate(obj,xtraing,ytrain,xtestg,ytest,decision_threshold);
+      result = knn.evaluate(xtraing,ytrain,xtestg,ytest,decision_threshold);
       %result = evaluate@KnnND(obj,xtraing,ytrain,xtestg,ytest,decision_threshold);
     end
     
@@ -439,7 +364,7 @@ classdef LmnnND < handle
       
       % KNN
       knn = KnnND(xtraing,ytrain,obj.knn_arg,obj.kappa_threshold);
-      predictions = knn.predict(xtraing,ytrain,xtestg,threshold);
+      predictions = knn.predict(xtraing,ytrain,xtestg,decision_threshold);
     end
     
     function T = computeTransform(obj,xtrain,ytrain)

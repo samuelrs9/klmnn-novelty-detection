@@ -24,9 +24,9 @@ plot_metric = false;
 
 % More experiment configurations
 num_experiments = 5;
-num_knn_args = 3;
-num_decision_thresholds = 4;
-num_kernels = 4;
+num_knn_args = 5;
+num_decision_thresholds = 50;
+num_kernels = 50;
 
 % Hyperparameters
 % KNN

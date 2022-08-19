@@ -1,155 +1,145 @@
-%% INICIALIZAÇÕES
-clc; clear; close all;
-run('libraries/lmnn/setpaths3.m');
-addpath('libraries/kpca');
-addpath('libraries/knfst');
+% Initializations
+clc;
+clear;
+close all;
+run('../libraries/lmnn/setpaths3.m');
+addpath('..');
+addpath('../libraries/kpca');
+addpath('../libraries/knfst');
+addpath('../compared_methods');
 
-out_dir = 'simulation_4';
+% Experiment configurations
+training_ratio = 0.7;
+num_untrained_classes = 1;
+random_select_classes = false;
+plot_metric = false;
 
-% VARIAÇÃO DA QUANTIDADE DE DADOS DE TREINAMENTO E DIMENSÕES
-N = [100,200,300,400,500,750,1000,1500,2000];
-%N = 800;
+% More experiment configurations
+num_experiments = 5;
+num_knn_args = 3;
+num_decision_thresholds = 4;
+num_kernels = 3;
 
-% MÉTODOS
-methods = {'knn','lmnn','klmnn','knfst','one_svm','multi_svm','kpca'};
+% Hyperparameters
+% KNN
+knn_config.name = 'knn';
+knn_config.num_decision_thresholds = num_decision_thresholds;
+knn_config.decision_thresholds = linspace(0.5,1.5,knn_config.num_decision_thresholds)';
 
-% PARA KNN, LMNN e KLMNN
-K = 3;
-kappa = 1;
+% LMNN
+lmnn_config.name = 'lmnn';
+lmnn_config.num_decision_thresholds = num_decision_thresholds;
+lmnn_config.decision_thresholds = linspace(0.5,1.5,lmnn_config.num_decision_thresholds)';
 
-run_validation = false;
+% KLMNN
+klmnn_config.name = 'klmnn';
+klmnn_config.num_decision_thresholds = num_decision_thresholds;
+klmnn_config.decision_thresholds = linspace(0.5,4.5,klmnn_config.num_decision_thresholds)';
+klmnn_config.num_kernels = num_kernels;
+klmnn_config.kernel_type = 'gauss';
+klmnn_config.reduction_ratio = 0.9; % percent variability explained by principal components
+klmnn_config.kernels = linspace(0.1,2.0,klmnn_config.num_kernels)';
 
-if run_validation
-    for i=1:numel(N)
-        if N(i) == 800
-            DIM = 2:20;
-        else
-            DIM = 10;
-        end
-        for j=1:numel(DIM)
-            % CRIA A BASE      
-            base = Simulations.uniformDistributions(N(i),DIM(j));
-            X = base.X;
-            y = base.y;
-            xtrain = base.xtrain;
-            ytrain = base.ytrain;
-            xtest = base.xtest;
-            ytest = base.ytest;
+% KNFST
+knfst_config.name = 'knfst';
+knfst_config.num_decision_thresholds = num_decision_thresholds;
+knfst_config.decision_thresholds = linspace(0.01,1.0,knfst_config.num_decision_thresholds)';
+knfst_config.kernel_type = 'gauss';
+knfst_config.num_kernels = num_kernels;
+knfst_config.kernels = linspace(0.1,1.5,knfst_config.num_kernels)';
 
-            exp_dir = strcat(out_dir,'/N=',int2str(N(i)),' DIM=',int2str(DIM(j)));
+% ONE SVM
+one_svm_config.name = 'one_svm';
+one_svm_config.kernel_type = 'gauss';
+one_svm_config.num_kernels = num_kernels;
+one_svm_config.kernels = linspace(0.1,1.5,one_svm_config.num_kernels)';
 
-            training_ratio = 1.0;
-            n_classes = numel(unique(y));
-            max_std = max(std(X));
+% MULTI SVM
+multi_svm_config.name = 'multi_svm';
+multi_svm_config.num_decision_thresholds = num_decision_thresholds;
+multi_svm_config.decision_thresholds = linspace(0.0,1.5,multi_svm_config.num_decision_thresholds)';
+multi_svm_config.kernel_type = 'gauss';
+multi_svm_config.num_kernels = num_kernels;
+multi_svm_config.kernels = linspace(0.1,1.5,multi_svm_config.num_kernels)';
 
-            search_parameters = true;        
+% KPCA
+kpca_config.name = 'kpca';
+kpca_config.num_decision_thresholds = num_decision_thresholds;
+kpca_config.decision_thresholds = linspace(0.5,0.99,kpca_config.num_decision_thresholds)';
+kpca_config.kernel_type = 'poly';
+kpca_config.num_kernels = num_kernels;
+kpca_config.kernels = linspace(0.1,1.5,kpca_config.num_kernels)';
 
-            if search_parameters
-                % CALIBRAÇÃO DOS PARÂMETROS POR FORÇA BRUTA
-                n_experiments = 5;
-                untrained_classes = 1;
+% Organize all methods in a cell array
+methods  = {knn_config,lmnn_config,klmnn_config,...
+  knfst_config,one_svm_config,multi_svm_config,kpca_config};
 
-                view_plot_metric = false;
+tutorial = 5;
 
-                % Para KNN, LMNN e KLMNN
-                K = 3;
-                kappa = 1;
+% Variation in the amount of training data
+%N = [800,100,200,300,400,500,750,1000,1500,2000];
+N = [300,100,200,400];
 
-                % Define intervalos de busca de parâmetros de kernel e thresholds
-                % KNN
-                knn_par.n_thresholds = 20;
-                knn_par.threshold = linspace(0.5,1.5,knn_par.n_thresholds)';
-
-                % LMNN
-                lmnn_par.n_thresholds = 20;
-                lmnn_par.threshold = linspace(0.5,1.5,lmnn_par.n_thresholds)';
-
-                % KLMNN
-                klmnn_par.n_thresholds = 20;
-                klmnn_par.threshold = linspace(0.5,4.5,klmnn_par.n_thresholds)';
-                klmnn_par.n_kernels = 10;
-                klmnn_par.kernel_type = 'gauss'; % explained = 0.9
-                klmnn_par.kernel = linspace(0.5*max_std,3.0*max_std,klmnn_par.n_kernels)';
-
-                % KNFST
-                knfst_par.n_thresholds = 20;
-                knfst_par.threshold = linspace(0.01,0.7,knfst_par.n_thresholds)';
-                knfst_par.kernel_type = 'gauss';
-                knfst_par.n_kernels = 10;
-                knfst_par.kernel = linspace(0.01*max_std,1.5*max_std,knfst_par.n_kernels)';
-
-                % ONE SVM
-                one_svm_par.kernel_type = 'gauss';
-                one_svm_par.n_kernels = 20;
-                one_svm_par.kernel = linspace(0.01*max_std,1.5*max_std,one_svm_par.n_kernels)';
-
-                % MULTI SVM
-                multi_svm_par.n_thresholds = 20;
-                multi_svm_par.threshold = linspace(0.0,1.0,multi_svm_par.n_thresholds)';
-                multi_svm_par.kernel_type = 'gauss';
-                multi_svm_par.n_kernels = 10;
-                multi_svm_par.kernel = linspace(0.01*max_std,1.5*max_std,multi_svm_par.n_kernels)';
-
-                % KPCA
-                kpca_par.n_thresholds = 20;
-                kpca_par.threshold = linspace(0.5,0.99,kpca_par.n_thresholds)';
-                kpca_par.kernel_type = 'gauss';
-                kpca_par.n_kernels = 10;
-                kpca_par.kernel = linspace(0.01*max_std,1.5*max_std,kpca_par.n_kernels)';
-
-                parameters = {knn_par,lmnn_par,klmnn_par,knfst_par,one_svm_par,multi_svm_par,kpca_par};
-
-                % Validação dos métodos
-                %Methods.runValidations(X,y,methods([1,2,3,4,5,6,7]),parameters,exp_dir,n_experiments,...
-                %                       n_classes,untrained_classes,training_ratio,K,kappa,view_plot_metric);
-
-                % Avaliação dos métodos (Usa os 30% dos dados que não foram utilizados na validação)
-                %Methods.runEvaluationModels(methods([1,2,3,4,5,6,7]),out_dir,n_experiments,K,kappa);
-
-                % Avalia os métodos conjuntos de teste e salva as métricas de acurácia
-                %Methods.runEvaluationTests(xtrain,ytrain,xtest,ytest,methods([1,2,3,4,5,6,7]),exp_dir,n_classes,K,kappa);
-            else
-                % TESTA COM PARÂMETROS MANUAIS
-                % KNN
-                knn_par.threshold_arg = 1;
-
-                % LMNN
-                lmnn_par.threshold_arg = 1;
-
-                % KLMNN
-                klmnn_par.threshold_arg = 1.0;    
-                klmnn_par.kernel_type = 'gauss'; % ou 'poly';
-                klmnn_par.kernel_arg = 0.5;
-
-                % KNFST
-                knfst_par.threshold_arg = 1;
-                knfst_par.kernel_type = 'gauss';
-                knfst_par.kernel_arg = 0.5;
-
-                % ONE SVM
-                one_svm_par.kernel_type = 'gauss';
-                one_svm_par.kernel_arg = 0.5;
-
-                % MULTI SVM
-                multi_svm_par.threshold_arg = 0.5;
-                multi_svm_par.kernel_type = 'gauss';    
-                multi_svm_par.kernel_arg = 0.5;
-
-                % KPCA NOV   
-                kpca_par.threshold_arg = 0.2;
-                kpca_par.kernel_type = 'gauss';
-                kpca_par.kernel_arg = 0.5;
-
-                parameters = {knn_par,lmnn_par,klmnn_par,knfst_par,one_svm_par,multi_svm_par,kpca_par};
-
-                % Avalia os métodos
-                Methods.runEvaluationsParameter(xtrain,ytrain,X,y,methods([1,2,3,4,5,6,7]),parameters,exp_dir,n_classes,K,kappa);
-            end
-        end
+for i=1:numel(N)
+  % Variation in the number of spatial dimensions
+  %if N(i) == 800
+  if N(i) == 300
+    %DIM = 2:20;
+    DIM = 2:5;
+  else
+    DIM = 10;
+  end
+  for j=1:numel(DIM)
+    % Output diretory
+    out_dir = strcat('out_sim_4','/N=',int2str(N(i)),' DIM=',int2str(DIM(j)));        
+    
+    % Create the synthetic dataset
+    num_test_points = 1000;
+    data = SyntheticDatasets.uniformDistributions(out_dir,N(i),num_test_points,DIM(j),false);
+    xtrain = data.X;
+    ytrain = data.y;
+    xtest = data.xtest;
+    ytest = data.ytest;
+  
+    % Manager
+    manager = Manager(xtrain,ytrain,out_dir,num_experiments,...
+      num_untrained_classes,training_ratio,random_select_classes,plot_metric);
+    
+    switch tutorial
+      case 1
+        % --------------------------------------------------------------------------------
+        % This runs novelty detection experiments for KNN, LMNN and KLMNN based approaches.
+        % --------------------------------------------------------------------------------
+        manager.runExperimentsForKnnMethods(methods([1,2,3]),num_knn_args);
+      case 2
+        % --------------------------------------------------------------------------------
+        % This processes novelty detection results for KNN, LMNN and KLMNN based approaches.
+        % --------------------------------------------------------------------------------
+        knn_reports = manager.reportExperimentsForKnnMethods(out_dir,num_knn_args);
+      case 3
+        % --------------------------------------------------------------------------------
+        % This runs novelty detection experiments for KNFST, ONE SVM, MULTI SVM and KPCA
+        % based approaches.
+        % --------------------------------------------------------------------------------
+        manager.runExperiments(methods([4,5,6,7]));
+      case 4
+        % --------------------------------------------------------------------------------
+        % This processes novelty detection results for all methods.
+        % --------------------------------------------------------------------------------
+        manager.reportExperiments(out_dir,methods([1,2,3,4,5,6,7]));        
+      case 5
+        % --------------------------------------------------------------------------------
+        % This runs evaluations on test sets. [PARCIALMENTE ATUALIZADO]
+        % --------------------------------------------------------------------------------
+        manager.runEvaluationTests(xtest,ytest,methods([1,2,3,4,5,6,7]),out_dir);
     end
+  end
+end   
+   
+if tutorial==6 
+  % --------------------------------------------------------------------------------------
+  % This loads and processes the runtime experiments. [NÃO ATUALIZADO]
+  % --------------------------------------------------------------------------------------
+  DIM = 2:20;
+  manager.reportExecutionTimeAndMetricsTests(methods,out_dir,N,DIM,K,kappa)
 end
-
-DIM = 2:20;
-
-% Carrega e processa o experimento de tempo de execução e avalia métricas
-Methods.reportExecutionTimeAndMetricsTests(methods,out_dir,N,DIM,K,kappa)

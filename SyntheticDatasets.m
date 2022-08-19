@@ -336,27 +336,27 @@ classdef SyntheticDatasets < handle
       end        
     end
     
-    function out = uniformDistributions(output_dir,num_points,num_dim,view,export)
+    function out = uniformDistributions(out_dir,num_points,num_test,num_dim,view,export)
       % ----------------------------------------------------------------------------------
       % Synthetic dataset with four classes of uniform distributions.
       % 
       % Input args
       %   output_dir: output directory to save synthetic dataset.
-      %   num_points: number of samples in dataset.
+      %   num_points: number of train samples in dataset.      
+      %   num_test: number of test samples in dataset.
       %   num_dim: data spatial dimensions.
       %   view: a boolean that enables or disables dataset plotting.
       %   export: a boolean that enables or disables dataset saving.
       % ----------------------------------------------------------------------------------         
       % ----------------------------------------------------------------------------------         
-      if nargin<4
+      if nargin<5
         view = false;
       end
-      if nargin<5
+      if nargin<6
         export = true;
       end    
       
       num_classes = 4;
-      num_test = 10000;
       num_exp = 5;
       
       rng('default');

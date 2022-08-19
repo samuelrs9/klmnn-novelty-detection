@@ -158,7 +158,7 @@ classdef KnnND < handle
       close all;
       % Finds the decision threshold index that gives the best average matthews correlation 
       % coefficient on all validation experiments
-      mean_mcc = mean(MCC,1);
+      mean_mcc = mean(MCC,1,'omitnan');
       [~,best_threshold_id] = max(mean_mcc);
       
       % Demais métricas
@@ -271,8 +271,8 @@ classdef KnnND < handle
       num_tests = size(xtest,3);
       evaluations = cell(num_tests,1);
       for i=1:num_tests
-        fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_tests);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.decision_thresholds);
+        fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',model.knn_arg,model.kappa_threshold,i,num_tests);
+        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest(:,:,i),ytest,model.decision_threshold);
       end
       results = struct2table(cell2mat(evaluations));
     end
