@@ -4,3 +4,6 @@
 [submodule "libraries/kpca"]
 	path = libraries/kpca
 	url = https://github.com/iqiukp/KPCA-MATLAB.git
+[submodule "libraries/lmnn"]
+	path = libraries/lmnn
+	url = https://github.com/iglesias/lmnn.git
