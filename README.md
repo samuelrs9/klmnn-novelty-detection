@@ -3,16 +3,18 @@
 This repository contains the Matlab implementation of the paper ["On novelty detection for multi-class classification using non-linear metric learning"](https://doi.org/10.1016/j.eswa.2020.114193).
 
 **TODO**
-* Corrigir e rodar todos os scripts de simulações.
-* Verificar as funções de plots usadas para gerar os gráficos do artigo.
-* Descobrir como clonar automaticamente os repositórios das bibliotecas usadas.
-* Escrever o README.md
+* Verificar ses os códigos do LMNN e do Kernel PCA estam compativeis.
 
 **Dependencies**
+* Large Margin Nearest Neighbors
+* Kernel Principal Component Analysis (KPCA)
 
 **Usage**
 
 **Experiments**
 
 **Compared Methods**
-
+* Kernel Null Foley-Sammon Transform (KNFST)
+* One Class SVM
+* Multi Class SVM
+* Kernel Principal Component Analysis (KPCA)
