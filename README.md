@@ -6,7 +6,7 @@ This repository contains the Matlab implementation of the paper ["On novelty det
 * Verificar ses os códigos do LMNN e do Kernel PCA estam compativeis.
 
 **Dependencies**
-* Large Margin Nearest Neighbors
+* Large Margin Nearest Neighbors (LMNN)
 * Kernel Principal Component Analysis (KPCA)
 
 **Usage**
