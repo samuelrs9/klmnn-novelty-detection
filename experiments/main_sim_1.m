@@ -23,10 +23,10 @@ random_select_classes = false;
 plot_metric = false;
 
 % More experiment configurations
-num_experiments = 5;
+num_experiments = 10;
 num_knn_args = 5;
-num_decision_thresholds = 20;
-num_kernels = 5;
+num_decision_thresholds = 40;
+num_kernels = 40;
 
 % Hyperparameters
 % KNN

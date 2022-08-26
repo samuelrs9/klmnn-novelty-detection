@@ -55,7 +55,7 @@ classdef KnnND < handle
     function experiments = runExperiments(obj,hyperparameters,num_experiments,...
       num_untrained_classes,training_ratio,random_select_classes,plot_metric)
       %-----------------------------------------------------------------------------------
-      % This method runs validation experiments and hyperparameter search.
+      % This method runs validation experiments and hyperparameter searches.
       %
       % Input args
       %   hyperparameters: a struct containing the hyperparameters, such as 'knn_arg', 
@@ -71,7 +71,6 @@ classdef KnnND < handle
       % Output args
       %   experiments: experiments report.
       % ----------------------------------------------------------------------------------                  
-      classes = unique(obj.Y);
       obj.knn_arg = hyperparameters.knn_arg;
       obj.kappa_threshold = hyperparameters.kappa_threshold;        
       num_decision_thresholds = hyperparameters.num_decision_thresholds;
@@ -227,30 +226,6 @@ classdef KnnND < handle
       xlabel('decision-thresholds');
       ylabel('f1-score');
       title('F1-SCORE');
-    end
-    
-    function [results,evaluations] = evaluateModel(obj,model,num_tests)
-      % ----------------------------------------------------------------------------------
-      % This method is used to evaluate the KNN prediction with multi-class novelty 
-      % detection using a trained model.
-      %
-      % Input args
-      %   model: trained model.
-      %   num_tests: number of tests to be performed.
-      %
-      % Output args
-      %   [results,evaluations]: metrics report for multi-class prediction and novelty detection.
-      % -----------------------------------------------------------------------------------
-      evaluations = cell(num_tests,1);
-      for i=1:num_tests
-        rng(i);
-        fprintf('\nKNN (K=%d kappa=%d) \tTest: %d/%d\n',obj.knn_arg,obj.kappa_threshold,i,num_tests);
-        id_test = obj.split{i}.idTest();
-        [xtest,ytest] = obj.split{i}.dataTest(id_test);
-        [xtrain,ytrain] = obj.split{i}.dataTrain(obj.split{i}.id_train_val_t);
-        evaluations{i} = obj.evaluate(xtrain,ytrain,xtest,ytest,model.decision_thresholds);
-      end
-      results = struct2table(cell2mat(evaluations));
     end
     
     function [results,evaluations] = evaluateTests(obj,xtrain,ytrain,xtest,ytest,model)

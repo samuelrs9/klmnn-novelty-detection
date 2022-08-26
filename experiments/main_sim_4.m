@@ -15,10 +15,10 @@ random_select_classes = false;
 plot_metric = false;
 
 % More experiment configurations
-num_experiments = 5;
-num_knn_args = 3;
-num_decision_thresholds = 4;
-num_kernels = 3;
+num_experiments = 10;
+num_knn_args = 5;
+num_decision_thresholds = 40;
+num_kernels = 40;
 
 % Hyperparameters
 % KNN
@@ -74,18 +74,15 @@ kpca_config.kernels = linspace(0.1,1.5,kpca_config.num_kernels)';
 methods  = {knn_config,lmnn_config,klmnn_config,...
   knfst_config,one_svm_config,multi_svm_config,kpca_config};
 
-tutorial = 5;
+tutorial = 7;
 
 % Variation in the amount of training data
-%N = [800,100,200,300,400,500,750,1000,1500,2000];
-N = [300,100,200,400];
+N = [800,100,200,300,400,500,750,1000,1500,2000];
 
 for i=1:numel(N)
   % Variation in the number of spatial dimensions
-  %if N(i) == 800
-  if N(i) == 300
-    %DIM = 2:20;
-    DIM = 2:5;
+  if N(i) == 800  
+    DIM = 2:20;
   else
     DIM = 10;
   end
@@ -94,7 +91,7 @@ for i=1:numel(N)
     out_dir = strcat('out_sim_4','/N=',int2str(N(i)),' DIM=',int2str(DIM(j)));        
     
     % Create the synthetic dataset
-    num_test_points = 1000;
+    num_test_points = 10000;
     data = SyntheticDatasets.uniformDistributions(out_dir,N(i),num_test_points,DIM(j),false);
     xtrain = data.X;
     ytrain = data.y;
@@ -134,12 +131,24 @@ for i=1:numel(N)
         manager.runEvaluationTests(xtest,ytest,methods([1,2,3,4,5,6,7]),out_dir);
     end
   end
-end   
-   
-if tutorial==6 
-  % --------------------------------------------------------------------------------------
-  % This loads and processes the runtime experiments. [NÃO ATUALIZADO]
-  % --------------------------------------------------------------------------------------
-  DIM = 2:20;
-  manager.reportExecutionTimeAndMetricsTests(methods,out_dir,N,DIM,K,kappa)
+end
+
+out_dir = 'out_sim_4';
+switch tutorial
+  case 6
+    % --------------------------------------------------------------------------------------
+    % This loads and processes the data variation experiments 
+    % for uniform distribution synthetic dataset.
+    % --------------------------------------------------------------------------------------
+    N = [100,200,300,400,500,750,1000,1500,2000];
+    DIM = 10;  
+    manager.reportDataVariationExperiment(methods,out_dir,N,DIM)
+  case 7
+    % --------------------------------------------------------------------------------------
+    % This loads and processes the dimension variation experiments 
+    % for uniform distribution synthetic dataset.
+    % --------------------------------------------------------------------------------------
+    N = 800;
+    DIM = 2:20;
+    manager.reportDimensionVariationExperiment(methods,out_dir,N,DIM)
 end
