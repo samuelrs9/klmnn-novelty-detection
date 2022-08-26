@@ -1,3 +1,6 @@
 [submodule "libraries/knfst"]
 	path = libraries/knfst
 	url = https://github.com/cvjena/knfst.git
+[submodule "libraries/kpca"]
+	path = libraries/kpca
+	url = https://github.com/iqiukp/KPCA-MATLAB.git
