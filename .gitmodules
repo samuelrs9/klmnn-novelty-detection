@@ -1,0 +1,3 @@
+[submodule "libraries/knfst"]
+	path = libraries/knfst
+	url = https://github.com/cvjena/knfst.git
