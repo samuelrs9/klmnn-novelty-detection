@@ -5,7 +5,7 @@ This repository contains the Matlab implementation of the paper ["On novelty det
 ## Introduction
 In this work, we propose to detect novelties by exploiting non-linear distances learned from multiclass training data. For this purpose, we adopt a kernelization technique jointly with the **Large Margin Nearest Neighbor (LMNN)** metric learning algorithm.
 
-To perform the metric learning, we used the original implementation made available by the authors of the **LMNN** algorithm (website). In the case of the kernelization algorithm, we used the **KPCA** algorithm, also made available by third parties.
+To perform the metric learning, we used the original implementation made available by the authors of the **LMNN** algorithm (website). For the kernelization algorithm, we used the **KPCA** algorithm, also made available by third parties.
 
 Both the LMNN and KPCA algorithms provided by third parties can be found in the `external` directory.
 
