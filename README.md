@@ -18,7 +18,7 @@ experiments/main_sim_2.m
 experiments/main_sim_3.m
 experiments/main_sim_4.m
 ```
-are used to run the experiments in the study simulations on synthetic datasets.
+are used to run the experiments in the simulation studies on synthetic datasets.
 
 ## External dependencies
 * Large Margin Nearest Neighbors (LMNN)
@@ -32,7 +32,7 @@ We compare our approach with the following methods
 * Multi Class SVM
 * Kernel Principal Component Analysis (KPCA)
 
-Codes for these approaches are available in the `compared_methods` directory. For **One Class** and **Multi Class SVM** we use the implementation available in Matlab. However for the **KNFST** and **KPCA** methods we use external implementatinos which can be found in the `external` directory.
+Codes for these approaches are available in the `compared_methods` directory. For **One Class** and **Multi Class SVM** we use the implementation available o Matlab. However for the **KNFST** and **KPCA** methods we use external implementatinos which can be found in the `external` directory.
 
 ## Citation
 If you find our work useful for your research, please cite our paper:
