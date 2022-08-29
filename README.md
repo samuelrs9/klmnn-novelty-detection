@@ -20,10 +20,16 @@ experiments/main_sim_4.m
 ```
 are used to run the experiments in the simulation studies on synthetic datasets.
 
-## External dependencies
+## External Dependencies
 * Large Margin Nearest Neighbors (LMNN)
 * Kernel Null Foley-Sammon Transform (KNFST)
 * Kernel Principal Component Analysis (KPCA)
+
+## Our Aproach
+In this work, we propose to detect novelties by exploiting non-linear distances learned from multiclass training data. For this purpose, we adopt a kernelization technique (KPCA) jointly with the Large Margin Nearest Neighbor (LMNN) metric learning algorithm.
+
+To perform the metric learning, we used the original implementation made available by the authors of the LMNN algorithm (website). In the case of the kernelization algorithm, we used the Kernel PCA algorithm, also made available by third parties.
+Both the LMNN and KPCA algorithms provided by third parties can be found in the `external` directory.
 
 ## Compared Methods
 We compare our approach with the following methods
