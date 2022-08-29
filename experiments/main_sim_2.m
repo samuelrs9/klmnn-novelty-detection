@@ -93,7 +93,7 @@ switch tutorial
     % ------------------------------------------------------------------------------------
     % This runs novelty detection experiments for KNN, LMNN and KLMNN based approaches.
     % ------------------------------------------------------------------------------------
-    manager.runExperimentsForKnnMethods(methods([1,2,3]),num_knn_args);
+    manager.runExperimentsForKnnMethods(methods([3]),num_knn_args);
   case 2
     % ------------------------------------------------------------------------------------
     % This processes novelty detection results for KNN, LMNN and KLMNN based approaches.
