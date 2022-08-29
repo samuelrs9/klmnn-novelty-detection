@@ -24,7 +24,13 @@ We compare our approach with the following methods
 * Multi Class SVM
 * Kernel Principal Component Analysis (KPCA)
 
-Codes for these approaches are available in the `compared_methods` directory. For **One Class** and **Multi Class SVM** we use the implementation available o Matlab. In the case of the **KNFST** and **KPCA** methods, we use external implementations that are located in the `external` directory.
+Codes for these approaches are available in the `compared_methods` directory:
+```
+compared_methods/KnfstND.m
+compared_methods/SvmND.m
+compared_methods/KpcaND.m
+```
+For **One Class** and **Multi Class SVM** we use the implementation available o Matlab. In the case of the **KNFST** and **KPCA** methods, we use external implementations that are located in the `external` directory.
 
 ## Datasets
 
