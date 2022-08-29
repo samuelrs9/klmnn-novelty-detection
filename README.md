@@ -33,7 +33,7 @@ compared_methods/KpcaND.m
 For One Class and Multi Class SVM we use the implementation available on Matlab. In the case of the KNFST and KPCA methods, we use external implementations that are located in the `external` directory.
 
 ## Experiments
-To replicate the experiments described in the paper we have made scripts available in the `experiments` directory. The scripts
+To replicate the experiments described in the paper, we have made scripts available in the `experiments` directory. The scripts
 ```
 experiments/main_libras.m
 experiments/main_iris.m
