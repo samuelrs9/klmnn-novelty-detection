@@ -2,10 +2,10 @@
 clc;
 clear;
 close all;
-run('../libraries/lmnn/setpaths3.m');
+run('../external/lmnn/setpaths3.m');
 addpath('..');
-addpath('../libraries/kpca');
-addpath('../libraries/knfst');
+addpath('../external/kpca');
+addpath('../external/knfst');
 addpath('../compared_methods');
 
 % Experiment configurations
