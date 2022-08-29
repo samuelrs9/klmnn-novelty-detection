@@ -22,15 +22,12 @@ This repository contains the Matlab implementation of the paper ["On novelty det
 ##Citation
 ```
 @article{silva2021novelty,
-	title = {On novelty detection for multi-class classification using non-linear metric learning},
-	journal = {Expert Systems with Applications},
-	volume = {167},
-	pages = {114193},
-	year = {2021},
-	issn = {0957-4174},
-	doi = {https://doi.org/10.1016/j.eswa.2020.114193},
-	url = {https://www.sciencedirect.com/science/article/pii/S0957417420309258},
-	author = {Samuel Rocha Silva and Thales Vieira and Dimas Martínez and Afonso Paiva},
-	keywords = {Novelty detection, Outlier detection, Anomaly detection, Metric learning, Multi-class classification},
+  title={On novelty detection for multi-class classification using non-linear metric learning},
+  author={Silva, Samuel Rocha and Vieira, Thales and Mart{\'\i}nez, Dimas and Paiva, Afonso},
+  journal={Expert Systems with Applications},
+  volume={167},
+  pages={114193},
+  year={2021},
+  publisher={Elsevier}
 }
 ```
