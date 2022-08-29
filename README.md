@@ -30,7 +30,7 @@ compared_methods/KnfstND.m
 compared_methods/SvmND.m
 compared_methods/KpcaND.m
 ```
-For **One Class** and **Multi Class SVM** we use the implementation available o Matlab. In the case of the **KNFST** and **KPCA** methods, we use external implementations that are located in the `external` directory.
+For **One Class** and **Multi Class SVM** we use the implementation available on Matlab. In the case of the **KNFST** and **KPCA** methods, we use external implementations that are located in the `external` directory.
 
 ## Datasets
 
@@ -44,7 +44,8 @@ experiments/main_pose.m
 experiments/main_glass.m
 ```
 are used to run novelty detection experiments on real datasets.
-On the other hand, the scripts
+
+And 
 ```
 experiments/main_sim_1.m
 experiments/main_sim_2.m
