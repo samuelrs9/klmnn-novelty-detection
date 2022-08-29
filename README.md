@@ -32,9 +32,6 @@ compared_methods/KpcaND.m
 ```
 For **One Class** and **Multi Class SVM** we use the implementation available on Matlab. In the case of the **KNFST** and **KPCA** methods, we use external implementations that are located in the `external` directory.
 
-## Datasets
-
-
 ## Experiments
 To replicate the experiments described in the paper we have made scripts available in the `experiments` directory. The scripts
 ```
@@ -53,6 +50,10 @@ experiments/main_sim_3.m
 experiments/main_sim_4.m
 ```
 are used to run the experiments in the simulation studies on synthetic datasets.
+
+## Other Files
+* `Datasets.m`: classe usada para gerenciar os datasets reais.
+* `SyntheticDatasets.m`: classe usada para gerar os datasets sintéticos.
 
 ## Citation
 If you find our work useful for your research, please cite our paper:
