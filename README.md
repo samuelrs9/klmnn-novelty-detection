@@ -26,12 +26,15 @@ are used to run the experiments in the study simulations on synthetic datasets.
 
 ## Usage
 
-
 ## Compared Methods
+We compare our approach with the following methods
 * Kernel Null Foley-Sammon Transform (KNFST)
 * One Class SVM
 * Multi Class SVM
 * Kernel Principal Component Analysis (KPCA)
+Codes for these approaches are available in the `compared_methods' directory.
+For One Class and Multi Class SVM we use the implementation available in Matlab.
+In the case of KNFST and KPCA methods, we also provide external dependencies which can be found in the `external` directory. 
 
 ## Citation
 If you find our work useful for your research, please cite our paper:
