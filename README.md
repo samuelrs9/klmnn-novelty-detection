@@ -52,11 +52,11 @@ experiments/main_sim_4.m
 are used to run the experiments in the simulation studies on synthetic datasets.
 
 ## Other Files
-* `Datasets.m`: class used to load real datasets that are located in the `datasets` directory.
-* `SyntheticDatasets.m`: class used to generate the synthetic datasets.
-* `SimpleSplit.m`: class used to manage the random partitioning of the dataset in training and testing.
-* `MetricsReport.m`: class used to calculate popular accuracy metrics in machine learning, such as *F1-Score* and *Mathews Correlation Coefficient*.
-* `Util.m`: class with useful methods for visualization.
+* `Datasets.m`is used to load real datasets that are located in the `datasets` directory.
+* `SyntheticDatasets.m` is used to generate the synthetic datasets.
+* `SimpleSplit.m` is used to manage the random partitioning of the dataset in training and testing.
+* `MetricsReport.m` is used to calculate popular accuracy metrics in machine learning, such as *F1-Score* and *Mathews Correlation Coefficient*.
+* `Util.m` has useful methods for visualization.
 
 ## Citation
 If you find our work useful for your research, please cite our paper:
