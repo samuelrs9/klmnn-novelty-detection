@@ -2,10 +2,10 @@
 
 This repository contains the Matlab implementation of the paper ["On novelty detection for multi-class classification using non-linear metric learning"](https://doi.org/10.1016/j.eswa.2020.114193).
 
-## Introduction
+## Our Approach
 In this work, we propose to detect novelties by exploiting non-linear distances learned from multiclass training data. For this purpose, we adopt a kernelization technique jointly with the *Large Margin Nearest Neighbor* (LMNN) metric learning algorithm.
 
-To tackle the novelty detection problem with metric learning we implement 3 classes:
+To adress the novelty detection problem with metric learning we implement 3 classes:
 ```
 KnnND.m
 LmnnND.m
