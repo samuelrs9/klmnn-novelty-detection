@@ -456,6 +456,7 @@ classdef KlmnnND < handle
       % build a KPCA object
       model = KernelPCA(parameter);
     end
+        
   end
 end
 
