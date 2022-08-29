@@ -5,26 +5,25 @@ This repository contains the Matlab implementation of the paper ["On novelty det
 ## Experiments
 To replicate the experiments described in the paper we have made scripts available in the `experiments` directory. The scripts
 ```
-expressions/main_libras.m
-expressions/main_iris.m
-expressions/main_pose.m
-expressions/main_glass.m
+experiments/main_libras.m
+experiments/main_iris.m
+experiments/main_pose.m
+experiments/main_glass.m
 ```
 are used to run novelty detection experiments on real datasets.
 On the other hand, the scripts
 ```
-expressions/main_sim_1.m
-expressions/main_sim_2.m
-expressions/main_sim_3.m
-expressions/main_sim_4.m
+experiments/main_sim_1.m
+experiments/main_sim_2.m
+experiments/main_sim_3.m
+experiments/main_sim_4.m
 ```
 are used to run the experiments in the study simulations on synthetic datasets.
 
-## Dependencies
+## External dependencies
 * Large Margin Nearest Neighbors (LMNN)
+* Kernel Null Foley-Sammon Transform (KNFST)
 * Kernel Principal Component Analysis (KPCA)
-
-## Usage
 
 ## Compared Methods
 We compare our approach with the following methods
@@ -33,9 +32,7 @@ We compare our approach with the following methods
 * Multi Class SVM
 * Kernel Principal Component Analysis (KPCA)
 
-Codes for these approaches are available in the `compared_methods` directory.
-For One Class and Multi Class SVM we use the implementation available in Matlab.
-In the case of KNFST and KPCA methods, we also provide external dependencies which can be found in the `external` directory. 
+Codes for these approaches are available in the `compared_methods` directory. For **One Class** and **Multi Class SVM** we use the implementation available in Matlab. However for the **KNFST** and **KPCA** methods we use external implementatinos which can be found in the `external` directory.
 
 ## Citation
 If you find our work useful for your research, please cite our paper:
