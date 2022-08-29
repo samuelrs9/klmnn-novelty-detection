@@ -149,9 +149,7 @@ classdef KlmnnND < handle
           fprintf('Compute KPCA... ');
           kpca = obj.kpcaModel(kernel_arg);
           xtrainp = kpca.train(xtrain); % Visualization.map(xtrain,xtrainp,ytrain)
-          xtrainp = xtrainp.data;
           xtestp = kpca.test(xtest);
-          xtestp = xtestp.data;
           fprintf('feito!\n');
           
           % Pré-processamento para o LMNN
@@ -359,9 +357,7 @@ classdef KlmnnND < handle
       % KPCA
       kpca = obj.kpcaModel(kernel_arg);
       xtrainp = kpca.train(xtrain);
-      xtrainp = xtrainp.data; 
       xtestp = kpca.test(xtest);
-      xtestp = xtestp.data;
       
       % Pré-processamento para o LMNN
       % treino
@@ -412,7 +408,6 @@ classdef KlmnnND < handle
       % KPCA
       kpca = obj.kpcaModel(kernel_arg);
       xtrainp = kpca.train(xtrain);
-      xtrainp = xtrainp.data;
       xtestp = kpca.test(xtest);
       
       % Pré-processamento para o LMNN
@@ -436,7 +431,7 @@ classdef KlmnnND < handle
       predictions = knn.predict(xtrainpg,ytrain,xtestpg,decision_threshold);
     end
     
-    function model = kpcaModelOld(obj,kernel_arg)
+    function model = kpcaModel(obj,kernel_arg)
       % ----------------------------------------------------------------------------------
       % This method build a Kernel PCA model.
       % 
@@ -457,31 +452,6 @@ classdef KlmnnND < handle
         % parameter setting
         parameter = struct('application','dr','display','on',...
           'kernel',kernel_f,'explained',obj.reduction_ratio,'tol',1e-6);
-      end      
-      % build a KPCA object
-      model = KernelPCA(parameter);
-    end
-    
-    function model = kpcaModel(obj,kernel_arg)
-      % ----------------------------------------------------------------------------------
-      % This method build a Kernel PCA model.
-      % 
-      % Input arg
-      %   kernel_arg: kernel parameter of kernel pca algorithm.
-      % 
-      % Output args
-      %   model: kernel pca model.
-      % ----------------------------------------------------------------------------------
-      % set kernel function
-      if strcmp(obj.kernel_type,'poly')
-        kernel_f = Kernel('type','polynomial','degree',kernel_arg,'offset',0.5);
-        % parameter setting
-        parameter = struct('display','on','kernelFunc',kernel_f);
-      else
-        kernel_f = Kernel('type','gaussian','width',kernel_arg);
-        % parameter setting
-        parameter = struct('display','on',...
-          'kernelFunc',kernel_f,'numComponents',obj.reduction_ratio);
       end      
       % build a KPCA object
       model = KernelPCA(parameter);
