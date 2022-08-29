@@ -2,11 +2,13 @@
 
 This repository contains the Matlab implementation of the paper ["On novelty detection for multi-class classification using non-linear metric learning"](https://doi.org/10.1016/j.eswa.2020.114193).
 
-## Our Aproach
-In this work, we propose to detect novelties by exploiting non-linear distances learned from multiclass training data. For this purpose, we adopt a kernelization technique (KPCA) jointly with the Large Margin Nearest Neighbor (LMNN) metric learning algorithm.
+## Introduction
+In this work, we propose to detect novelties by exploiting non-linear distances learned from multiclass training data. For this purpose, we adopt a kernelization technique jointly with the **Large Margin Nearest Neighbor (LMNN)** metric learning algorithm.
 
-To perform the metric learning, we used the original implementation made available by the authors of the LMNN algorithm (website). In the case of the kernelization algorithm, we used the Kernel PCA algorithm, also made available by third parties.
+To perform the metric learning, we used the original implementation made available by the authors of the **LMNN** algorithm (website). In the case of the kernelization algorithm, we used the **KPCA** algorithm, also made available by third parties.
 Both the LMNN and KPCA algorithms provided by third parties can be found in the `external` directory.
+
+
 
 ## Compared Methods
 We compare our approach with the following methods
